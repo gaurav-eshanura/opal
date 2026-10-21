@@ -1,0 +1,116 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Check that nothing outside the platform layer touches the OS
+        shell: bash
+        run: |
+          # Every OS-specific call must live in platform_compat.py (plus the
+          # input watcher, which is the one deliberate exception).
+          if grep -rnE "winreg|ctypes\.windll|os\.startfile|powershell" opal_studio/ \
+             --include="*.py" \
+             | grep -v "platform_compat.py" \
+             | grep -v "input_watch.py"; then
+            echo "::error::OS-specific calls found outside the platform layer"
+            exit 1
+          fi
+
+      - name: Run the test suite
+        shell: bash
+        run: python test_opal.py
+
+      - name: Run the exhaustive feature audit
+        shell: bash
+        run: python tests/test_every_feature.py
+
+      - name: Check the security guarantees
+        shell: bash
+        run: python tests/test_security.py
+
+  build:
+    name: Portable build
+    needs: test
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build the core build
+        run: python build_release.py --core
+
+      - name: Build the full build
+        run: python build_release.py
+
+      - name: Check the build size
+        shell: bash
+        run: |
+          du -sm dist/Opal dist/Opal-Full
+          # The core build must stay under 250 MB and the full build under
+          # 650 MB. These limits stop a stray dependency from bloating it.
+          core=$(du -sm dist/Opal | cut -f1)
+          full=$(du -sm dist/Opal-Full | cut -f1)
+          if [ "$core" -gt 250 ]; then
+            echo "::error::Core build is ${core} MB, over the 250 MB budget"
+            exit 1
+          fi
+          if [ "$full" -gt 650 ]; then
+            echo "::error::Full build is ${full} MB, over the 650 MB budget"
+            exit 1
+          fi
+
+      - name: Upload the builds
+        uses: actions/upload-artifact@v4
+        with:
+          name: opal-windows
+          path: |
+            dist/Opal
+            dist/Opal-Full
+          retention-days: 14

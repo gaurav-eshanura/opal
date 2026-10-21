@@ -1,0 +1,94 @@
+# ---------------------------------------------------------------------------
+# Opal - ignored files
+# Only the Opal product belongs in this repository. The folder it lives in
+# also holds other projects, so everything that is not Opal is excluded.
+# ---------------------------------------------------------------------------
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.venv/
+venv/
+env/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# --- Node / tooling ---
+node_modules/
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Tests and scratch ---
+test_sandbox/
+real_test_sandbox/
+every_feature_sandbox/
+scratch/
+outputs/
+*.log
+*.tmp
+*.part
+*.tan_partial
+*.tan_tmp
+
+# --- Local model and engine caches ---
+# The one model that ships inside the app is committed (below). Everything
+# else is downloaded on demand into the user's data folder.
+*.onnx
+!assets/models/*.onnx
+*.bin
+*.pth
+*.pt
+*.safetensors
+*.gguf
+
+# --- Binaries we do not commit ---
+# ffmpeg is 95 MB. Put it at assets/bin/ffmpeg.exe (Windows) or
+# assets/bin/ffmpeg (macOS / Linux) and the full build will bundle it.
+assets/bin/*
+!assets/bin/.gitkeep
+ffmpeg_backup/
+sd-bin/
+*.exe
+!assets/bin/.gitkeep
+
+# --- Other projects that share this working directory ---
+# The image-generation studio and the food-brand site are separate products
+# and are not part of Opal.
+models/
+/app.py
+/css/
+/js/
+/index.html
+/firebase.json
+.firebaserc
+.firebase/
+/dist_out.txt
+/dist_err.txt
+/0
+/generate.bat
+/generate.ps1
+/run_gui.bat
+.video_agent/
+.v2c/
+.mimosa/
+
+# Everything in assets/ belongs to another project except the two folders
+# Opal's build uses.
+assets/*
+!assets/bin/
+!assets/models/
+
+# --- Local agent state ---
+.zcode/
+.claude/

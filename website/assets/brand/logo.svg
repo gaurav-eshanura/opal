@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 96" width="300" height="96" role="img" aria-label="Opal - the offline file studio">
+  <title>Opal</title>
+  <defs>
+    <radialGradient id="l-body" cx="34%" cy="26%" r="88%">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.42" stop-color="#F2F5FC"/>
+      <stop offset="1" stop-color="#C6D2E8"/>
+    </radialGradient>
+    <linearGradient id="l-cool" x1="0.1" y1="1" x2="0.9" y2="0">
+      <stop offset="0" stop-color="#21C7D0"/>
+      <stop offset="0.48" stop-color="#3C7BF2"/>
+      <stop offset="1" stop-color="#8A5CF6"/>
+    </linearGradient>
+    <linearGradient id="l-warm" x1="0" y1="0.6" x2="1" y2="0.4">
+      <stop offset="0" stop-color="#EE4E8A"/>
+      <stop offset="1" stop-color="#FF9A3C"/>
+    </linearGradient>
+    <linearGradient id="l-rim" x1="0.1" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.98"/>
+      <stop offset="0.4" stop-color="#FFFFFF" stop-opacity="0.42"/>
+      <stop offset="0.74" stop-color="#96AAD7" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#5A6B93" stop-opacity="0.62"/>
+    </linearGradient>
+    <filter id="l-blur" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+    <filter id="l-blur-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
+    <clipPath id="l-clip"><ellipse cx="46" cy="48" rx="36" ry="29"/></clipPath>
+  </defs>
+
+  <g clip-path="url(#l-clip)">
+    <ellipse cx="46" cy="48" rx="36" ry="29" fill="url(#l-body)"/>
+    <g filter="url(#l-blur)">
+      <ellipse cx="36" cy="48" rx="34" ry="10" fill="url(#l-cool)" opacity="0.8"
+               transform="rotate(-19 36 48)"/>
+      <ellipse cx="58" cy="57" rx="20" ry="7" fill="url(#l-warm)" opacity="0.62"
+               transform="rotate(-19 58 57)"/>
+    </g>
+    <ellipse cx="30" cy="28" rx="11" ry="5.5" fill="#FFFFFF" opacity="0.75"
+             transform="rotate(-31 30 28)" filter="url(#l-blur-soft)"/>
+  </g>
+  <ellipse cx="46" cy="48" rx="36" ry="29" fill="none" stroke="url(#l-rim)" stroke-width="1.8"/>
+
+  <text x="96" y="50" font-family="Segoe UI, Inter, system-ui, sans-serif" font-size="34"
+        font-weight="800" letter-spacing="6" fill="#1A1D26">OPAL</text>
+  <text x="98" y="72" font-family="Segoe UI, Inter, system-ui, sans-serif" font-size="10.5"
+        font-weight="700" letter-spacing="3.4" fill="#1A1D26" opacity="0.5">OFFLINE FILE STUDIO</text>
+</svg>

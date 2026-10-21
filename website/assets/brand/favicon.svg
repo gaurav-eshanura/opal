@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Opal">
+  <defs>
+    <radialGradient id="f-body" cx="34%" cy="26%" r="88%">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.45" stop-color="#F0F4FC"/>
+      <stop offset="1" stop-color="#BFCCE4"/>
+    </radialGradient>
+    <linearGradient id="f-cool" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#21C7D0"/>
+      <stop offset="0.5" stop-color="#3C7BF2"/>
+      <stop offset="1" stop-color="#8A5CF6"/>
+    </linearGradient>
+    <linearGradient id="f-warm" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#EE4E8A"/>
+      <stop offset="1" stop-color="#FF9A3C"/>
+    </linearGradient>
+    <linearGradient id="f-rim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.95"/>
+      <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#5A6B93" stop-opacity="0.55"/>
+    </linearGradient>
+    <clipPath id="f-clip"><ellipse cx="32" cy="32" rx="26" ry="21"/></clipPath>
+  </defs>
+  <g clip-path="url(#f-clip)">
+    <ellipse cx="32" cy="32" rx="26" ry="21" fill="url(#f-body)"/>
+    <g opacity="0.82" transform="rotate(-19 32 32)">
+      <ellipse cx="25" cy="31" rx="24" ry="7.5" fill="url(#f-cool)"/>
+      <ellipse cx="40" cy="38" rx="14" ry="5.5" fill="url(#f-warm)" opacity="0.7"/>
+    </g>
+    <ellipse cx="20" cy="18" rx="8" ry="4" fill="#FFFFFF" opacity="0.75" transform="rotate(-31 20 18)"/>
+  </g>
+  <ellipse cx="32" cy="32" rx="26" ry="21" fill="none" stroke="url(#f-rim)" stroke-width="1.6"/>
+</svg>

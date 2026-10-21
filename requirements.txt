@@ -1,0 +1,39 @@
+# Opal - runtime dependencies
+# Everything here runs on your own machine. Nothing is uploaded, and the app
+# works with the network unplugged once the optional engines are installed.
+
+# --- Interface ---
+PySide6==6.11.0
+
+# --- Documents ---
+pymupdf==1.28.2          # PDF engine: render, edit, sign, OCR text layer
+pypdf==6.9.1              # PDF reading and merging
+python-docx==1.2.0        # Word
+python-pptx==1.0.2        # PowerPoint
+openpyxl==3.1.5           # Excel
+EbookLib==0.20            # EPUB
+beautifulsoup4==4.14.3    # HTML
+lxml==6.1.1               # HTML parsing
+Markdown==3.10.2          # Markdown
+fonttools==4.62.1         # Font inspection
+
+# --- Images ---
+pillow==12.1.1
+pillow-heif==1.8.1        # HEIC (iPhone photos)
+qrcode==8.2
+numpy==2.4.6
+
+# --- Signatures ---
+pyHanko==0.38.0           # Real DSC signing (PKCS#12 certificates)
+cryptography==48.0.0
+asn1crypto==1.5.1
+oscrypto==1.3.0
+
+# --- On-device AI (optional: the app installs these on first use) ---
+onnxruntime==1.26.0       # Background removal, upscaling
+opencv-python==4.13.0.92  # Face blur, object removal
+rapidocr-onnxruntime==1.2.3  # Offline OCR
+
+# --- System ---
+Send2Trash==2.1.0
+pywin32==311              # Windows only: shell integration and the global hotkey
