@@ -1642,8 +1642,8 @@ def guess_cause(r):
 # ---------------------------------------------------------------------------
 
 def release_ai_sessions():
-    """Frees the AI sessions this process loaded, so that the CLI subprocess
-    (which has to load the very same model again) has room to do it."""
+    """Frees the AI sessions this process loaded, so that the command line
+    run (which has to load the very same model again) has room to do it."""
     try:
         from opal_studio.engines import EngineManager
         EngineManager._rembg_sessions.clear()
