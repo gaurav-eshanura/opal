@@ -36,4 +36,4 @@ rapidocr-onnxruntime==1.2.3  # Offline OCR
 
 # --- System ---
 Send2Trash==2.1.0
-pywin32==311              # Windows only: shell integration and the global hotkey
+pywin32==311; sys_platform == "win32"   # Windows: shell integration, global hotkey, SAPI speech

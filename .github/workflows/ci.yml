@@ -33,6 +33,25 @@ jobs:
           cache: pip
           cache-dependency-path: requirements.txt
 
+      - name: Install the system libraries Qt needs (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libgl1 libegl1 libxkbcommon-x11-0 libdbus-1-3 \
+            libfontconfig1 libfreetype6 ffmpeg
+
+      - name: Install ffmpeg (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: brew install ffmpeg
+
+      - name: Install ffmpeg (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: choco install ffmpeg -y --no-progress
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -54,14 +73,20 @@ jobs:
 
       - name: Run the test suite
         shell: bash
+        env:
+          QT_QPA_PLATFORM: offscreen
         run: python test_opal.py
 
       - name: Run the exhaustive feature audit
         shell: bash
+        env:
+          QT_QPA_PLATFORM: offscreen
         run: python tests/test_every_feature.py
 
       - name: Check the security guarantees
         shell: bash
+        env:
+          QT_QPA_PLATFORM: offscreen
         run: python tests/test_security.py
 
   build:

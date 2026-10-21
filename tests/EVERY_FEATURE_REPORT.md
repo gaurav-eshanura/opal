@@ -1,8 +1,8 @@
 # Opal - Every-Feature Verification Report
 
-- Generated: 2026-10-21 23:10:27
+- Generated: 2026-10-21 23:58:40
 - Suite: `tests/test_every_feature.py`
-- Result: **165 passed, 0 failed** (165 checks in total)
+- Result: **166 passed, 0 failed** (166 checks in total)
 
 The suite runs every action in `OpalEngine.get_catalog()` against real sample files, opens every dialog and modal surface headless, exercises every public function in `opal_studio/platform_compat.py` and drives the CLI. Output files are re-opened with the matching reader (PIL / PyMuPDF / zipfile) so a "successful" conversion that produced a broken file counts as a failure.
 
@@ -11,7 +11,7 @@ The suite runs every action in `OpalEngine.get_catalog()` against real sample fi
 | Area | Checks |
 |------|--------|
 | CATALOG - every action run for real | 58 (58 passed, 0 failed) |
-| MODULES - every opal_studio module imports cleanly | 32 (32 passed, 0 failed) |
+| MODULES - every opal_studio module imports cleanly | 33 (33 passed, 0 failed) |
 | DIALOGS - every modal surface opens | 49 (49 passed, 0 failed) |
 | CROSS-PLATFORM LAYER | 15 (15 passed, 0 failed) |
 | COMMAND LINE | 11 (11 passed, 0 failed) |
@@ -27,7 +27,7 @@ The suite runs every action in `OpalEngine.get_catalog()` against real sample fi
 | PDF signing (pyHanko) | installed |
 | OCR (RapidOCR) | available |
 | Network | reachable |
-| Free RAM during the run | 2.9 GB free of 16.9 GB |
+| Free RAM during the run | 5.0 GB free of 16.9 GB |
 
 ## Notes
 
@@ -119,92 +119,93 @@ The suite runs every action in `OpalEngine.get_catalog()` against real sample fi
 | 77 | MODULES - every opal_studio module imports cleanly | module opal_studio.pdf_tools imports | PASS |  |
 | 78 | MODULES - every opal_studio module imports cleanly | module opal_studio.platform_compat imports | PASS |  |
 | 79 | MODULES - every opal_studio module imports cleanly | module opal_studio.radial_widget imports | PASS |  |
-| 80 | MODULES - every opal_studio module imports cleanly | module opal_studio.settings_dialog imports | PASS |  |
-| 81 | MODULES - every opal_studio module imports cleanly | module opal_studio.theme imports | PASS |  |
-| 82 | MODULES - every opal_studio module imports cleanly | module opal_studio.toast imports | PASS |  |
-| 83 | MODULES - every opal_studio module imports cleanly | module opal_studio.tray imports | PASS |  |
-| 84 | MODULES - every opal_studio module imports cleanly | module opal_studio.viewer_doc imports | PASS |  |
-| 85 | MODULES - every opal_studio module imports cleanly | module opal_studio.viewer_image imports | PASS |  |
-| 86 | MODULES - every opal_studio module imports cleanly | module opal_studio.viewer_media imports | PASS |  |
-| 87 | MODULES - every opal_studio module imports cleanly | module opal_studio.viewer_pdf imports | PASS |  |
-| 88 | MODULES - every opal_studio module imports cleanly | module opal_studio.watch_folder imports | PASS |  |
-| 89 | MODULES - every opal_studio module imports cleanly | module opal_studio.worker imports | PASS |  |
-| 90 | MODULES - every opal_studio module imports cleanly | every opal_studio module imports without error | PASS |  |
-| 91 | DIALOGS - every modal surface opens | SettingsDialog opens without crashing | PASS |  |
-| 92 | DIALOGS - every modal surface opens | SettingsDialog is visible | PASS |  |
-| 93 | DIALOGS - every modal surface opens | SettingsDialog shows the AI model pickers | PASS |  |
-| 94 | DIALOGS - every modal surface opens | SettingsDialog buttons are wired | PASS |  |
-| 95 | DIALOGS - every modal surface opens | SettingsDialog 'Save Preferences' button works | PASS |  |
-| 96 | DIALOGS - every modal surface opens | SettingsDialog save persisted the preferences | PASS |  |
-| 97 | DIALOGS - every modal surface opens | HistoryDialog opens without crashing | PASS |  |
-| 98 | DIALOGS - every modal surface opens | HistoryDialog is visible | PASS |  |
-| 99 | DIALOGS - every modal surface opens | HistoryDialog lists recorded runs | PASS |  |
-| 100 | DIALOGS - every modal surface opens | SignatureDialog opens without crashing | PASS |  |
-| 101 | DIALOGS - every modal surface opens | SignatureDialog is visible | PASS |  |
-| 102 | DIALOGS - every modal surface opens | SignatureDialog has draw / type / image tabs | PASS |  |
-| 103 | DIALOGS - every modal surface opens | SignatureDialog type tab renders a signature | PASS |  |
-| 104 | DIALOGS - every modal surface opens | SignatureDialog draw tab captures strokes | PASS |  |
-| 105 | DIALOGS - every modal surface opens | SignatureDialog image tab produces a signature PNG | PASS |  |
-| 106 | DIALOGS - every modal surface opens | PdfStudio opens without crashing | PASS |  |
-| 107 | DIALOGS - every modal surface opens | PdfStudio is visible | PASS |  |
-| 108 | DIALOGS - every modal surface opens | PdfStudio loaded the document | PASS |  |
-| 109 | DIALOGS - every modal surface opens | PdfStudio built a page view per page | PASS |  |
-| 110 | DIALOGS - every modal surface opens | PdfStudio built page thumbnails | PASS |  |
-| 111 | DIALOGS - every modal surface opens | _range_dialog opens and returns the typed range | PASS |  |
-| 112 | DIALOGS - every modal surface opens | ImageLab opens without crashing | PASS |  |
-| 113 | DIALOGS - every modal surface opens | ImageLab is visible | PASS |  |
-| 114 | DIALOGS - every modal surface opens | ImageLab loaded the picture | PASS |  |
-| 115 | DIALOGS - every modal surface opens | ImageLab palette tool produces swatches | PASS |  |
-| 116 | DIALOGS - every modal surface opens | DocStudio opens without crashing | PASS |  |
-| 117 | DIALOGS - every modal surface opens | DocStudio is visible | PASS |  |
-| 118 | DIALOGS - every modal surface opens | DocStudio rendered the text | PASS |  |
-| 119 | DIALOGS - every modal surface opens | MediaStudio opens without crashing | PASS |  |
-| 120 | DIALOGS - every modal surface opens | MediaStudio is visible | PASS |  |
-| 121 | DIALOGS - every modal surface opens | MediaStudio read the media duration | PASS |  |
-| 122 | DIALOGS - every modal surface opens | OpalDashboard opens without crashing | PASS |  |
-| 123 | DIALOGS - every modal surface opens | OpalDashboard is visible | PASS |  |
-| 124 | DIALOGS - every modal surface opens | FloatStudio opens without crashing | PASS |  |
-| 125 | DIALOGS - every modal surface opens | FloatStudio is visible | PASS |  |
-| 126 | DIALOGS - every modal surface opens | FloatStudio starts on the Home tab | PASS |  |
-| 127 | DIALOGS - every modal surface opens | FloatStudio opens a file in a new tab | PASS |  |
-| 128 | DIALOGS - every modal surface opens | FloatStudio HomeTab opens without crashing | PASS |  |
-| 129 | DIALOGS - every modal surface opens | FloatStudio HomeTab is visible | PASS |  |
-| 130 | DIALOGS - every modal surface opens | RadialMenuWidget opens without crashing | PASS |  |
-| 131 | DIALOGS - every modal surface opens | RadialMenuWidget is visible | PASS |  |
-| 132 | DIALOGS - every modal surface opens | RadialMenuWidget 'convert' mode lists conversions | PASS |  |
-| 133 | DIALOGS - every modal surface opens | RadialMenuWidget 'tools' mode lists tools | PASS |  |
-| 134 | DIALOGS - every modal surface opens | RadialMenuWidget 'actions' mode lists actions | PASS |  |
-| 135 | DIALOGS - every modal surface opens | OpalToast opens without crashing | PASS |  |
-| 136 | DIALOGS - every modal surface opens | OpalToast is visible | PASS |  |
-| 137 | DIALOGS - every modal surface opens | OpalToast shows the action buttons | PASS |  |
-| 138 | DIALOGS - every modal surface opens | OpalTray opens without crashing | PASS |  |
-| 139 | DIALOGS - every modal surface opens | OpalTray has a context menu | PASS |  |
-| 140 | CROSS-PLATFORM LAYER | platform_name() returns the OS name | PASS |  |
-| 141 | CROSS-PLATFORM LAYER | startup_supported() returns a bool | PASS |  |
-| 142 | CROSS-PLATFORM LAYER | context_menu_supported() returns a bool | PASS |  |
-| 143 | CROSS-PLATFORM LAYER | portable_root() returns a path or None | PASS |  |
-| 144 | CROSS-PLATFORM LAYER | user_data_dir() returns an existing folder | PASS |  |
-| 145 | CROSS-PLATFORM LAYER | is_portable() agrees with portable_root() | PASS |  |
-| 146 | CROSS-PLATFORM LAYER | copy_text_to_clipboard() works | PASS |  |
-| 147 | CROSS-PLATFORM LAYER | send_to_trash() removes the file | PASS |  |
-| 148 | CROSS-PLATFORM LAYER | set_startup_entry(True) registers the app | PASS |  |
-| 149 | CROSS-PLATFORM LAYER | set_startup_entry(False) removes the app | PASS |  |
-| 150 | CROSS-PLATFORM LAYER | install_context_menu() registers the entry | PASS |  |
-| 151 | CROSS-PLATFORM LAYER | uninstall_context_menu() removes the entry | PASS |  |
-| 152 | CROSS-PLATFORM LAYER | reveal_in_file_manager() opens Explorer on the file | PASS |  |
-| 153 | CROSS-PLATFORM LAYER | open_with_default() opens the file with its default app | PASS |  |
-| 154 | CROSS-PLATFORM LAYER | open_terminal() opens a terminal in the folder | PASS |  |
-| 155 | COMMAND LINE | CLI --catalog exits 0 | PASS |  |
-| 156 | COMMAND LINE | CLI --catalog prints the whole catalog | PASS |  |
-| 157 | COMMAND LINE | CLI --list-formats exits 0 | PASS |  |
-| 158 | COMMAND LINE | CLI --list-formats prints every format group | PASS |  |
-| 159 | COMMAND LINE | CLI --info exits 0 | PASS |  |
-| 160 | COMMAND LINE | CLI --info prints machine-readable JSON about the file | PASS |  |
-| 161 | COMMAND LINE | CLI --convert exits 0 | PASS |  |
-| 162 | COMMAND LINE | CLI --convert really produced a file | PASS |  |
-| 163 | COMMAND LINE | CLI --convert output is a valid WebP | PASS |  |
-| 164 | COMMAND LINE | CLI --tool exits 0 | PASS |  |
-| 165 | COMMAND LINE | CLI --tool really ran the AI cut-out | PASS |  |
+| 80 | MODULES - every opal_studio module imports cleanly | module opal_studio.safepath imports | PASS |  |
+| 81 | MODULES - every opal_studio module imports cleanly | module opal_studio.settings_dialog imports | PASS |  |
+| 82 | MODULES - every opal_studio module imports cleanly | module opal_studio.theme imports | PASS |  |
+| 83 | MODULES - every opal_studio module imports cleanly | module opal_studio.toast imports | PASS |  |
+| 84 | MODULES - every opal_studio module imports cleanly | module opal_studio.tray imports | PASS |  |
+| 85 | MODULES - every opal_studio module imports cleanly | module opal_studio.viewer_doc imports | PASS |  |
+| 86 | MODULES - every opal_studio module imports cleanly | module opal_studio.viewer_image imports | PASS |  |
+| 87 | MODULES - every opal_studio module imports cleanly | module opal_studio.viewer_media imports | PASS |  |
+| 88 | MODULES - every opal_studio module imports cleanly | module opal_studio.viewer_pdf imports | PASS |  |
+| 89 | MODULES - every opal_studio module imports cleanly | module opal_studio.watch_folder imports | PASS |  |
+| 90 | MODULES - every opal_studio module imports cleanly | module opal_studio.worker imports | PASS |  |
+| 91 | MODULES - every opal_studio module imports cleanly | every opal_studio module imports without error | PASS |  |
+| 92 | DIALOGS - every modal surface opens | SettingsDialog opens without crashing | PASS |  |
+| 93 | DIALOGS - every modal surface opens | SettingsDialog is visible | PASS |  |
+| 94 | DIALOGS - every modal surface opens | SettingsDialog shows the AI model pickers | PASS |  |
+| 95 | DIALOGS - every modal surface opens | SettingsDialog buttons are wired | PASS |  |
+| 96 | DIALOGS - every modal surface opens | SettingsDialog 'Save Preferences' button works | PASS |  |
+| 97 | DIALOGS - every modal surface opens | SettingsDialog save persisted the preferences | PASS |  |
+| 98 | DIALOGS - every modal surface opens | HistoryDialog opens without crashing | PASS |  |
+| 99 | DIALOGS - every modal surface opens | HistoryDialog is visible | PASS |  |
+| 100 | DIALOGS - every modal surface opens | HistoryDialog lists recorded runs | PASS |  |
+| 101 | DIALOGS - every modal surface opens | SignatureDialog opens without crashing | PASS |  |
+| 102 | DIALOGS - every modal surface opens | SignatureDialog is visible | PASS |  |
+| 103 | DIALOGS - every modal surface opens | SignatureDialog has draw / type / image tabs | PASS |  |
+| 104 | DIALOGS - every modal surface opens | SignatureDialog type tab renders a signature | PASS |  |
+| 105 | DIALOGS - every modal surface opens | SignatureDialog draw tab captures strokes | PASS |  |
+| 106 | DIALOGS - every modal surface opens | SignatureDialog image tab produces a signature PNG | PASS |  |
+| 107 | DIALOGS - every modal surface opens | PdfStudio opens without crashing | PASS |  |
+| 108 | DIALOGS - every modal surface opens | PdfStudio is visible | PASS |  |
+| 109 | DIALOGS - every modal surface opens | PdfStudio loaded the document | PASS |  |
+| 110 | DIALOGS - every modal surface opens | PdfStudio built a page view per page | PASS |  |
+| 111 | DIALOGS - every modal surface opens | PdfStudio built page thumbnails | PASS |  |
+| 112 | DIALOGS - every modal surface opens | _range_dialog opens and returns the typed range | PASS |  |
+| 113 | DIALOGS - every modal surface opens | ImageLab opens without crashing | PASS |  |
+| 114 | DIALOGS - every modal surface opens | ImageLab is visible | PASS |  |
+| 115 | DIALOGS - every modal surface opens | ImageLab loaded the picture | PASS |  |
+| 116 | DIALOGS - every modal surface opens | ImageLab palette tool produces swatches | PASS |  |
+| 117 | DIALOGS - every modal surface opens | DocStudio opens without crashing | PASS |  |
+| 118 | DIALOGS - every modal surface opens | DocStudio is visible | PASS |  |
+| 119 | DIALOGS - every modal surface opens | DocStudio rendered the text | PASS |  |
+| 120 | DIALOGS - every modal surface opens | MediaStudio opens without crashing | PASS |  |
+| 121 | DIALOGS - every modal surface opens | MediaStudio is visible | PASS |  |
+| 122 | DIALOGS - every modal surface opens | MediaStudio read the media duration | PASS |  |
+| 123 | DIALOGS - every modal surface opens | OpalDashboard opens without crashing | PASS |  |
+| 124 | DIALOGS - every modal surface opens | OpalDashboard is visible | PASS |  |
+| 125 | DIALOGS - every modal surface opens | FloatStudio opens without crashing | PASS |  |
+| 126 | DIALOGS - every modal surface opens | FloatStudio is visible | PASS |  |
+| 127 | DIALOGS - every modal surface opens | FloatStudio starts on the Home tab | PASS |  |
+| 128 | DIALOGS - every modal surface opens | FloatStudio opens a file in a new tab | PASS |  |
+| 129 | DIALOGS - every modal surface opens | FloatStudio HomeTab opens without crashing | PASS |  |
+| 130 | DIALOGS - every modal surface opens | FloatStudio HomeTab is visible | PASS |  |
+| 131 | DIALOGS - every modal surface opens | RadialMenuWidget opens without crashing | PASS |  |
+| 132 | DIALOGS - every modal surface opens | RadialMenuWidget is visible | PASS |  |
+| 133 | DIALOGS - every modal surface opens | RadialMenuWidget 'convert' mode lists conversions | PASS |  |
+| 134 | DIALOGS - every modal surface opens | RadialMenuWidget 'tools' mode lists tools | PASS |  |
+| 135 | DIALOGS - every modal surface opens | RadialMenuWidget 'actions' mode lists actions | PASS |  |
+| 136 | DIALOGS - every modal surface opens | OpalToast opens without crashing | PASS |  |
+| 137 | DIALOGS - every modal surface opens | OpalToast is visible | PASS |  |
+| 138 | DIALOGS - every modal surface opens | OpalToast shows the action buttons | PASS |  |
+| 139 | DIALOGS - every modal surface opens | OpalTray opens without crashing | PASS |  |
+| 140 | DIALOGS - every modal surface opens | OpalTray has a context menu | PASS |  |
+| 141 | CROSS-PLATFORM LAYER | platform_name() returns the OS name | PASS |  |
+| 142 | CROSS-PLATFORM LAYER | startup_supported() returns a bool | PASS |  |
+| 143 | CROSS-PLATFORM LAYER | context_menu_supported() returns a bool | PASS |  |
+| 144 | CROSS-PLATFORM LAYER | portable_root() returns a path or None | PASS |  |
+| 145 | CROSS-PLATFORM LAYER | user_data_dir() returns an existing folder | PASS |  |
+| 146 | CROSS-PLATFORM LAYER | is_portable() agrees with portable_root() | PASS |  |
+| 147 | CROSS-PLATFORM LAYER | copy_text_to_clipboard() works | PASS |  |
+| 148 | CROSS-PLATFORM LAYER | send_to_trash() removes the file | PASS |  |
+| 149 | CROSS-PLATFORM LAYER | set_startup_entry(True) registers the app | PASS |  |
+| 150 | CROSS-PLATFORM LAYER | set_startup_entry(False) removes the app | PASS |  |
+| 151 | CROSS-PLATFORM LAYER | install_context_menu() registers the entry | PASS |  |
+| 152 | CROSS-PLATFORM LAYER | uninstall_context_menu() removes the entry | PASS |  |
+| 153 | CROSS-PLATFORM LAYER | reveal_in_file_manager() opens Explorer on the file | PASS |  |
+| 154 | CROSS-PLATFORM LAYER | open_with_default() opens the file with its default app | PASS |  |
+| 155 | CROSS-PLATFORM LAYER | open_terminal() opens a terminal in the folder | PASS |  |
+| 156 | COMMAND LINE | CLI --catalog exits 0 | PASS |  |
+| 157 | COMMAND LINE | CLI --catalog prints the whole catalog | PASS |  |
+| 158 | COMMAND LINE | CLI --list-formats exits 0 | PASS |  |
+| 159 | COMMAND LINE | CLI --list-formats prints every format group | PASS |  |
+| 160 | COMMAND LINE | CLI --info exits 0 | PASS |  |
+| 161 | COMMAND LINE | CLI --info prints machine-readable JSON about the file | PASS |  |
+| 162 | COMMAND LINE | CLI --convert exits 0 | PASS |  |
+| 163 | COMMAND LINE | CLI --convert really produced a file | PASS |  |
+| 164 | COMMAND LINE | CLI --convert output is a valid WebP | PASS |  |
+| 165 | COMMAND LINE | CLI --tool exits 0 | PASS |  |
+| 166 | COMMAND LINE | CLI --tool really ran the AI cut-out | PASS |  |
 
 ## Failures
 
