@@ -102,8 +102,9 @@ def main():
     check("config has new keys", "bg_model" in cfg and "keep_original_dates" in cfg)
 
     print("\n--- CLEAN SHUTDOWN ---")
-    tangerine._on_about_to_quit()
-    pump(app, 200)
+    tangerine.shutdown()
+    app.quit()
+    pump(app, 300)
     check("clean shutdown completes", True)
 
     print("\n" + "=" * 60)

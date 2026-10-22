@@ -77,10 +77,50 @@ class OpalApp:
             self.watch_folder_worker.start()
 
     def _on_about_to_quit(self):
-        self.drag_detector.stop()
-        self.drag_detector.wait(1500)
-        if self.watch_folder_worker:
-            self.watch_folder_worker.stop()
+        self.shutdown()
+
+    def shutdown(self):
+        """Stops the background threads and puts the windows away.
+
+        A QThread that is still running when Qt tears down aborts the whole
+        process, and so does tearing down a visible frameless window on some
+        platforms. Both are handled here, on every path out - including the
+        app simply being deleted.
+        """
+        for widget in (getattr(self, "studio", None),
+                       getattr(self, "radial_menu", None),
+                       getattr(self, "drop_orb", None),
+                       getattr(self, "toast", None),
+                       getattr(self, "tray", None),
+                       getattr(self, "dashboard", None)):
+            if widget is None:
+                continue
+            try:
+                widget.hide()
+            except Exception:
+                pass
+        try:
+            self.drag_detector.stop()
+            self.drag_detector.wait(1500)
+        except Exception:
+            pass
+        worker = getattr(self, "watch_folder_worker", None)
+        if worker is not None:
+            try:
+                worker.stop()
+                worker.wait(1500)
+            except Exception:
+                pass
+        try:
+            self.hotkey_mgr.unregister(self.app)
+        except Exception:
+            pass
+
+    def __del__(self):
+        try:
+            self.shutdown()
+        except Exception:
+            pass
 
     def on_watch_folder_file_processed(self, original_name: str, output_path: str, message: str):
         self.toast.show_message("Auto-Converted", message, target_path=output_path, is_error=False)
