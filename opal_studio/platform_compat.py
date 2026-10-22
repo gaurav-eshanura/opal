@@ -130,14 +130,14 @@ def send_to_trash(path: str) -> bool:
 
 def startup_supported() -> bool:
     """Whether this platform can register the app to start at login."""
-    return IS_WINDOWS or IS_LINUX
+    return IS_WINDOWS or IS_LINUX or IS_MAC
 
 
 def set_startup_entry(enable: bool, command: Optional[str] = None) -> bool:
     """
     Registers (or removes) the app in the system's start-up list.
-    Windows uses the Run key, Linux writes a .desktop entry. macOS is handled
-    by the user in System Settings, so we politely do nothing there.
+    Windows uses the Run key, Linux writes a .desktop entry and macOS writes a
+    Launch Agent in the user's own folder.
     """
     if command is None:
         command = _startup_command()
@@ -171,6 +171,35 @@ def set_startup_entry(enable: bool, command: Optional[str] = None) -> bool:
                     encoding="utf-8")
             elif entry.exists():
                 entry.unlink()
+            return True
+        except Exception:
+            return False
+
+    if IS_MAC:
+        # A Launch Agent in the user's own folder. No administrator rights,
+        # and removing it is just deleting the file.
+        try:
+            import shlex
+            agents = Path.home() / "Library" / "LaunchAgents"
+            plist = agents / "com.eshanura.opal.plist"
+            if enable:
+                agents.mkdir(parents=True, exist_ok=True)
+                arguments = "".join(
+                    f"        <string>{part}</string>\n"
+                    for part in shlex.split(command))
+                plist.write_text(
+                    '<?xml version="1.0" encoding="UTF-8"?>\n'
+                    '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" '
+                    '"http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n'
+                    '<plist version="1.0">\n<dict>\n'
+                    '    <key>Label</key>\n    <string>com.eshanura.opal</string>\n'
+                    '    <key>ProgramArguments</key>\n    <array>\n'
+                    f'{arguments}    </array>\n'
+                    '    <key>RunAtLoad</key>\n    <true/>\n'
+                    '</dict>\n</plist>\n',
+                    encoding="utf-8")
+            elif plist.exists():
+                plist.unlink()
             return True
         except Exception:
             return False

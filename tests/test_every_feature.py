@@ -1304,24 +1304,32 @@ def test_platform_compat():
               f"{type(e).__name__}: {e}", "product")
 
     # start-up entry
-    try:
-        ok_on = pc.set_startup_entry(True)
-        check("set_startup_entry(True) registers the app", ok_on is True, f"returned {ok_on}")
-        ok_off = pc.set_startup_entry(False)
-        check("set_startup_entry(False) removes the app", ok_off is True, f"returned {ok_off}")
-    except Exception as e:
-        check("set_startup_entry(True) registers the app", False,
-              f"{type(e).__name__}: {e}", "product")
+    if pc.startup_supported():
+        try:
+            ok_on = pc.set_startup_entry(True)
+            check("set_startup_entry(True) registers the app", ok_on is True, f"returned {ok_on}")
+            ok_off = pc.set_startup_entry(False)
+            check("set_startup_entry(False) removes the app", ok_off is True, f"returned {ok_off}")
+        except Exception as e:
+            check("set_startup_entry(True) registers the app", False,
+                  f"{type(e).__name__}: {e}", "product")
+    else:
+        skip("set_startup_entry() registers the app", "not supported on this platform")
 
     # file-manager integration
-    try:
-        ok = pc.install_context_menu()
-        check("install_context_menu() registers the entry", ok is True, f"returned {ok}")
-        ok = pc.uninstall_context_menu()
-        check("uninstall_context_menu() removes the entry", ok is True, f"returned {ok}")
-    except Exception as e:
-        check("install_context_menu() registers the entry", False,
+    if pc.context_menu_supported():
+        try:
+            ok = pc.install_context_menu()
+            check("install_context_menu() registers the entry", ok is True, f"returned {ok}")
+            ok = pc.uninstall_context_menu()
+            check("uninstall_context_menu() removes the entry", ok is True, f"returned {ok}")
+        except Exception as e:
+            check("install_context_menu() registers the entry", False,
               f"{type(e).__name__}: {e}", "product")
+    else:
+        skip("install_context_menu() registers the entry",
+             "the right-click menu needs a registered file type, which only "
+             "Windows and Linux can do outside a macOS app bundle")
 
     # reveal / open / terminal - these really touch the desktop
     probe_file = PROBE_DIR / "probe.txt"
