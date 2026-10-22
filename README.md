@@ -39,8 +39,8 @@ things Acrobat is used for, and a few it never did.
 
 | Build | Size | What it is | Get it |
 |---|---|---|---|
-| **Opal** | 202 MB (103 MB zipped) | Everything except the heavy AI engines, which install on first use | [`Opal-v2.0.0-Windows-x64.zip`](https://github.com/gaurav-eshanura/opal/releases/latest) |
-| **Opal Full** | 529 MB (232 MB zipped) | Everything bundled, including the cut-out model — works offline from the first click | [`Opal-Full-v2.0.0-Windows-x64.zip`](https://github.com/gaurav-eshanura/opal/releases/latest) |
+| **Opal** | 202 MB (103 MB zipped) | Everything except the heavy AI engines, which install on first use | [`Opal-v2.0.1-Windows-x64.zip`](https://github.com/gaurav-eshanura/opal/releases/latest) |
+| **Opal Full** | 563 MB (232 MB zipped) | Everything bundled, including the cut-out model — works offline from the first click | [`Opal-Full-v2.0.1-Windows-x64.zip`](https://github.com/gaurav-eshanura/opal/releases/latest) |
 
 macOS and Linux builds are produced by the scripts in [`build_macos.sh`](build_macos.sh)
 and [`build_linux.sh`](build_linux.sh) — see [Building from source](#-building-from-source).
@@ -149,8 +149,12 @@ operating system lives behind a single layer, `opal_studio/platform_compat.py`:
 | Drag-and-drop wheel | Shell COM | AppleScript | drop-to-apply |
 | Click-through mode | Qt `WindowTransparentForInput` | same | same |
 | Autostart entry | Registry `Run` key | Launch Agent | `.desktop` file |
-| Right-click menu | Registry | Finder | — |
+| Right-click menu | Registry | needs an `.app` bundle | `.desktop` file |
 | Text-to-speech | SAPI | — | — |
+
+The right-click menu on macOS needs an `.app` bundle to declare the file
+types it handles, so it is only registered when Opal is running as a bundle.
+Everything else works the same on all three.
 
 ---
 
@@ -228,7 +232,11 @@ python tests/test_every_feature.py   # 165 checks: every action, every dialog
 | Customer journey (CSC / print shop) | 31 |
 | Cross-platform & portable mode | 45 |
 | Security guarantees | 24 |
-| Every feature (exhaustive) | 165 |
+| Every feature (exhaustive) | 166 |
+
+Every one of these runs on **Windows, macOS and Linux**, on Python 3.11 and
+3.12, in the CI pipeline on every push. The CI also builds the portable
+Windows app and fails if it grows past its size budget.
 
 ---
 

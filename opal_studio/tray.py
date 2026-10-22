@@ -106,7 +106,7 @@ class OpalTray(QSystemTrayIcon):
         QMessageBox.information(
             None,
             "About Opal",
-            "Opal v2.0\n\n"
+            "Opal v2.0.1\n\n"
             "Every file, in every light.\n"
             "• Shift = Convert Formats\n"
             "• Alt = File Tools\n"
