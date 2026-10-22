@@ -142,23 +142,40 @@ class _MacBackend:
         cg.CGEventCreate.argtypes = [ctypes.c_void_p]
         cg.CGEventGetLocation.restype = ctypes.c_void_p
         cg.CGEventGetLocation.argtypes = [ctypes.c_void_p]
-        self._source = cg.CGEventSourceCreate(self._HID_SYSTEM)
         # The virtual key code of "T" on a US layout.
         self._t_keycode = 20
+        # On a machine with no window server (a build agent, for instance)
+        # there is no event source to read, and the backend is simply not
+        # available. Asking CoreGraphics for one anyway is what brings the
+        # whole process down.
+        try:
+            self._source = cg.CGEventSourceCreate(self._HID_SYSTEM)
+        except Exception:
+            self._source = None
+        if not self._source:
+            raise RuntimeError("No CoreGraphics event source on this machine")
 
     def state(self) -> InputState:
         cg = self._cg
         source = self._source
-        flags = cg.CGEventSourceFlagsState(source)
+        if not source:
+            return InputState()
+        try:
+            flags = cg.CGEventSourceFlagsState(source)
+        except Exception:
+            return InputState()
         # The cursor lives on the newest mouse event.
-        event = cg.CGEventCreate(None)
         x = y = 0
-        if event:
-            point = cg.CGEventGetLocation(event)
-            if point:
-                # CGPoint is two doubles.
-                raw = ctypes.cast(point, ctypes.POINTER(ctypes.c_double))
-                x, y = int(raw[0]), int(raw[1])
+        try:
+            event = cg.CGEventCreate(None)
+            if event:
+                point = cg.CGEventGetLocation(event)
+                if point:
+                    # CGPoint is two doubles.
+                    raw = ctypes.cast(point, ctypes.POINTER(ctypes.c_double))
+                    x, y = int(raw[0]), int(raw[1])
+        except Exception:
+            x = y = 0
         return InputState(
             x=x, y=y,
             left_down=bool(cg.CGEventSourceButtonState(source, self._LEFT_BUTTON)),

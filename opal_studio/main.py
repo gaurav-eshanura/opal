@@ -91,12 +91,21 @@ class OpalApp:
                        getattr(self, "radial_menu", None),
                        getattr(self, "drop_orb", None),
                        getattr(self, "toast", None),
-                       getattr(self, "tray", None),
                        getattr(self, "dashboard", None)):
             if widget is None:
                 continue
             try:
                 widget.hide()
+            except Exception:
+                pass
+        # The tray icon owns a piece of system chrome. On macOS it has to be
+        # released properly or the process aborts as it goes away.
+        tray = getattr(self, "tray", None)
+        if tray is not None:
+            try:
+                tray.hide()
+                tray.setParent(None)
+                tray.deleteLater()
             except Exception:
                 pass
         try:
@@ -113,6 +122,11 @@ class OpalApp:
                 pass
         try:
             self.hotkey_mgr.unregister(self.app)
+        except Exception:
+            pass
+        # Let the deletions above actually happen before anything else goes.
+        try:
+            self.app.processEvents()
         except Exception:
             pass
 
