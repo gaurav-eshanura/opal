@@ -15,12 +15,18 @@ CORE_BUILD = os.environ.get("OPAL_CORE", "").strip().lower() in ("1", "true", "y
 DIST_NAME = os.environ.get("OPAL_DIST_NAME", "Opal")
 
 # FFmpeg travels with the app on every platform so video and audio work offline.
+# It is not kept in the repository, so a build without it is still made - the
+# tools that need it then use the ffmpeg on the machine.
 _binaries = []
 if not CORE_BUILD:
     if IS_WINDOWS:
-        _binaries.append(('assets\\bin\\ffmpeg.exe', '.'))
+        _ffmpeg = 'assets\\bin\\ffmpeg.exe'
     elif IS_MAC:
-        _binaries.append(('assets\\bin\\ffmpeg', '.'))
+        _ffmpeg = 'assets\\bin\\ffmpeg'
+    else:
+        _ffmpeg = ''
+    if _ffmpeg and os.path.isfile(_ffmpeg):
+        _binaries.append((_ffmpeg, '.'))
 
 _entry = 'opal_studio\\main.py' if IS_WINDOWS else 'opal_studio/main.py'
 _datas = [('opal_studio', 'opal_studio')]

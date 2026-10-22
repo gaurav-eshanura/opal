@@ -124,11 +124,19 @@ def build_executable() -> int:
     # FFmpeg travels with the app so the video and audio tools work out of the box.
     ffmpeg_src = ROOT / "ffmpeg_backup" / "ffmpeg.exe"
     ffmpeg_dst = ROOT / "assets" / "bin" / "ffmpeg.exe"
+    if not ffmpeg_src.exists():
+        # Fall back to whatever ffmpeg is on this machine, so the full build
+        # can be made on a fresh checkout.
+        found = shutil.which("ffmpeg")
+        if found:
+            ffmpeg_src = Path(found)
     if ffmpeg_src.exists():
         ffmpeg_dst.parent.mkdir(parents=True, exist_ok=True)
         if not ffmpeg_dst.exists() or ffmpeg_src.stat().st_mtime > ffmpeg_dst.stat().st_mtime:
             shutil.copy2(ffmpeg_src, ffmpeg_dst)
             print(f"Bundled FFmpeg -> {ffmpeg_dst}")
+    elif not core:
+        print("  (no FFmpeg found - the full build will not carry one)")
 
     env = dict(os.environ)
     if core:

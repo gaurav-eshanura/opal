@@ -109,6 +109,10 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
+      - name: Install ffmpeg
+        shell: bash
+        run: choco install ffmpeg -y --no-progress
+
       - name: Build the core build
         run: python build_release.py --core
 
