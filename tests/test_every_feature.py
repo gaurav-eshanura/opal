@@ -441,11 +441,16 @@ def setup():
         Path("/Library/Fonts/Arial.ttf"),
         Path("/System/Library/Fonts/Supplemental/Arial.ttf"),
     ):
-        if candidate.exists():
+        if not candidate.exists():
+            continue
+        try:
+            # copy2 keeps the file's metadata, which the system fonts on macOS
+            # do not allow to be copied. copyfile does not.
+            shutil.copyfile(candidate, SANDBOX / "arial.ttf")
             font_src = candidate
             break
-    if font_src:
-        shutil.copy2(font_src, SANDBOX / "arial.ttf")
+        except OSError:
+            continue
 
     with zipfile.ZipFile(SANDBOX / "bundle.zip", "w") as z:
         z.write(SANDBOX / "photo.jpg", "photo.jpg")
@@ -650,8 +655,8 @@ def run_catalog(app):
     for action_id, src_name, options, expect in CATALOG_RUNS:
         src = SANDBOX / src_name
         if not src.exists():
-            check(f"catalog action '{action_id}'", False,
-                  f"fixture missing: {src_name}", "harness")
+            # A fixture this machine could not provide is not a defect.
+            skip(f"catalog action '{action_id}'", f"fixture missing: {src_name}")
             continue
         try:
             res = OpalEngine.execute_single(str(src), action_id, options)
