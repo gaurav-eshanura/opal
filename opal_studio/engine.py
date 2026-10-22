@@ -224,6 +224,114 @@ def _needs_unicode_font(text: str) -> bool:
     return False
 
 
+def _parse_subtitle_cues(path: Path) -> List[Tuple[float, float, str]]:
+    """Reads the cues out of an SRT or WebVTT file.
+
+    Returns a list of (start seconds, end seconds, text).
+    """
+    try:
+        raw = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return []
+    if raw.startswith("\ufeff"):
+        raw = raw[1:]
+    raw = raw.replace("\r\n", "\n").replace("\r", "\n")
+
+    stamp = re.compile(
+        r"(\d{1,2}):(\d{2}):(\d{2})[.,](\d{1,3})\s*-->\s*"
+        r"(\d{1,2}):(\d{2}):(\d{2})[.,](\d{1,3})")
+
+    cues: List[Tuple[float, float, str]] = []
+    for block in re.split(r"\n\s*\n", raw):
+        lines = [line for line in block.split("\n") if line.strip()]
+        if not lines:
+            continue
+        match = None
+        for index, line in enumerate(lines):
+            match = stamp.search(line)
+            if match:
+                text_lines = lines[index + 1:]
+                break
+        if not match:
+            continue
+        h1, m1, s1, ms1, h2, m2, s2, ms2 = match.groups()
+
+        def _seconds(h, m, s, ms):
+            return int(h) * 3600 + int(m) * 60 + int(s) + int(ms.ljust(3, "0")) / 1000.0
+
+        start = _seconds(h1, m1, s1, ms1)
+        end = _seconds(h2, m2, s2, ms2)
+        text = "\n".join(text_lines).strip()
+        if text:
+            cues.append((start, end, text))
+    return cues
+
+
+def _render_subtitle_png(path: Path, text: str, width: int, height: int) -> None:
+    """Draws one subtitle cue onto a transparent picture the size of the frame."""
+    from PIL import Image, ImageDraw, ImageFont
+
+    image = Image.new("RGBA", (max(2, width), max(2, height)), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(image)
+
+    font = None
+    font_path = _unicode_font_path()
+    if font_path:
+        try:
+            font = ImageFont.truetype(font_path, max(18, int(height * 0.055)))
+        except Exception:
+            font = None
+    if font is None:
+        try:
+            font = ImageFont.load_default()
+        except Exception:
+            font = None
+
+    try:
+        left, top, right, bottom = draw.textbbox((0, 0), "Ag", font=font)
+        line_height = max(20, (bottom - top) + max(6, int(height * 0.012)))
+    except Exception:
+        line_height = max(20, int(height * 0.06))
+
+    # Wrap the text so it fits the frame.
+    max_width = int(width * 0.92)
+    lines: List[str] = []
+    for paragraph in text.split("\n"):
+        words = paragraph.split()
+        if not words:
+            lines.append("")
+            continue
+        current = words[0]
+        for word in words[1:]:
+            candidate = f"{current} {word}"
+            try:
+                w = draw.textlength(candidate, font=font)
+            except Exception:
+                w = len(candidate) * (line_height // 2)
+            if w <= max_width:
+                current = candidate
+            else:
+                lines.append(current)
+                current = word
+        lines.append(current)
+
+    block_height = line_height * len(lines)
+    y = height - int(height * 0.06) - block_height
+    bar_top = max(0, y - int(line_height * 0.25))
+    draw.rectangle([0, bar_top, width, height], fill=(0, 0, 0, 170))
+
+    for line in lines:
+        try:
+            w = draw.textlength(line, font=font)
+        except Exception:
+            w = len(line) * (line_height // 2)
+        x = max(0, (width - w) / 2)
+        draw.text((x, y), line, font=font, fill=(255, 255, 255, 255))
+        y += line_height
+
+    image.save(path, "PNG")
+
+
 def _unicode_font_path() -> Optional[str]:
     """Finds a font that covers Indian and other non-Latin scripts.
 
@@ -2808,6 +2916,14 @@ class OpalEngine:
 
     @classmethod
     def _burn_subtitles(cls, src: Path) -> ConversionResult:
+        """Puts the subtitles into the picture.
+
+        ffmpeg's own subtitle filter needs libass, and plenty of ffmpeg builds
+        (the one Homebrew ships, for one) do not have it. So the subtitle text
+        is drawn here instead - which also means Indic subtitles come out
+        right - and ffmpeg is only asked to lay the pictures over the video,
+        a job every build can do.
+        """
         ff = cls._ffmpeg()
         if not ff:
             return ConversionResult(False, message="Media encoder not available.")
@@ -2817,27 +2933,82 @@ class OpalEngine:
             return ConversionResult(False, message=f"No matching subtitle file for {src.name}.")
         dst = cls._resolve_dest_path(src, "_subtitled", src.suffix)
 
-        # ffmpeg's subtitle filter has to have the file name escaped, and the
-        # rules differ between a Windows path (C:\..., with a colon) and a
-        # Unix one. Rather than fight that, the subtitle is copied beside the
-        # video under a simple name and ffmpeg is run from that folder, so the
-        # name it is given has nothing to escape.
-        simple_name = f"{src.stem}_opal_sub{sub.suffix}"
-        try:
-            shutil.copyfile(sub, src.parent / simple_name)
-        except OSError as e:
-            return ConversionResult(False, message=f"Subtitle burn failed: {e}")
+        cues = _parse_subtitle_cues(sub)
+        if not cues:
+            return ConversionResult(False, message=f"No subtitle text found in {sub.name}.")
 
-        cmd = [ff, "-y", "-i", str(src), "-vf", f"subtitles={simple_name}",
-               "-c:v", "libx264", "-preset", "fast", "-c:a", "copy", str(dst)]
-        err = cls._run_ffmpeg(cmd, cwd=src.parent)
+        width, height = cls._video_size(src)
+        work = src.parent / f"{src.stem}_opal_subs"
+        shutil.rmtree(work, ignore_errors=True)
+        work.mkdir(parents=True, exist_ok=True)
         try:
-            (src.parent / simple_name).unlink(missing_ok=True)
-        except OSError:
-            pass
+            frames = []
+            for index, (start, end, text) in enumerate(cues):
+                png = work / f"cue_{index:04d}.png"
+                _render_subtitle_png(png, text, width, height)
+                frames.append((png, start, end))
+
+            inputs: List[str] = []
+            for png, _, _ in frames:
+                inputs += ["-i", str(png)]
+
+            chain = []
+            previous = "0:v"
+            for index, (_, start, end) in enumerate(frames):
+                source = f"{index + 1}:v"
+                last = index == len(frames) - 1
+                target = "vout" if last else f"v{index}"
+                chain.append(
+                    f"[{previous}][{source}]overlay=x=0:y=0:eof_action=repeat:"
+                    f"enable='between(t,{start:.2f},{end:.2f})'[{target}]")
+                previous = target
+
+            cmd = ([ff, "-y", "-i", str(src)] + inputs + [
+                "-filter_complex", ";".join(chain),
+                "-map", "[vout]", "-map", "0:a?",
+                "-c:v", "libx264", "-preset", "fast", "-c:a", "copy", str(dst)])
+            err = cls._run_ffmpeg(cmd)
+        except Exception as e:
+            return ConversionResult(False, message=f"Subtitle burn failed: {e}")
+        finally:
+            shutil.rmtree(work, ignore_errors=True)
+
         if err or not Path(dst).exists():
             return ConversionResult(False, message=f"Subtitle burn failed: {err}")
         return ConversionResult(True, str(dst), f"Burned {sub.name} into the video.")
+
+    @classmethod
+    def _video_size(cls, src: Path) -> Tuple[int, int]:
+        """The width and height of a video, in pixels."""
+        ff = cls._ffmpeg()
+        if ff:
+            try:
+                probe = ff.replace("ffmpeg", "ffprobe")
+                if Path(probe).exists():
+                    out = subprocess.run(
+                        [probe, "-v", "error", "-select_streams", "v:0",
+                         "-show_entries", "stream=width,height",
+                         "-of", "csv=p=0:s=x", str(src)],
+                        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                        creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
+                        timeout=15).stdout.strip()
+                    if "," in out:
+                        w, h = out.split(",")[:2]
+                        if int(w) > 0 and int(h) > 0:
+                            return int(w), int(h)
+            except Exception:
+                pass
+        try:
+            import cv2
+            cap = cv2.VideoCapture(str(src))
+            w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH) or 0)
+            h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT) or 0)
+            cap.release()
+            if w > 0 and h > 0:
+                return w, h
+        except Exception:
+            pass
+        return 1280, 720
 
     @classmethod
     def _audio_normalize(cls, src: Path) -> ConversionResult:

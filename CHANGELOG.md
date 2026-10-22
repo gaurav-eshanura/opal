@@ -17,6 +17,11 @@ All notable changes to Opal are recorded here. The format follows
   CoreGraphics and X11 backends.
 
 ### Fixed
+- **Burning subtitles no longer depends on ffmpeg having libass.** Plenty of
+  ffmpeg builds (the one Homebrew ships, for one) do not, so the feature
+  simply failed there. The subtitle text is now drawn by Opal itself and
+  ffmpeg is only asked to lay the pictures over the video. As a bonus,
+  subtitles in Hindi and other Indic scripts now come out right.
 - **Archive extraction could write outside the target folder.** A crafted tar
   with a member named `../../something` would have been written outside the
   folder the user chose. Every member is now checked before anything is
