@@ -21,6 +21,8 @@ from pathlib import Path
 from typing import Optional, Callable, Dict, List, Tuple
 from urllib.parse import urlsplit
 
+from opal_studio.safepath import safe_path
+
 IS_WINDOWS = sys.platform.startswith("win")
 
 
