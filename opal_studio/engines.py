@@ -325,12 +325,19 @@ def _safe_model_path(raw_dest: str) -> Path:
     Confines model downloads to the Opal engines directory.
     Any '..' component is rejected; the result is rebuilt inside the base
     directory using only the final name, so traversal is impossible.
+
+    The check is done on the name as text rather than through the path
+    library, because a backslash is only a separator on Windows: a name like
+    "..\\escape.onnx" has to be refused on every platform, not just the one
+    where it would escape.
     """
-    parts = Path(raw_dest).parts
-    if ".." in parts or len(parts) > 1:
+    text = str(raw_dest)
+    if not text:
+        raise UnsafeRequestError(f"Refusing suspicious download path: {raw_dest!r}")
+    if "/" in text or "\\" in text or ".." in text:
         raise UnsafeRequestError(f"Refusing multi-segment or traversal path: {raw_dest!r}")
-    name = parts[0] if parts else ""
-    if not name:
+    name = text.strip()
+    if not name or name in (".", ".."):
         raise UnsafeRequestError(f"Refusing suspicious download path: {raw_dest!r}")
     base = _app_model_dir().resolve()
     return base / name

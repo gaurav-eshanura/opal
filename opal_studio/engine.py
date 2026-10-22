@@ -225,15 +225,52 @@ def _needs_unicode_font(text: str) -> bool:
 
 
 def _unicode_font_path() -> Optional[str]:
-    """Finds a Windows font that covers Indian and other non-Latin scripts."""
-    fonts_dir = Path(os.environ.get("WINDIR", r"C:\Windows")) / "Fonts"
-    preferred = ["Nirmala.ttc", "Nirmala.ttf", "Kokila.ttf", "Mangal.ttf",
-                 "Sanskrit2003.ttf", "Vrinda.ttf", "IskoolaPota.ttf",
-                 "Ebrima.ttf", "arialuni.ttf"]
+    """Finds a font that covers Indian and other non-Latin scripts.
+
+    The font has to exist on the machine the app is running on, and each
+    platform names its Indic font differently. Without this, Hindi text turns
+    into a row of dots on a machine that has no Nirmala UI.
+    """
+    import sys
+
+    if sys.platform.startswith("win"):
+        fonts_dir = Path(os.environ.get("WINDIR", r"C:\Windows")) / "Fonts"
+        preferred = ["Nirmala.ttc", "Nirmala.ttf", "Kokila.ttf", "Mangal.ttf",
+                     "Sanskrit2003.ttf", "Vrinda.ttf", "IskoolaPota.ttf",
+                     "Ebrima.ttf", "arialuni.ttf"]
+    elif sys.platform == "darwin":
+        fonts_dir = Path("/System/Library/Fonts")
+        preferred = ["DevanagariSangamMN.ttc", "Kohinoor.ttc",
+                     "/System/Library/Fonts/Supplemental/Devanagari Sangam MN.ttc",
+                     "/System/Library/Fonts/Supplemental/Kohinoor Devanagari.ttc",
+                     "/Library/Fonts/Arial Unicode.ttf"]
+    else:
+        fonts_dir = Path("/usr/share/fonts")
+        preferred = [
+            "truetype/noto/NotoSansDevanagari-Regular.ttf",
+            "truetype/lohit-devanagari/Lohit-Devanagari.ttf",
+            "truetype/noto/NotoSansDevanagari[wdth,wght].ttf",
+            "opentype/noto/NotoSansDevanagari-Regular.ttf",
+            "truetype/dejavu/DejaVuSans.ttf",
+        ]
+
     for name in preferred:
-        cand = fonts_dir / name
+        cand = Path(name) if os.path.isabs(name) else fonts_dir / name
         if cand.exists():
             return str(cand)
+
+    # Last resort: look through the system font folders for anything that
+    # mentions Devanagari in its name.
+    for root in (fonts_dir, Path("/usr/share/fonts"), Path("/Library/Fonts"),
+                 Path.home() / ".fonts", Path.home() / ".local/share/fonts"):
+        if not root.exists():
+            continue
+        try:
+            for found in sorted(root.rglob("*")):
+                if found.is_file() and "devanagari" in found.name.lower():
+                    return str(found)
+        except OSError:
+            continue
     return None
 
 
@@ -1729,11 +1766,14 @@ class OpalEngine:
         return cls.get_ffmpeg_bin()
 
     @classmethod
-    def _run_ffmpeg(cls, cmd: List[str]) -> Optional[str]:
+    def _run_ffmpeg(cls, cmd: List[str], cwd: Optional[Path] = None) -> Optional[str]:
         p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                           cwd=str(cwd) if cwd else None,
                            creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0)
         if p.returncode != 0:
-            return p.stderr.decode("utf-8", "ignore")[-400:]
+            # The last few lines of ffmpeg's own complaint, which is where it
+            # says what it could not open.
+            return "\n".join(p.stderr.decode("utf-8", "ignore").strip().splitlines()[-3:])
         return None
 
     @classmethod
@@ -2776,10 +2816,25 @@ class OpalEngine:
         if not sub:
             return ConversionResult(False, message=f"No matching subtitle file for {src.name}.")
         dst = cls._resolve_dest_path(src, "_subtitled", src.suffix)
-        sub_arg = str(sub).replace("\\", "/").replace(":", "\\:")
-        cmd = [ff, "-y", "-i", str(src), "-vf", f"subtitles='{sub_arg}'",
+
+        # ffmpeg's subtitle filter has to have the file name escaped, and the
+        # rules differ between a Windows path (C:\..., with a colon) and a
+        # Unix one. Rather than fight that, the subtitle is copied beside the
+        # video under a simple name and ffmpeg is run from that folder, so the
+        # name it is given has nothing to escape.
+        simple_name = f"{src.stem}_opal_sub{sub.suffix}"
+        try:
+            shutil.copyfile(sub, src.parent / simple_name)
+        except OSError as e:
+            return ConversionResult(False, message=f"Subtitle burn failed: {e}")
+
+        cmd = [ff, "-y", "-i", str(src), "-vf", f"subtitles={simple_name}",
                "-c:v", "libx264", "-preset", "fast", "-c:a", "copy", str(dst)]
-        err = cls._run_ffmpeg(cmd)
+        err = cls._run_ffmpeg(cmd, cwd=src.parent)
+        try:
+            (src.parent / simple_name).unlink(missing_ok=True)
+        except OSError:
+            pass
         if err or not Path(dst).exists():
             return ConversionResult(False, message=f"Subtitle burn failed: {err}")
         return ConversionResult(True, str(dst), f"Burned {sub.name} into the video.")
