@@ -1,6 +1,6 @@
 # Opal - Every-Feature Verification Report
 
-- Generated: 2026-10-21 23:58:40
+- Generated: 2026-10-22 08:41:30
 - Suite: `tests/test_every_feature.py`
 - Result: **166 passed, 0 failed** (166 checks in total)
 
@@ -27,7 +27,7 @@ The suite runs every action in `OpalEngine.get_catalog()` against real sample fi
 | PDF signing (pyHanko) | installed |
 | OCR (RapidOCR) | available |
 | Network | reachable |
-| Free RAM during the run | 5.0 GB free of 16.9 GB |
+| Free RAM during the run | 3.3 GB free of 16.9 GB |
 
 ## Notes
 

@@ -38,7 +38,7 @@ SANDBOX = ROOT / "test_sandbox" / "every_feature"
 PROBE_DIR = Path(tempfile.gettempdir()) / "opal_every_feature_probe"
 REPORT_PATH = ROOT / "tests" / "EVERY_FEATURE_REPORT.md"
 
-PASS, FAIL = [], []
+PASS, FAIL, SKIPPED = [], [], []
 RESULTS = []          # every check, in order: dict(name, area, ok, detail, kind)
 OUTPUTS = {}          # action id -> output path produced by the engine
 AREA = {"kind": ""}   # current area label, set as we walk through the suite
@@ -60,6 +60,24 @@ def check(name, ok, detail="", kind=""):
         "ok": ok,
         "detail": "" if ok else str(detail),
         "kind": "" if ok else (kind or "product"),
+    })
+
+
+def skip(name, reason=""):
+    """Records a check this environment cannot make, without failing it.
+
+    A build machine with no clipboard tool and no terminal emulator is not a
+    defect in the app, so the check is reported as skipped rather than
+    failed.
+    """
+    print(f"[SKIP] {name} {('- ' + str(reason)) if reason else ''}")
+    SKIPPED.append(name)
+    RESULTS.append({
+        "name": name,
+        "area": AREA.get("kind", ""),
+        "ok": True,
+        "detail": str(reason),
+        "kind": "environment",
     })
 
 
@@ -413,8 +431,20 @@ def setup():
     book.add_item(epub.EpubNav())
     epub.write_epub(str(SANDBOX / "novel.epub"), book, {})
 
-    font_src = Path(os.environ.get("WINDIR", "C:/Windows")) / "Fonts" / "arial.ttf"
-    if font_src.exists():
+    # A font to inspect. Every platform ships a different one, so the first
+    # one that exists is used.
+    font_src = None
+    for candidate in (
+        Path(os.environ.get("WINDIR", "C:/Windows")) / "Fonts" / "arial.ttf",
+        Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
+        Path("/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf"),
+        Path("/Library/Fonts/Arial.ttf"),
+        Path("/System/Library/Fonts/Supplemental/Arial.ttf"),
+    ):
+        if candidate.exists():
+            font_src = candidate
+            break
+    if font_src:
         shutil.copy2(font_src, SANDBOX / "arial.ttf")
 
     with zipfile.ZipFile(SANDBOX / "bundle.zip", "w") as z:
@@ -1220,12 +1250,19 @@ def test_platform_compat():
           pc.is_portable() == (root is not None), f"is_portable={pc.is_portable()}")
 
     # clipboard
-    try:
-        ok = pc.copy_text_to_clipboard("Opal clipboard probe 12345")
-        check("copy_text_to_clipboard() works", ok is True, f"returned {ok}")
-    except Exception as e:
-        check("copy_text_to_clipboard() works", False,
-              f"{type(e).__name__}: {e}", "product")
+    # A build machine with no clipboard tool and no display is not a defect in
+    # the app, so the check is skipped rather than failed.
+    clipboard_tool = (pc.IS_WINDOWS or pc.IS_MAC
+                      or any(shutil.which(c) for c in ("wl-copy", "xclip", "xsel")))
+    if clipboard_tool:
+        try:
+            ok = pc.copy_text_to_clipboard("Opal clipboard probe 12345")
+            check("copy_text_to_clipboard() works", ok is True, f"returned {ok}")
+        except Exception as e:
+            check("copy_text_to_clipboard() works", False,
+                  f"{type(e).__name__}: {e}", "product")
+    else:
+        skip("copy_text_to_clipboard() works", "no clipboard tool on this machine")
 
     # trash a throwaway file
     PROBE_DIR.mkdir(parents=True, exist_ok=True)
@@ -1278,13 +1315,21 @@ def test_platform_compat():
         check("open_with_default() opens the file with its default app", False,
               f"{type(e).__name__}: {e}", "product")
 
-    try:
-        ok = pc.open_terminal(str(PROBE_DIR))
-        check("open_terminal() opens a terminal in the folder", ok is True,
-              f"returned {ok}")
-    except Exception as e:
-        check("open_terminal() opens a terminal in the folder", False,
-              f"{type(e).__name__}: {e}", "product")
+    terminal_tool = (pc.IS_WINDOWS or pc.IS_MAC
+                     or any(shutil.which(c) for c in
+                            ("x-terminal-emulator", "gnome-terminal", "konsole",
+                             "xfce4-terminal", "xterm")))
+    if terminal_tool:
+        try:
+            ok = pc.open_terminal(str(PROBE_DIR))
+            check("open_terminal() opens a terminal in the folder", ok is True,
+                  f"returned {ok}")
+        except Exception as e:
+            check("open_terminal() opens a terminal in the folder", False,
+                  f"{type(e).__name__}: {e}", "product")
+    else:
+        skip("open_terminal() opens a terminal in the folder",
+             "no terminal emulator on this machine")
 
     restore_registry(saved)
 
@@ -1690,9 +1735,12 @@ def main():
                 pass
 
     print("\n" + "=" * 68)
-    print(f"EVERY-FEATURE RESULT: {len(PASS)} passed, {len(FAIL)} failed")
+    print(f"EVERY-FEATURE RESULT: {len(PASS)} passed, {len(FAIL)} failed, "
+          f"{len(SKIPPED)} skipped")
     if FAIL:
         print("FAILED:", ", ".join(FAIL))
+    if SKIPPED:
+        print("SKIPPED:", ", ".join(SKIPPED))
     print(f"Breakdown -> product bugs: {n_product}, environment: {n_env}, harness: {n_harness}")
     print(f"Report written to {REPORT_PATH}")
     print("=" * 68)
