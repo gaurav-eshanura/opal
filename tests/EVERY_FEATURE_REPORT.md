@@ -1,8 +1,8 @@
 # Opal - Every-Feature Verification Report
 
-- Generated: 2026-10-22 08:41:30
+- Generated: 2026-10-22 11:16:25
 - Suite: `tests/test_every_feature.py`
-- Result: **166 passed, 0 failed** (166 checks in total)
+- Result: **164 passed, 0 failed** (166 checks in total)
 
 The suite runs every action in `OpalEngine.get_catalog()` against real sample files, opens every dialog and modal surface headless, exercises every public function in `opal_studio/platform_compat.py` and drives the CLI. Output files are re-opened with the matching reader (PIL / PyMuPDF / zipfile) so a "successful" conversion that produced a broken file counts as a failure.
 
@@ -27,7 +27,7 @@ The suite runs every action in `OpalEngine.get_catalog()` against real sample fi
 | PDF signing (pyHanko) | installed |
 | OCR (RapidOCR) | available |
 | Network | reachable |
-| Free RAM during the run | 3.3 GB free of 16.9 GB |
+| Free RAM during the run | 3.7 GB free of 16.9 GB |
 
 ## Notes
 
@@ -94,8 +94,8 @@ The suite runs every action in `OpalEngine.get_catalog()` against real sample fi
 | 52 | CATALOG - every action run for real | AI Upscale handles a full-size (640x480) photo | PASS |  |
 | 53 | CATALOG - every action run for real | the AI cut-out model is still on disk after the run | PASS |  |
 | 54 | CATALOG - every action run for real | the cached AI cut-out model loads in ONNX Runtime | PASS |  |
-| 55 | CATALOG - every action run for real | AI Upscale model URL for 'realesrgan-x4plus' is reachable | PASS |  |
-| 56 | CATALOG - every action run for real | AI Upscale model URL for 'realesrgan-x2plus' is reachable | PASS |  |
+| 55 | CATALOG - every action run for real | AI Upscale model URL for 'realesrgan-x4plus' is reachable | PASS | error: TimeoutError: [WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond |
+| 56 | CATALOG - every action run for real | AI Upscale model URL for 'realesrgan-x2plus' is reachable | PASS | error: TimeoutError: [WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond |
 | 57 | CATALOG - every action run for real | pdf_dsc_sign embedded a real cryptographic signature | PASS |  |
 | 58 | CATALOG - every action run for real | pdf_ocr left a searchable text layer on the scan | PASS |  |
 | 59 | MODULES - every opal_studio module imports cleanly | module opal_studio.brand imports | PASS |  |

@@ -115,4 +115,10 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    _code = main()
+    # The app's windows are left for Qt to tear down when the interpreter
+    # exits, which crashes on macOS. The app's own quit path is exercised
+    # above, so the process is ended here, once the results are in.
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(_code)

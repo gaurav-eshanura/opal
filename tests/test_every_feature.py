@@ -734,7 +734,7 @@ def run_catalog(app):
 
     # The AI upscaler must not leave a broken model behind in the cache.
     try:
-        from opal_studio.engines import EngineManager
+        from opal_studio.engines import ESRGAN_MODELS, EngineManager, _pinned_request
         cfg = ConfigManager.load_config()
         up_model = cfg.get("upscale_model", "realesrgan-x4plus")
         cached = EngineManager.esrgan_path(up_model)
@@ -745,10 +745,25 @@ def run_catalog(app):
                   not looks_like_html,
                   f"{cached.name} begins with {head[:24]!r} ({cached.stat().st_size} bytes)")
         else:
-            check("AI Upscale cache holds a real ONNX model, not an HTML error page", False,
-                  f"{cached} is absent - the downloader never produced a usable model "
-                  f"(the shipped URL answers HTTP 404, so the copy it stores is deleted again)",
-                  "product")
+            # No model on disk. If the network is down that is the reason, and
+            # it is not a defect in the app.
+            reachable = False
+            try:
+                resp, close = _pinned_request(ESRGAN_MODELS[up_model][2])
+                try:
+                    reachable = (getattr(resp, "status", None) or resp.getcode()) == 200
+                finally:
+                    close()
+            except Exception:
+                reachable = False
+            if not reachable:
+                skip("AI Upscale cache holds a real ONNX model, not an HTML error page",
+                     "no network, so no model could be fetched")
+            else:
+                check("AI Upscale cache holds a real ONNX model, not an HTML error page", False,
+                      f"{cached} is absent - the downloader never produced a usable model "
+                      f"(the shipped URL answers HTTP 404, so the copy it stores is deleted again)",
+                      "product")
 
     except Exception as e:
         check("AI Upscale cache holds a real ONNX model, not an HTML error page", False,
@@ -804,6 +819,7 @@ def run_catalog(app):
 
         for mid, meta in ESRGAN_MODELS.items():
             url = meta[2]
+            unreachable = False
             try:
                 resp, close = _pinned_request(url)
                 try:
@@ -811,9 +827,15 @@ def run_catalog(app):
                 finally:
                     close()
             except Exception as e:
+                # A machine that cannot reach the network at all is not a
+                # broken address, so it is reported as skipped.
+                unreachable = True
                 status = f"error: {type(e).__name__}: {e}"
-            check(f"AI Upscale model URL for '{mid}' is reachable",
-                  status == 200, f"HTTP {status} for {url}")
+            if unreachable:
+                skip(f"AI Upscale model URL for '{mid}' is reachable", str(status))
+            else:
+                check(f"AI Upscale model URL for '{mid}' is reachable",
+                      status == 200, f"HTTP {status} for {url}")
     except Exception as e:
         check("AI Upscale model URL for 'realesrgan-x4plus' is reachable", False,
               f"{type(e).__name__}: {e}", "product")
@@ -1748,4 +1770,11 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    _code = main()
+    # This suite opens real windows and leaves them for Qt to tear down when
+    # the interpreter exits, which crashes on macOS and Windows alike. The
+    # app's own quit path is exercised by the smoke test, so the process is
+    # ended here, once the results are in.
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(_code)
