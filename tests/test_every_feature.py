@@ -1342,19 +1342,30 @@ def test_platform_compat():
         check("reveal_in_file_manager() opens Explorer on the file", False,
               f"{type(e).__name__}: {e}", "product")
 
-    try:
-        ok = pc.open_with_default(str(probe_file))
-        check("open_with_default() opens the file with its default app", ok is True,
-              f"returned {ok}")
-    except Exception as e:
-        check("open_with_default() opens the file with its default app", False,
+    # Opening a file with its default app, and opening a terminal, both start
+    # an interactive program for a person to use. On a build machine there is
+    # no such person, and the program that was started stays alive holding the
+    # log open, so these are only checked on a real desktop.
+    if os.environ.get("CI"):
+        skip("open_with_default() opens the file with its default app",
+             "no interactive desktop on a build machine")
+    else:
+        try:
+            ok = pc.open_with_default(str(probe_file))
+            check("open_with_default() opens the file with its default app", ok is True,
+                  f"returned {ok}")
+        except Exception as e:
+            check("open_with_default() opens the file with its default app", False,
               f"{type(e).__name__}: {e}", "product")
 
     terminal_tool = (pc.IS_WINDOWS or pc.IS_MAC
                      or any(shutil.which(c) for c in
                             ("x-terminal-emulator", "gnome-terminal", "konsole",
                              "xfce4-terminal", "xterm")))
-    if terminal_tool:
+    if os.environ.get("CI"):
+        skip("open_terminal() opens a terminal in the folder",
+             "no interactive desktop on a build machine")
+    elif terminal_tool:
         try:
             ok = pc.open_terminal(str(PROBE_DIR))
             check("open_terminal() opens a terminal in the folder", ok is True,

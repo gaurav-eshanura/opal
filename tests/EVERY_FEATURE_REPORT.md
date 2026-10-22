@@ -1,8 +1,8 @@
 # Opal - Every-Feature Verification Report
 
-- Generated: 2026-10-22 11:58:44
+- Generated: 2026-10-22 12:38:03
 - Suite: `tests/test_every_feature.py`
-- Result: **166 passed, 0 failed** (166 checks in total)
+- Result: **164 passed, 0 failed** (166 checks in total)
 
 The suite runs every action in `OpalEngine.get_catalog()` against real sample files, opens every dialog and modal surface headless, exercises every public function in `opal_studio/platform_compat.py` and drives the CLI. Output files are re-opened with the matching reader (PIL / PyMuPDF / zipfile) so a "successful" conversion that produced a broken file counts as a failure.
 
@@ -27,7 +27,7 @@ The suite runs every action in `OpalEngine.get_catalog()` against real sample fi
 | PDF signing (pyHanko) | installed |
 | OCR (RapidOCR) | available |
 | Network | reachable |
-| Free RAM during the run | 3.5 GB free of 16.9 GB |
+| Free RAM during the run | 2.8 GB free of 16.9 GB |
 
 ## Notes
 
@@ -193,8 +193,8 @@ The suite runs every action in `OpalEngine.get_catalog()` against real sample fi
 | 151 | CROSS-PLATFORM LAYER | install_context_menu() registers the entry | PASS |  |
 | 152 | CROSS-PLATFORM LAYER | uninstall_context_menu() removes the entry | PASS |  |
 | 153 | CROSS-PLATFORM LAYER | reveal_in_file_manager() opens Explorer on the file | PASS |  |
-| 154 | CROSS-PLATFORM LAYER | open_with_default() opens the file with its default app | PASS |  |
-| 155 | CROSS-PLATFORM LAYER | open_terminal() opens a terminal in the folder | PASS |  |
+| 154 | CROSS-PLATFORM LAYER | open_with_default() opens the file with its default app | PASS | no interactive desktop on a build machine |
+| 155 | CROSS-PLATFORM LAYER | open_terminal() opens a terminal in the folder | PASS | no interactive desktop on a build machine |
 | 156 | COMMAND LINE | CLI --catalog exits 0 | PASS |  |
 | 157 | COMMAND LINE | CLI --catalog prints the whole catalog | PASS |  |
 | 158 | COMMAND LINE | CLI --list-formats exits 0 | PASS |  |
