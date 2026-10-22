@@ -6,6 +6,9 @@ keyboard shortcut, without needing to find where the app is running.
 On Windows the shortcut is registered with the system, so it works even when
 another program has the focus. On macOS and Linux the same combination is
 watched directly, which means it fires from anywhere too.
+
+All the native work lives in opal_studio/input_watch.py, so this file stays
+free of operating-system calls.
 """
 
 import sys
@@ -13,36 +16,11 @@ import threading
 import time
 from typing import Optional
 
-from PySide6.QtCore import QAbstractNativeEventFilter, QObject, Signal
+from PySide6.QtCore import QObject, Signal
 
-from opal_studio.input_watch import InputWatcher
+from opal_studio.input_watch import InputWatcher, register_native_hotkey
 
 IS_WINDOWS = sys.platform.startswith("win")
-
-
-class WindowsHotkeyFilter(QAbstractNativeEventFilter):
-    WM_HOTKEY = 0x0312
-
-    def __init__(self, hotkey_id: int, callback):
-        super().__init__()
-        self.hotkey_id = hotkey_id
-        self.callback = callback
-
-    def nativeEventFilter(self, eventType, message):
-        if eventType == b"windows_generic_MSG":
-            try:
-                addr = int(message)
-                if addr != 0:
-                    import ctypes
-                    from ctypes import wintypes
-
-                    msg = wintypes.MSG.from_address(addr)
-                    if msg.message == self.WM_HOTKEY and msg.wParam == self.hotkey_id:
-                        self.callback()
-                        return True, 0
-            except Exception:
-                pass
-        return False, 0
 
 
 class _PollingHotkey(threading.Thread):
@@ -86,7 +64,6 @@ class GlobalHotkeyManager(QObject):
         super().__init__(parent)
         self.filter = None
         self.is_registered = False
-        self.hotkey_id = 1001
         self._poller: Optional[_PollingHotkey] = None
 
     def register(self, app, vk_key=ord("T"), modifiers=0x0002 | 0x0001):
@@ -95,22 +72,12 @@ class GlobalHotkeyManager(QObject):
         Default: Ctrl + Alt + T (MOD_CONTROL=0x0002, MOD_ALT=0x0001)
         """
         if IS_WINDOWS:
-            return self._register_windows(app, vk_key, modifiers)
-        return self._register_polling()
-
-    def _register_windows(self, app, vk_key, modifiers) -> bool:
-        try:
-            import ctypes
-
-            user32 = ctypes.windll.user32
-            success = user32.RegisterHotKey(None, self.hotkey_id, modifiers, vk_key)
-            if success:
-                self.filter = WindowsHotkeyFilter(self.hotkey_id, self.hotkey_triggered.emit)
-                app.installNativeEventFilter(self.filter)
+            filter = register_native_hotkey(app, vk_key, modifiers,
+                                            self.hotkey_triggered.emit)
+            if filter is not None:
+                self.filter = filter
                 self.is_registered = True
                 return True
-        except Exception:
-            pass
         return self._register_polling()
 
     def _register_polling(self) -> bool:
@@ -123,13 +90,10 @@ class GlobalHotkeyManager(QObject):
         if self._poller is not None:
             self._poller.stop()
             self._poller = None
-        if self.is_registered and IS_WINDOWS:
+        if self.filter is not None:
             try:
-                import ctypes
-
-                ctypes.windll.user32.UnregisterHotKey(None, self.hotkey_id)
+                app.removeNativeEventFilter(self.filter)
             except Exception:
                 pass
-            if self.filter:
-                app.removeNativeEventFilter(self.filter)
+            self.filter = None
         self.is_registered = False

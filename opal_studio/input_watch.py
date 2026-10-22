@@ -16,6 +16,8 @@ import sys
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
+from PySide6.QtCore import QAbstractNativeEventFilter
+
 IS_WINDOWS = sys.platform.startswith("win")
 IS_MAC = sys.platform == "darwin"
 IS_LINUX = sys.platform.startswith("linux")
@@ -356,7 +358,6 @@ def _x11_dnd_selection(xlib, display, root) -> List[str]:
 
 class InputWatcher:
     """Reads the global input state, whichever platform we are on."""
-
     def __init__(self):
         self._backend = None
         self._failed = False
@@ -396,3 +397,67 @@ class InputWatcher:
             return backend.selected_files()
         except Exception:
             return []
+
+
+# ---------------------------------------------------------------------------
+# The native global hotkey (Windows)
+# ---------------------------------------------------------------------------
+
+class _WindowsHotkeyFilter(QAbstractNativeEventFilter):
+    """Listens for the WM_HOTKEY message Windows sends us."""
+
+    WM_HOTKEY = 0x0312
+
+    def __init__(self, hotkey_id: int, callback):
+        super().__init__()
+        self.hotkey_id = hotkey_id
+        self.callback = callback
+
+    def nativeEventFilter(self, eventType, message):
+        if eventType == b"windows_generic_MSG":
+            try:
+                from ctypes import wintypes
+
+                addr = int(message)
+                if addr != 0:
+                    msg = wintypes.MSG.from_address(addr)
+                    if msg.message == self.WM_HOTKEY and msg.wParam == self.hotkey_id:
+                        self.callback()
+                        return True, 0
+            except Exception:
+                pass
+        return False, 0
+
+
+def register_native_hotkey(app, vk_key: int, modifiers: int, on_fire,
+                           hotkey_id: int = 1001):
+    """Registers a system-wide hotkey with Windows.
+
+    Returns the event filter to install, or None when the system would not
+    take the shortcut (another program already holds it, for instance).
+    """
+    if not IS_WINDOWS:
+        return None
+    try:
+        import ctypes
+
+        user32 = ctypes.windll.user32
+        if not user32.RegisterHotKey(None, hotkey_id, modifiers, vk_key):
+            return None
+        event_filter = _WindowsHotkeyFilter(hotkey_id, on_fire)
+        app.installNativeEventFilter(event_filter)
+        return event_filter
+    except Exception:
+        return None
+
+
+def unregister_native_hotkey(hotkey_id: int = 1001) -> None:
+    """Releases a hotkey registered with Windows."""
+    if not IS_WINDOWS:
+        return
+    try:
+        import ctypes
+
+        ctypes.windll.user32.UnregisterHotKey(None, hotkey_id)
+    except Exception:
+        pass
