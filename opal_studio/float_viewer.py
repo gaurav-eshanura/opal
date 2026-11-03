@@ -154,7 +154,9 @@ class FloatStudio(QWidget):
     ghost (click-through) mode, edge snapping and drag & drop.
     """
 
-    file_action = Signal(str, list)   # action id, file paths (handled by the app)
+    # Argument order must match main.OpalApp.on_action_selected(file_paths, action_id)
+    # and radial_widget.RadialMenuWidget.action_selected = Signal(list, str).
+    file_action = Signal(list, str)   # file paths, action id (handled by the app)
 
     def __init__(self, file_paths: Optional[List[str]] = None, parent=None):
         super().__init__(parent)
@@ -335,7 +337,7 @@ class FloatStudio(QWidget):
             for p in paths:
                 self.open_file(p)
         else:
-            self.file_action.emit(action_id, paths)
+            self.file_action.emit(paths, action_id)
 
     def _open_files(self):
         paths, _ = QFileDialog.getOpenFileNames(self, "Open in Opal Studio", "",

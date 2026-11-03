@@ -138,6 +138,7 @@ class OpalDashboard(QWidget):
     history_requested = Signal()
     toggle_orb_requested = Signal()
     studio_requested = Signal()
+    feature_requested = Signal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -220,16 +221,16 @@ class OpalDashboard(QWidget):
         title_label.setStyleSheet("color: #EDF1FA;")
         title_row.addWidget(title_label)
 
-        status_pill = QLabel("Active & Running")
-        status_pill.setFont(QFont("Segoe UI", 8, QFont.Bold))
-        status_pill.setStyleSheet("""
+        self.status_pill = QLabel("Active & Running")
+        self.status_pill.setFont(QFont("Segoe UI", 8, QFont.Bold))
+        self.status_pill.setStyleSheet("""
             background-color: rgba(47, 158, 99, 0.10);
             color: #2F7D52;
             border: 1px solid rgba(47, 158, 99, 0.30);
             border-radius: 10px;
             padding: 3px 10px;
         """)
-        title_row.addWidget(status_pill)
+        title_row.addWidget(self.status_pill)
         title_row.addStretch()
         title_box.addLayout(title_row)
 
@@ -312,13 +313,13 @@ class OpalDashboard(QWidget):
         cards_layout.setContentsMargins(12, 12, 12, 12)
 
         card1 = self._create_feature_card("Remove Background", "Local AI cutout, transparent PNG",
-                                         "Saved next to your photo")
+                                         "Saved next to your photo", feature_key="remove_bg")
         card2 = self._create_feature_card("PDF Studio", "Sign, search, redact, export",
-                                         "A full PDF editor, not a viewer")
+                                         "A full PDF editor, not a viewer", feature_key="pdf_studio")
         card3 = self._create_feature_card("WhatsApp Ready", "Shrink photos and PDFs to share",
-                                          "Hold Alt while dragging")
+                                          "Hold Alt while dragging", feature_key="whatsapp")
         card4 = self._create_feature_card("Auto Watch Folder", "Dropped files convert themselves",
-                                          "Downloads / Opal_Auto")
+                                          "Downloads / Opal_Auto", feature_key="watch_folder")
 
         for card in (card1, card2, card3, card4):
             cards_layout.addWidget(card, 1)
@@ -342,8 +343,21 @@ class OpalDashboard(QWidget):
 
         main_layout.addLayout(bottom_row)
 
-    def _create_feature_card(self, title: str, desc: str, hint: str) -> QFrame:
-        """One bordered card: title, one line of detail, and a quiet hint."""
+    def _make_feature_click(self, card: QFrame, feature_key: str):
+        """Build a mouse handler that asks the app to run the card's feature."""
+        def handler(event):
+            if event.button() == Qt.LeftButton:
+                self.feature_requested.emit(feature_key)
+            QFrame.mouseReleaseEvent(card, event)
+        return handler
+
+    def _create_feature_card(self, title: str, desc: str, hint: str,
+                             feature_key: str = "") -> QFrame:
+        """One bordered card: title, one line of detail, and a quiet hint.
+
+        A card with a feature key is clickable and asks the app to run that
+        feature; a card without one is a plain caption.
+        """
         card = QFrame()
         card.setObjectName("featureCard")
         card.setStyleSheet("""
@@ -355,6 +369,10 @@ class OpalDashboard(QWidget):
             QFrame#featureCard:hover { border-color: rgba(255,82,0,0.45); }
             QFrame#featureCard QLabel { background: transparent; border: none; }
         """)
+        if feature_key:
+            card.setCursor(Qt.PointingHandCursor)
+            card.setToolTip(f"Open {title}")
+            card.mouseReleaseEvent = self._make_feature_click(card, feature_key)
         layout = QVBoxLayout(card)
         layout.setSpacing(3)
         layout.setContentsMargins(16, 14, 16, 14)
@@ -420,6 +438,29 @@ class OpalDashboard(QWidget):
         config["show_drop_dock"] = checked
         ConfigManager.save_config(config)
         self.toggle_orb_requested.emit()
+
+    def set_queue_status(self, running: bool, queued: int):
+        """The header pill says what the app is doing right now: one job
+        running, and how many more are waiting their turn."""
+        if running:
+            text = f"Working · {queued} queued" if queued else "Working…"
+            self.status_pill.setText(text)
+            self.status_pill.setStyleSheet("""
+                background-color: rgba(108, 99, 255, 0.12);
+                color: #8A83FF;
+                border: 1px solid rgba(108, 99, 255, 0.40);
+                border-radius: 10px;
+                padding: 3px 10px;
+            """)
+        else:
+            self.status_pill.setText("Active & Running")
+            self.status_pill.setStyleSheet("""
+                background-color: rgba(47, 158, 99, 0.10);
+                color: #2F7D52;
+                border: 1px solid rgba(47, 158, 99, 0.30);
+                border-radius: 10px;
+                padding: 3px 10px;
+            """)
 
     def closeEvent(self, event):
         # Minimize to system tray instead of exiting the entire background engine

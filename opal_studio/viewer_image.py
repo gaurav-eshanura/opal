@@ -646,7 +646,9 @@ class ImageLab(QWidget):
             ("↕ Flip Vertical", lambda: self._flip_qimage(True)),
             ("↔ Flip Horizontal", lambda: self._flip_qimage(False)),
         ]:
-            self.options_lay.addWidget(_tool_btn(label))
+            btn = _tool_btn(label)
+            btn.clicked.connect(slot)
+            self.options_lay.addWidget(btn)
 
     def _opts_filters(self):
         form = self._add_group("Filters")
@@ -660,7 +662,9 @@ class ImageLab(QWidget):
             ("Pixelate", lambda: self._pil_op(self._filter_pixelate)),
             ("Posterize", lambda: self._pil_op(self._filter_posterize)),
         ]:
-            self.options_lay.addWidget(_tool_btn(label))
+            btn = _tool_btn(label)
+            btn.clicked.connect(slot)
+            self.options_lay.addWidget(btn)
 
     def _opts_watermark(self):
         form = self._add_group("Text Watermark")
@@ -1061,11 +1065,11 @@ class ImageLab(QWidget):
         if not self.current_image:
             return
         self.push_history()
-        transform = {90: Qt.FastTransformation, -90: Qt.FastTransformation}.get(degrees)
         from PySide6.QtGui import QTransform
         self.current_image = self.current_image.transformed(QTransform().rotate(degrees))
         self.canvas.set_image(self.current_image)
         self._update_info()
+        self._auto_save_result("rotated")
 
     def _flip_qimage(self, vertical: bool):
         if not self.current_image:
@@ -1076,6 +1080,7 @@ class ImageLab(QWidget):
             QTransform().scale(-1 if not vertical else 1, -1 if vertical else 1))
         self.canvas.set_image(self.current_image)
         self._update_info()
+        self._auto_save_result("flipped")
 
     # -- PIL filter helpers --
     def _pil_op(self, func):

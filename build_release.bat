@@ -1,6 +1,6 @@
 @echo off
-title Build Tangerine for Windows
+title Build Opal for Windows
 cd /d "%~dp0"
-echo Compiling standalone Tangerine release...
+echo Compiling standalone Opal release...
 python build_release.py
 pause

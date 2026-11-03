@@ -76,7 +76,7 @@ jobs:
         shell: bash
         env:
           QT_QPA_PLATFORM: offscreen
-        run: python test_opal.py
+        run: python -m pytest tests/ -q
 
       - name: Run the exhaustive feature audit
         shell: bash
@@ -84,17 +84,16 @@ jobs:
           QT_QPA_PLATFORM: offscreen
         run: python tests/test_every_feature.py
 
-      - name: Check the security guarantees
-        shell: bash
-        env:
-          QT_QPA_PLATFORM: offscreen
-        run: python tests/test_security.py
-
   build:
-    name: Portable build
+    name: Portable build (${{ matrix.os }})
     needs: test
-    runs-on: windows-latest
-    timeout-minutes: 45
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
 
     steps:
       - uses: actions/checkout@v4
@@ -102,6 +101,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
 
       - name: Install dependencies
         run: |
@@ -111,7 +112,15 @@ jobs:
 
       - name: Install ffmpeg
         shell: bash
-        run: choco install ffmpeg -y --no-progress
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            choco install ffmpeg -y --no-progress
+          elif [ "$RUNNER_OS" = "macOS" ]; then
+            brew install ffmpeg
+          else
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
 
       - name: Build the core build
         run: python build_release.py --core
@@ -122,11 +131,17 @@ jobs:
       - name: Check the build size
         shell: bash
         run: |
-          du -sm dist/Opal dist/Opal-Full
+          # macOS ships an .app bundle, the other platforms a folder.
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            full_dir="dist/Opal-Full.app"
+          else
+            full_dir="dist/Opal-Full"
+          fi
+          du -sm dist/Opal "$full_dir"
           # The core build must stay under 250 MB and the full build under
           # 650 MB. These limits stop a stray dependency from bloating it.
           core=$(du -sm dist/Opal | cut -f1)
-          full=$(du -sm dist/Opal-Full | cut -f1)
+          full=$(du -sm "$full_dir" | cut -f1)
           if [ "$core" -gt 250 ]; then
             echo "::error::Core build is ${core} MB, over the 250 MB budget"
             exit 1
@@ -136,11 +151,27 @@ jobs:
             exit 1
           fi
 
+      - name: Check that the release archive was produced
+        shell: bash
+        run: |
+          ls -la dist/*.zip
+          case "$RUNNER_OS" in
+            macOS) tag=macOS-x64 ;;
+            Linux) tag=Linux-x64 ;;
+            *)     tag=Windows-x64 ;;
+          esac
+          version=$(python -c "from opal_studio.version import __version__; print(__version__)")
+          # The website's download button points at these two files.
+          test -f "dist/Opal-v${version}-${tag}.zip"
+          test -f "dist/Opal-Full-v${version}-${tag}.zip"
+
       - name: Upload the builds
         uses: actions/upload-artifact@v4
         with:
-          name: opal-windows
+          name: opal-${{ matrix.os }}
           path: |
             dist/Opal
             dist/Opal-Full
+            dist/*.app
+            dist/*.zip
           retention-days: 14

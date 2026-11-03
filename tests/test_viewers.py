@@ -18,6 +18,8 @@ sys.path.insert(0, str(ROOT))
 from PIL import Image, ImageDraw
 from PySide6.QtWidgets import QApplication
 
+import pytest
+
 from opal_studio.viewer_image import ImageLab
 from opal_studio.viewer_doc import DocStudio
 from opal_studio.viewer_media import MediaStudio
@@ -88,6 +90,17 @@ def make_files():
                         str(WORK / "clip.mp4")],
                        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                        creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _samples():
+    """The files the checks below open.
+
+    Run as a script, main() built them before the checks started.  Under
+    pytest nothing built them, so the checks were opening files that were
+    not there - and failing for a reason that had nothing to do with the app.
+    """
+    make_files()
 
 
 def test_image_lab(app):

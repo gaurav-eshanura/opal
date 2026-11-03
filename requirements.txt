@@ -24,10 +24,11 @@ qrcode==8.2
 numpy==2.4.6
 
 # --- Signatures ---
-pyHanko==0.38.0           # Real DSC signing (PKCS#12 certificates)
+pyHanko==0.38.0           # Real DSC signing (PKCS#12 certificates and PKCS#11 tokens)
 cryptography==48.0.0
 asn1crypto==1.5.1
 oscrypto==1.3.0
+python-pkcs11==0.10.1     # Talks to a plugged-in DSC USB token; the key never leaves it
 
 # --- On-device AI (optional: the app installs these on first use) ---
 onnxruntime==1.26.0       # Background removal, upscaling

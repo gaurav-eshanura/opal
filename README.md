@@ -39,8 +39,8 @@ things Acrobat is used for, and a few it never did.
 
 | Build | Size | What it is | Get it |
 |---|---|---|---|
-| **Opal** | 202 MB (103 MB zipped) | Everything except the heavy AI engines, which install on first use | [`Opal-v2.0.1-Windows-x64.zip`](https://github.com/gaurav-eshanura/opal/releases/latest) |
-| **Opal Full** | 563 MB (232 MB zipped) | Everything bundled, including the cut-out model — works offline from the first click | [`Opal-Full-v2.0.1-Windows-x64.zip`](https://github.com/gaurav-eshanura/opal/releases/latest) |
+| **Opal** | 202 MB (98 MB zipped) | Everything except the heavy AI engines, which install on first use | [`Opal-v2.0.1-Windows-x64.zip`](https://github.com/gaurav-eshanura/opal/releases/latest) |
+| **Opal Full** | 529 MB (222 MB zipped) | Everything bundled, including the cut-out model — works offline from the first click | [`Opal-Full-v2.0.1-Windows-x64.zip`](https://github.com/gaurav-eshanura/opal/releases/latest) |
 
 macOS and Linux builds are produced by the scripts in [`build_macos.sh`](build_macos.sh)
 and [`build_linux.sh`](build_linux.sh) — see [Building from source](#-building-from-source).
@@ -63,7 +63,9 @@ profile, and leaves nothing behind on a shared or counter PC.
 
 ## ✨ What it does
 
-**70+ actions across 36 studio tools, every one of them tested end to end.**
+**101 actions in the wheel, 38 more in the catalogue. Every action that makes a
+file is run against a real file, and the result is opened again to prove it
+works.**
 
 ### 🖼 Image Lab
 
@@ -77,7 +79,10 @@ optimisation
 ### 📄 PDF Studio — a real editor, not a viewer
 
 Convert to Word, PowerPoint, EPUB, HTML, TXT, PNG, JPEG · annotate · **sign
-with a real DSC certificate** · draw, type or upload a signature · redact ·
+with a real DSC certificate or plugged-in USB token** (into a prepared
+signature field when the form has one, with optional RFC 3161 timestamp) ·
+**cryptographically verify signatures** · draw, type or upload a signature ·
+redact · **search & redact** ·
 build and fill forms · offline OCR · watermark · page numbers · flatten ·
 protect and unlock · merge · split · extract · reverse · rotate · insert ·
 reorder · compress · fit to A4 · under 1 MB for WhatsApp · repair a broken
@@ -109,10 +114,14 @@ macOS and Linux.
 ### 🪪 Digital signatures that are real
 
 Sign a PDF with the PKCS#12 certificate (`.pfx` / `.p12`) your authority
-issued — the same file an Indian DSC provider hands you. Opal shows the
-certificate subject, issuer, serial and validity **before** you sign, produces
-a standard `adbe.pkcs7.detached` signature, and the private key never leaves
-your computer.
+issued — the same file an Indian DSC provider hands you — **or directly with
+the DSC USB token plugged into the machine**, the way Acrobat does. Opal finds
+the token's PKCS#11 driver by itself, shows the certificate subject, issuer,
+serial and validity **before** you sign, and computes the signature inside
+the token: the private key never leaves the device. The token PIN is asked
+for in a dialog and held in memory only — never saved, logged, or put on a
+command line. The result is a standard `adbe.pkcs7.detached` signature that
+any reader can verify.
 
 ---
 
@@ -124,15 +133,58 @@ The same engine, no window. Useful for scripts, batch jobs and hotkeys.
 opal_cli.bat --convert photo.HEIC --to png
 opal_cli.bat --tool photo.jpg --to remove_bg
 opal_cli.bat --convert invoice.pdf --to docx --out C:\Reports
+opal_cli.bat --convert scans/ --to pdf --out C:\Reports --recursive  # a whole folder at once
+opal_cli.bat --convert scans/ --to pdf --json                         # one JSON summary for scripts
+opal_cli.bat --sign contract.pdf --token                              # sign with the plugged-in DSC token
+opal_cli.bat --sign contract.pdf --pfx cert.pfx --out signed.pdf      # sign with a certificate file
+opal_cli.bat --sign contract.pdf --token --tsa https://freetsa.org/tsr   # ...with an RFC 3161 timestamp
+opal_cli.bat --verify-signature signed.pdf                            # cryptographically validate signatures
+opal_cli.bat --tool contract.pdf --to pdf_search_redact --options '{"query": "PAN"}'
 opal_cli.bat --info report.pdf
 opal_cli.bat --catalog
 ```
 
-`--info` prints machine-readable JSON, so Opal drops straight into a script.
+`--sign` reads the DSC PIN / certificate password from the `OPAL_DSC_PIN`
+environment variable or asks for it interactively — never from the command
+line — signs a copy (the original is never touched) and verifies the signature
+before reporting success.
+
+`--info` and `--json` print machine-readable JSON, so Opal drops straight into
+a script. A folder argument means every supported file in it (files already
+in the target format are skipped); `--recursive` includes subfolders.
 
 <p align="center">
   <img src="website/assets/screenshots/01-dashboard.png" alt="The Opal dashboard" width="760" />
 </p>
+
+---
+
+## 🔌 Plugins
+
+Drop a `.py` file into the **plugins folder** — `plugins/` next to the app in
+portable mode, otherwise the Opal data folder (`%APPDATA%\Opal\plugins`,
+`~/.local/share/Opal/plugins`, `~/Library/Application Support/Opal/plugins`;
+`OPAL_PLUGINS_DIR` overrides both) — and its tool appears in the wheel's
+tools mode (Alt) next to the built-in ones.
+
+```python
+OPAL_PLUGIN = {
+    "id": "upper",            # shows in the wheel as plugin:upper
+    "label": "UPPERCASE",
+    "desc": "Write the text back in capitals",
+    "exts": [".txt"],         # optional; omit to apply to every file
+}
+
+def run(file_path, options=None):
+    from pathlib import Path
+    src = Path(file_path)
+    dst = src.with_name(src.stem + "_upper.txt")
+    dst.write_text(src.read_text(encoding="utf-8").upper(), encoding="utf-8")
+    return {"success": True, "output_path": str(dst), "message": "Uppercased"}
+```
+
+A plugin that fails to load or raises while running is skipped with a reason
+and reported — it never crashes Opal. Covered by `tests/test_plugins.py`.
 
 ---
 
@@ -164,12 +216,14 @@ Everything else works the same on all three.
   signing and every AI model run on your machine.
 - **No account, no telemetry, no sign-in screen.** There is no policy setting
   to change because there is nothing to change.
-- **The only network traffic** is the one-time download of an optional model.
-  Those downloads are checked three ways: the host must be on a fixed
+- **The only network traffic** is the one-time download of an optional model
+  and, only if you ask for it, an RFC 3161 timestamp when signing (`--tsa`).
+  Model downloads are checked three ways: the host must be on a fixed
   allow-list, the connection is pinned to a validated public address (so a DNS
   record cannot be flipped underneath us), and the file must look like a model
   and match a pinned SHA-256 fingerprint. Anything that fails is deleted, not
-  cached.
+  cached. Timestamp servers are likewise host-allow-listed, and a timestamp
+  server receives only the hash of your signature — never the document.
 - **Your documents stay on your disk.** Results are written next to the
   original under a new name. The original is never touched.
 - **Archives cannot escape.** A crafted archive with a member named
@@ -200,7 +254,16 @@ python build_release.py --core     # small build, engines install on demand
 python build_release.py            # full build, everything bundled
 ```
 
-The result lands in `dist/Opal/` or `dist/Opal-Full/`.
+The app lands in `dist/Opal/` or `dist/Opal-Full/`, and the build then packs it
+into the archive people actually download:
+
+```
+dist/Opal-v2.0.1-Windows-x64.zip          (also copied to website/downloads/)
+dist/Opal-Full-v2.0.1-Windows-x64.zip     (also copied to website/downloads/)
+```
+
+That copy into `website/downloads/` is what makes the download button on the
+site point at a real file.
 
 To bundle FFmpeg in the full build, put the binary at `assets/bin/ffmpeg.exe`
 (Windows), `assets/bin/ffmpeg` (macOS / Linux) or leave it on your `PATH`.
@@ -212,27 +275,42 @@ and [`build_linux.sh`](build_linux.sh).
 
 ## 🧪 Testing
 
-Opal ships with an extensive verification suite. It runs the real engine, not
-mocks: every catalogue action is executed against real sample files and each
-output is re-opened with the matching reader, so a "successful" conversion that
-produced a broken file counts as a failure.
+The suite is **pytest**, and it can fail. It runs the real engine, not mocks:
+every action is executed against real sample files the suite builds itself,
+and each output is re-opened with the matching reader — so a "successful"
+conversion that produced a file nothing can open counts as a failure.
 
 ```bash
-python test_opal.py            # core suites
-python test_opal.py --full     # adds the slow real-media suites
-python tests/test_every_feature.py   # 165 checks: every action, every dialog
+python -m pytest tests/ -q              # the whole suite
+python -m pytest tests/ -q -k menu      # one part of it
 ```
 
-| Suite | Checks |
+| Suite | What it covers |
 |---|---|
-| Engine toolkit | 70 |
-| PDF Studio | 38 |
-| Viewers & floating shell | 44 |
-| Application smoke test | 21 |
-| Customer journey (CSC / print shop) | 31 |
-| Cross-platform & portable mode | 45 |
-| Security guarantees | 24 |
-| Every feature (exhaustive) | 166 |
+| `test_menu_contract.py` | every wheel action × the file types it applies to (297 cases) |
+| `test_catalog_contract.py` | all 38 catalogue actions, plus the guards around them |
+| `test_watch_folder.py` | a file dropped into a watched folder, end to end |
+| `test_every_feature.py` | every dialog, the cross-platform layer and the CLI |
+| `test_viewers.py` | the Image Lab, Document Studio, Media Studio and the floating shell |
+| `test_legacy_suites.py` | the old print-only suites, now run where a failed check is a failed test |
+| `test_dsc_token.py` | DSC USB-token signing: error paths, a monkeypatched token that signs for real, and a live probe when a token is plugged in |
+| `test_parity.py` | Acrobat-parity additions: sign into prepared signature fields, cryptographic verify, search & redact, TSA timestamping |
+| `test_security.py` | the privacy and path-confinement promises |
+
+Two groups are deliberately **skipped** rather than counted as passes: the
+Real-ESRGAN upscaler (minutes per image on the CPU) and the desktop-only
+suites that open Explorer, a terminal or MS Office. Ask for them by name:
+
+```bash
+OPAL_RUN_SLOW=1 python -m pytest tests/ -q       # adds the AI upscaler
+OPAL_RUN_DESKTOP=1 python -m pytest tests/ -q    # adds the desktop suites
+```
+
+The number the website quotes is measured, not estimated:
+
+```bash
+python tools/bench_counter.py     # ten real counter jobs, back to back
+```
 
 Every one of these runs on **Windows, macOS and Linux**, on Python 3.11 and
 3.12, in the CI pipeline on every push. The CI also builds the portable
@@ -258,7 +336,8 @@ opal_studio/            the application
   brand.py              the Opal mark
   platform_compat.py    everything that touches the operating system
   input_watch.py        cross-platform mouse and keyboard reading
-  dsc_sign.py           DSC certificate signing
+  dsc_sign.py           DSC certificate signing (.pfx and USB tokens)
+  dsc_token.py          PKCS#11 access to a plugged-in DSC USB token
 website/                the marketing site
 tests/                  the verification suites
 tools/                  the screenshot capture tool
@@ -275,8 +354,9 @@ tools/                  the screenshot capture tool
 - [x] Cross-platform input watcher
 - [x] Portable mode
 - [ ] More matting models, smaller and faster
-- [ ] Batch jobs with a queue
-- [ ] Plugin API for custom tools
+- [x] Batch jobs with a queue — one runs at a time, the rest wait in order and
+  the dashboard header shows "Working · N queued"
+- [x] Plugin API — drop a `.py` into the plugins folder and it joins the wheel
 
 ---
 

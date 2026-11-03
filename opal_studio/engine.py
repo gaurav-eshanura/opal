@@ -17,6 +17,7 @@ import shutil
 import zipfile
 import tarfile
 import subprocess
+import tempfile
 from pathlib import Path
 from typing import List, Dict, Any, Tuple, Optional
 from PIL import Image, ImageOps, ImageFilter, UnidentifiedImageError
@@ -414,6 +415,9 @@ class OpalEngine:
                 ".xlsx", ".xls", ".pptx", ".ppt", ".rtf", ".log"}
     FONT_EXTS = {".ttf", ".otf", ".woff", ".woff2"}
     ARCHIVE_EXTS = {".zip", ".tar", ".gz", ".tgz"}
+    # Every extension Opal can take in, e.g. for expanding a folder on the CLI.
+    SUPPORTED_EXTS = (IMAGE_EXTS | AUDIO_EXTS | VIDEO_EXTS | PDF_EXTS
+                      | DOC_EXTS | FONT_EXTS | ARCHIVE_EXTS)
 
     @classmethod
     def get_file_category(cls, file_paths: List[str]) -> str:
@@ -462,7 +466,10 @@ class OpalEngine:
         if mode == "convert":
             return cls._get_conversion_options(category, is_batch, file_paths)
         elif mode == "tools":
-            return cls._get_tools_options(category, is_batch, file_paths)
+            opts = cls._get_tools_options(category, is_batch, file_paths)
+            # User plugins join the wheel here, next to the built-in tools.
+            from opal_studio.plugins import PluginManager
+            return opts + PluginManager.options_for_files(file_paths)
         else:
             return cls._get_action_options(file_paths)
 
@@ -512,39 +519,35 @@ class OpalEngine:
                 {"id": "png_preview", "label": "Preview PNG", "desc": "Render specimen sheet as PNG"},
             ]
         elif category == "document":
-            opts = [
-                {"id": "pdf", "label": "PDF", "desc": "Export as high quality PDF document"},
-                {"id": "extract_text", "label": "Extract Text", "desc": "Strip formatting to clean text file"},
-            ]
+            # Every id offered here is routed by the engine AND meaningful for the
+            # file type in hand. The generic "pdf" and "extract_text" entries
+            # dispatch to the right converter per extension.
             exts = {Path(fp).suffix.lower() for fp in (file_paths or [])}
+            opts = [
+                {"id": "pdf", "label": "PDF", "desc": "Export as a high quality PDF document"},
+                {"id": "extract_text", "label": "Extract Text", "desc": "Strip formatting to a clean text file"},
+            ]
             if ".json" in exts:
                 opts.append({"id": "format_json", "label": "Format JSON", "desc": "Prettify and indent JSON"})
-                opts.append({"id": "csv", "label": "CSV", "desc": "Flatten JSON records to CSV table"})
+                opts.append({"id": "json_csv", "label": "CSV Table", "desc": "Flatten JSON records to a CSV table"})
             if ".csv" in exts:
-                opts.append({"id": "xlsx", "label": "XLSX", "desc": "Build a formatted Excel workbook"})
-                opts.append({"id": "json", "label": "JSON", "desc": "Convert CSV rows to JSON records"})
+                opts.append({"id": "csv_xlsx", "label": "XLSX", "desc": "Build a formatted Excel workbook"})
+                opts.append({"id": "csv_json", "label": "JSON", "desc": "Convert CSV rows to JSON records"})
             if any(e in (".xlsx", ".xls") for e in exts):
-                opts.append({"id": "csv", "label": "CSV Table", "desc": "Export spreadsheet sheet as CSV"})
+                opts.append({"id": "xlsx_csv", "label": "CSV Table", "desc": "Export every sheet as a CSV table"})
             if ".epub" in exts:
-                opts += [
-                    {"id": "extract_text", "label": "EPUB → TXT", "desc": "Extract readable book text"},
-                    {"id": "html", "label": "EPUB → HTML", "desc": "Convert book chapters to HTML"},
-                ]
+                opts.append({"id": "epub_html", "label": "EPUB → HTML", "desc": "Convert the book chapters to HTML"})
             if any(e in (".srt", ".vtt") for e in exts):
-                opts += [
-                    {"id": "vtt", "label": "VTT / SRT", "desc": "Convert subtitle format"},
-                    {"id": "extract_text", "label": "Dialogue TXT", "desc": "Extract spoken lines only"},
-                ]
+                if ".vtt" in exts:
+                    opts.append({"id": "vtt_srt", "label": "→ SRT", "desc": "Convert the subtitle format to SRT"})
+                if ".srt" in exts:
+                    opts.append({"id": "srt_vtt", "label": "→ VTT", "desc": "Convert the subtitle format to VTT"})
+                opts.append({"id": "subs_txt", "label": "Dialogue TXT", "desc": "Extract the spoken lines only"})
+                opts.append({"id": "subs_shift", "label": "Shift Timing", "desc": "Move every subtitle earlier or later"})
             if ".md" in exts:
-                opts += [
-                    {"id": "html", "label": "HTML", "desc": "Render markdown to styled web page"},
-                    {"id": "docx", "label": "DOCX", "desc": "Convert markdown to Word"},
-                ]
-            if ".pptx" in exts or ".ppt" in exts:
-                opts += [
-                    {"id": "pdf", "label": "PPT → PDF", "desc": "Render slides to PDF pages"},
-                    {"id": "extract_text", "label": "Slides → TXT", "desc": "Extract speaker text"},
-                ]
+                opts.append({"id": "md_html", "label": "HTML", "desc": "Render markdown to a styled web page"})
+            if ".docx" in exts:
+                opts.append({"id": "docx_html", "label": "Word → HTML", "desc": "Export the Word document as a web page"})
             return opts
         elif category == "archive":
             return [
@@ -594,8 +597,8 @@ class OpalEngine:
             if is_batch:
                 opts.insert(0, {"id": "contact_sheet", "label": "Contact Sheet",
                                 "desc": f"Combine {len(file_paths)} images into one grid"})
-        elif category in ("video", "audio"):
-            return [
+        elif category == "video":
+            opts = [
                 {"id": "compress_media", "label": "Compress", "desc": "Reduce file size for messaging & sharing"},
                 {"id": "fit_25mb", "label": "Fit 25MB", "desc": "Target under 25MB Discord limit"},
                 {"id": "fit_10mb", "label": "Fit 10MB", "desc": "Target under 10MB email limit"},
@@ -604,8 +607,28 @@ class OpalEngine:
                 {"id": "video_720p", "label": "Make 720p", "desc": "Resize to 720p H.264"},
                 {"id": "video_frames", "label": "All Frames", "desc": "Export every frame as images"},
                 {"id": "video_thumbnails", "label": "Thumb Grid", "desc": "9-frame contact sheet image"},
-                {"id": "mute_video", "label": "Mute Audio", "desc": "Strip sound track completely"},
-                {"id": "burn_subtitles", "label": "Burn Subs", "desc": "Permanently embed matching .srt subtitles"},
+                {"id": "mute_video", "label": "Mute Audio", "desc": "Strip the sound track completely"},
+                {"id": "video_speed", "label": "Speed", "desc": "Speed the clip up or slow it down"},
+                {"id": "video_rotate", "label": "Rotate", "desc": "Turn the video 90 degrees"},
+            ]
+            # Burning subtitles needs a matching .srt / .vtt sitting next to
+            # the video, so the tool is only offered when one is really there.
+            if file_paths and all(
+                    any(Path(p).with_suffix(ext).exists() for ext in (".srt", ".vtt"))
+                    for p in file_paths):
+                opts.insert(9, {"id": "burn_subtitles", "label": "Burn Subs",
+                                "desc": "Permanently embed matching .srt subtitles"})
+            return opts
+        elif category == "audio":
+            # Audio-only tools. Video tools (crop, frames, thumbnails, burn, mute)
+            # cannot work on a file with no video stream.
+            return [
+                {"id": "compress_media", "label": "Compress", "desc": "Reduce file size for messaging & sharing"},
+                {"id": "fit_25mb", "label": "Fit 25MB", "desc": "Target under 25MB Discord limit"},
+                {"id": "fit_10mb", "label": "Fit 10MB", "desc": "Target under 10MB email limit"},
+                {"id": "trim_30s", "label": "Trim 30s", "desc": "Keep the first 30 seconds"},
+                {"id": "audio_normalize", "label": "Normalize", "desc": "Even out the loud and quiet parts"},
+                {"id": "audio_speed", "label": "Speed", "desc": "Speed the recording up or slow it down"},
             ]
         elif category == "pdf":
             opts = [
@@ -628,6 +651,11 @@ class OpalEngine:
             if is_batch:
                 opts.insert(0, {"id": "merge_pdf", "label": "Merge PDFs", "desc": "Combine all selected PDFs into one document"})
             return opts
+        elif category == "font":
+            return [
+                {"id": "font_report", "label": "Font Report", "desc": "Full family, style and licensing report"},
+                {"id": "font_subset", "label": "Subset Font", "desc": "Keep only the characters you need - much smaller file"},
+            ]
         return [
             {"id": "quick_zip", "label": "Quick ZIP", "desc": "Compress into standard ZIP file"},
             {"id": "hash_file", "label": "Checksums", "desc": "MD5 / SHA1 / SHA256 to clipboard & file"},
@@ -760,6 +788,11 @@ class OpalEngine:
             # Route actions
             if action_id == "float":
                 return cls._action_float(src)
+            if action_id == "merge_pdf":
+                return ConversionResult(False, message="Merge needs at least two PDFs - "
+                                                      "select more files and try again.")
+            if action_id == "zip_bundle":
+                return cls._bundle_to_zip([str(src)])
             if action_id == "copy_path":
                 return cls._action_copy_path(src)
             if action_id == "show_explorer":
@@ -858,6 +891,9 @@ class OpalEngine:
     @classmethod
     def _route_extended(cls, src: Path, cat: str, action_id: str,
                         options: Dict[str, Any]) -> Optional[ConversionResult]:
+        if action_id.startswith("plugin:"):
+            from opal_studio.plugins import PluginManager
+            return PluginManager.run_plugin(action_id[len("plugin:"):], src, options)
         if action_id == "open_with":
             return cls._action_open_with(src)
         if action_id == "copy_file":
@@ -946,6 +982,10 @@ class OpalEngine:
             return cls._join_photos(src, options)
         if action_id == "pdf_dsc_sign":
             return cls._pdf_dsc_sign(src, options)
+        if action_id == "pdf_verify_signature":
+            return cls._pdf_verify_signature(src, options)
+        if action_id == "pdf_search_redact":
+            return cls._pdf_search_redact(src, options)
         if action_id == "pdf_remove_blank":
             return cls._pdf_remove_blank_pages(src, options)
         if action_id == "favicon_set":
@@ -1021,7 +1061,7 @@ class OpalEngine:
         if action_id == "png_preview" and cat == "font":
             return cls._font_preview_png(src)
         if action_id == "font_subset":
-            return cls._font_report(src)  # placeholder safety
+            return cls._font_subset(src, options)
 
         # --- media extras ---
         if action_id == "video_720p":
@@ -1083,6 +1123,10 @@ class OpalEngine:
                        ".BMP": "BMP", ".GIF": "GIF", ".TIFF": "TIFF", ".TIF": "TIFF",
                        ".ICO": "ICO", ".AVIF": "AVIF", ".PDF": "PDF"}
             save_kw["format"] = ext_map.get(dst.suffix.upper(), "PNG")
+        # JPEG and BMP cannot carry an alpha channel. Flattening the extra band
+        # here keeps every caller safe instead of failing at save time.
+        if save_kw.get("format") in ("JPEG", "BMP") and img.mode in ("RGBA", "LA"):
+            img = img.convert("RGB")
         try:
             img.save(str(tmp), **save_kw)
             os.replace(str(tmp), str(dst))
@@ -1316,8 +1360,11 @@ class OpalEngine:
         ffmpeg_bin = cls.get_ffmpeg_bin()
         if not ffmpeg_bin:
             return ConversionResult(False, message="Media encoder not available.")
-        dst = cls._resolve_dest_path(src, "_compressed", src.suffix)
         cat = cls.get_file_category([str(src)])
+        # Audio is re-encoded to MP3, so the output must be named .mp3 -
+        # MP3 bytes inside a .wav file would not open as a WAV.
+        dst = cls._resolve_dest_path(src, "_compressed",
+                                     ".mp3" if cat == "audio" else src.suffix)
         if cat == "audio":
             cmd = [ffmpeg_bin, "-y", "-i", str(src), "-vn",
                    "-acodec", "libmp3lame", "-b:a", "128k", str(dst)]
@@ -1337,7 +1384,12 @@ class OpalEngine:
             return ConversionResult(False, message="Media encoder not available.")
         dst = cls._resolve_dest_path(src, "_trimmed", src.suffix)
         cmd = [ffmpeg_bin, "-y", "-ss", "0", "-i", str(src), "-t", str(duration_seconds), "-c", "copy", str(dst)]
-        subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0)
+        proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0)
+        if proc.returncode != 0 or not dst.exists() or dst.stat().st_size == 0:
+            detail = proc.stderr.decode("utf-8", "replace").strip().splitlines()
+            tail = detail[-1] if detail else f"exit code {proc.returncode}"
+            return ConversionResult(False, message=f"Trim failed: {tail[:160]}")
         return ConversionResult(True, str(dst), f"Trimmed to first {duration_seconds} seconds.")
 
     @classmethod
@@ -1347,7 +1399,12 @@ class OpalEngine:
             return ConversionResult(False, message="Media encoder not available.")
         dst = cls._resolve_dest_path(src, "_muted", src.suffix)
         cmd = [ffmpeg_bin, "-y", "-i", str(src), "-c:v", "copy", "-an", str(dst)]
-        subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0)
+        proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0)
+        if proc.returncode != 0 or not dst.exists() or dst.stat().st_size == 0:
+            detail = proc.stderr.decode("utf-8", "replace").strip().splitlines()
+            tail = detail[-1] if detail else f"exit code {proc.returncode}"
+            return ConversionResult(False, message=f"Mute failed: {tail[:160]}")
         return ConversionResult(True, str(dst), "Soundtrack removed.")
 
     # --- PDF & ZIP IMPLEMENTATIONS ---
@@ -1443,58 +1500,64 @@ class OpalEngine:
 
     @classmethod
     def _convert_document_to_pdf(cls, src: Path) -> ConversionResult:
+        """Any readable document -> PDF. Dispatches to the best converter for the format."""
         ext = src.suffix.lower()
-        dst = cls._resolve_dest_path(src, "", ".pdf")
-        tmp = _partial_sibling(dst)
 
-        # 1. Word Documents (.docx, .doc) via Word COM
         if ext in (".docx", ".doc"):
-            try:
-                import win32com.client
-                word = win32com.client.Dispatch("Word.Application")
-                word.Visible = False
-                try:
-                    doc = word.Documents.Open(str(src.resolve()))
-                    doc.SaveAs(str(tmp.resolve()), FileFormat=17)
-                    doc.Close()
-                finally:
-                    word.Quit()
-                tmp.replace(dst)
-                return ConversionResult(True, str(dst), "Exported Word document to PDF.")
-            except Exception:
-                pass
-
-        # 2. Excel spreadsheets (.xlsx, .xls) via Excel COM
+            return cls._docx_to_pdf(src)
         if ext in (".xlsx", ".xls"):
-            try:
-                import win32com.client
-                xl = win32com.client.Dispatch("Excel.Application")
-                xl.Visible = False
-                try:
-                    wb = xl.Workbooks.Open(str(src.resolve()))
-                    wb.ExportAsFixedFormat(0, str(tmp.resolve()))
-                    wb.Close(False)
-                finally:
-                    xl.Quit()
-                tmp.replace(dst)
-                return ConversionResult(True, str(dst), "Exported Excel sheet to PDF.")
-            except Exception:
-                pass
+            return cls._xlsx_to_pdf(src)
+        if ext in (".pptx", ".ppt"):
+            return cls._pptx_to_pdf(src)
+        if ext == ".epub":
+            return cls._epub_to_pdf(src)
+        if ext == ".html":
+            return cls._md_or_html_to_pdf(src)
+        if ext == ".md":
+            return cls._md_or_html_to_pdf(src)
+        if ext in (".rtf", ".srt", ".vtt"):
+            text = cls._document_plain_text(src)
+            if isinstance(text, ConversionResult):
+                return text
+            return cls._plain_text_to_pdf(src, text)
 
-        # 3. Text & Code files (.txt, .md, .csv, .json, .log, .dart, .py, .html) via PyMuPDF
-        if ext in (".txt", ".md", ".csv", ".json", ".log", ".dart", ".py", ".html"):
+        # Plain text & code files via PyMuPDF
+        if ext in (".txt", ".csv", ".json", ".log", ".dart", ".py", ".java",
+                   ".c", ".cpp", ".h", ".css", ".js", ".ts", ".xml", ".yml", ".yaml", ".toml"):
             try:
-                if not fitz:
-                    return ConversionResult(False, message="PDF renderer unavailable.")
                 content = src.read_text(encoding="utf-8", errors="replace")
-                tmp = _partial_sibling(dst)
-                _text_to_pdf_fit(content, str(tmp), title=src.name)
-                os.replace(str(tmp), str(dst))
-                return ConversionResult(True, str(dst), f"Exported document to PDF ({src.name}).")
+                return cls._plain_text_to_pdf(src, content)
             except Exception as e:
                 return ConversionResult(False, message=f"PDF generation failed: {str(e)}")
 
         return ConversionResult(False, message=f"Cannot export {ext} to PDF.")
+
+    @classmethod
+    def _require_ext(cls, src: Path, allowed: Tuple[str, ...], what: str) -> Optional[ConversionResult]:
+        """Return an error result when this file is not the type the action expects.
+
+        Without this, the lenient converters happily turn a .srt into a spreadsheet
+        and report success. A wrong input is an error, not a conversion.
+        """
+        if src.suffix.lower() in allowed:
+            return None
+        wanted = " or ".join(e.upper().lstrip(".") for e in allowed)
+        got = src.suffix.upper().lstrip(".") or "unknown"
+        return ConversionResult(False, message=f"{what} needs a {wanted} file - this is a {got} file.")
+
+    @classmethod
+    def _plain_text_to_pdf(cls, src: Path, content: str) -> ConversionResult:
+        """Typeset plain text into a PDF with PyMuPDF."""
+        try:
+            if not fitz:
+                return ConversionResult(False, message="PDF renderer unavailable.")
+            dst = cls._resolve_dest_path(src, "", ".pdf")
+            tmp = _partial_sibling(dst)
+            _text_to_pdf_fit(content, str(tmp), title=src.name)
+            os.replace(str(tmp), str(dst))
+            return ConversionResult(True, str(dst), f"Exported document to PDF ({src.name}).")
+        except Exception as e:
+            return ConversionResult(False, message=f"PDF generation failed: {str(e)}")
 
     @classmethod
     def _convert_pdf_to_docx(cls, src: Path) -> ConversionResult:
@@ -1521,43 +1584,94 @@ class OpalEngine:
 
     @classmethod
     def _convert_document_to_text(cls, src: Path) -> ConversionResult:
+        """Strip any readable document down to a clean text file."""
         ext = src.suffix.lower()
         if ext == ".pdf":
             return cls._pdf_extract_text(src)
-        dst = cls._resolve_dest_path(src, "_text", ".txt")
         if ext in (".docx", ".doc"):
-            if docx:
-                try:
-                    d = docx.Document(src)
-                    text = "\n\n".join([p.text for p in d.paragraphs if p.text.strip()])
-                    dst.write_text(text, encoding="utf-8")
-                    return ConversionResult(True, str(dst), "Extracted text from Word document.")
-                except Exception as e:
-                    return ConversionResult(False, message=f"DOCX extraction failed: {str(e)}")
-        if ext in (".txt", ".md", ".csv", ".json", ".log", ".dart", ".py", ".html"):
-            content = src.read_text(encoding="utf-8", errors="replace")
-            dst.write_text(content, encoding="utf-8")
-            return ConversionResult(True, str(dst), "Saved clean text file.")
-        return ConversionResult(False, message=f"Text extraction not supported for {ext}.")
+            return cls._docx_to_text(src)
+        if ext in (".xlsx", ".xls"):
+            return cls._xlsx_to_text(src)
+        if ext in (".pptx", ".ppt"):
+            return cls._pptx_to_text(src)
+        if ext == ".epub":
+            return cls._epub_to_text(src)
+        if ext in (".srt", ".vtt"):
+            return cls._subtitles_to_text(src)
+
+        dst = cls._resolve_dest_path(src, "_text", ".txt")
+        content = cls._document_plain_text(src)
+        if isinstance(content, ConversionResult):
+            return content
+        dst.write_text(content, encoding="utf-8")
+        return ConversionResult(True, str(dst), "Saved clean text file.")
+
+    @classmethod
+    def _document_plain_text(cls, src: Path):
+        """Plain-text view of a document, or a ConversionResult if it cannot be read."""
+        ext = src.suffix.lower()
+        try:
+            if ext == ".rtf":
+                raw = src.read_text(encoding="utf-8", errors="replace")
+                text = re.sub(r"\\'([0-9a-fA-F]{2})",
+                              lambda m: chr(int(m.group(1), 16)), raw)
+                text = re.sub(r"\\[a-zA-Z]+-?\d* ?", "", text)
+                text = text.replace("{", "").replace("}", "")
+                return text.strip()
+            return src.read_text(encoding="utf-8", errors="replace")
+        except Exception as e:
+            return ConversionResult(False, message=f"Could not read {src.name}: {e}")
+
+    @classmethod
+    def _docx_to_text(cls, src: Path) -> ConversionResult:
+        dst = cls._resolve_dest_path(src, "_text", ".txt")
+        if docx is None:
+            return ConversionResult(False, message="Word reader unavailable on this machine.")
+        try:
+            d = docx.Document(str(src))
+            parts = [p.text for p in d.paragraphs if p.text.strip()]
+            for table in d.tables:
+                for row in table.rows:
+                    cells = [c.text.strip() for c in row.cells if c.text.strip()]
+                    if cells:
+                        parts.append("\t".join(cells))
+            dst.write_text("\n\n".join(parts), encoding="utf-8")
+            return ConversionResult(True, str(dst), "Extracted text from Word document.")
+        except Exception as e:
+            return ConversionResult(False, message=f"DOCX extraction failed: {str(e)}")
+
+    @classmethod
+    def _xlsx_to_text(cls, src: Path) -> ConversionResult:
+        dst = cls._resolve_dest_path(src, "_text", ".txt")
+        try:
+            import openpyxl
+            wb = openpyxl.load_workbook(str(src), data_only=True)
+            blocks = []
+            for ws in wb.worksheets:
+                blocks.append(f"--- {ws.title} ---")
+                for row in ws.iter_rows(values_only=True):
+                    cells = ["" if c is None else str(c) for c in row]
+                    if any(c.strip() for c in cells):
+                        blocks.append("\t".join(cells))
+            dst.write_text("\n".join(blocks), encoding="utf-8")
+            return ConversionResult(True, str(dst),
+                                    f"Extracted text from {len(wb.worksheets)} sheet(s).")
+        except Exception as e:
+            return ConversionResult(False, message=f"XLSX extraction failed: {str(e)}")
 
     @classmethod
     def _convert_excel_to_csv(cls, src: Path) -> ConversionResult:
-        try:
-            import win32com.client
+        """Spreadsheet or JSON record set -> CSV. Dispatches on the real input type."""
+        ext = src.suffix.lower()
+        if ext == ".json":
+            return cls._json_to_csv(src)
+        if ext in (".xlsx", ".xls"):
+            return cls._xlsx_to_csv(src)
+        if ext == ".csv":
             dst = cls._resolve_dest_path(src, "", ".csv")
-            tmp = _partial_sibling(dst)
-            xl = win32com.client.Dispatch("Excel.Application")
-            xl.Visible = False
-            try:
-                wb = xl.Workbooks.Open(str(src.resolve()))
-                wb.SaveAs(str(tmp.resolve()), FileFormat=6)
-                wb.Close(False)
-            finally:
-                xl.Quit()
-            tmp.replace(dst)
-            return ConversionResult(True, str(dst), "Converted Excel sheet to CSV.")
-        except Exception as e:
-            return ConversionResult(False, message=f"Excel to CSV failed: {str(e)}")
+            return ConversionResult(True, str(dst), "Already a CSV table.")
+        return ConversionResult(False,
+                                message=f"Cannot export {ext} to CSV.")
 
     @classmethod
     def _bundle_to_zip(cls, file_paths: List[str]) -> ConversionResult:
@@ -1612,7 +1726,8 @@ class OpalEngine:
 
     @classmethod
     def _action_float(cls, src: Path) -> ConversionResult:
-        return ConversionResult(True, str(src), "Floating on top of screen.")
+        """The app intercepts this action and opens the floating studio for the file."""
+        return ConversionResult(True, str(src), "Ready to open in the floating studio.")
 
     @classmethod
     def _crop_16_9(cls, src: Path) -> ConversionResult:
@@ -1736,6 +1851,9 @@ class OpalEngine:
     @classmethod
     def _format_json(cls, src: Path) -> ConversionResult:
         import json
+        bad = cls._require_ext(src, (".json",), "JSON formatting")
+        if bad is not None:
+            return bad
         try:
             data = json.loads(src.read_text(encoding="utf-8"))
             dst = cls._resolve_dest_path(src, "_formatted", ".json")
@@ -2099,6 +2217,8 @@ class OpalEngine:
                 new_size = (img.width + 2 * pad_x, img.height + 2 * pad_y)
                 canvas = Image.new("RGBA", new_size, color)
                 canvas.paste(img.convert("RGBA"), (pad_x, pad_y))
+                if dst.suffix.lower() in (".jpg", ".jpeg", ".bmp"):
+                    canvas = canvas.convert("RGB")
                 cls._pil_save_atomic(canvas, dst)
             return ConversionResult(True, str(dst), f"Added {pct}% padding.")
         except Exception as e:
@@ -2112,8 +2232,13 @@ class OpalEngine:
                 img.load()
                 small = img.convert("RGB").resize((150, 150))
                 palette = small.quantize(colors=6, method=Image.Quantize.MEDIANCUT)
-            pal = palette.getpalette()
-            colors = [tuple(pal[i * 3:i * 3 + 3]) for i in range(6)]
+            pal = palette.getpalette() or []
+            # A flat-colour image quantizes to an empty palette; its palette
+            # is simply the one colour it has.
+            colors = [tuple(pal[i * 3:i * 3 + 3]) for i in range(min(6, len(pal) // 3))]
+            if not colors:
+                px = small.getpixel((small.width // 2, small.height // 2))
+                colors = [tuple(px[:3])]
             hexes = [f"#{r:02X}{g:02X}{b:02X}" for r, g, b in colors]
             dst = cls._resolve_dest_path(src, "_palette", ".png")
             sw = 96
@@ -2323,7 +2448,7 @@ class OpalEngine:
             doc = fitz.open(str(src))
             book = epub.EpubBook()
             title = src.stem or "Untitled"
-            book.set_identifier(f"tangerine-{abs(hash(title))}")
+            book.set_identifier(f"opal-{abs(hash(title))}")
             book.set_title(title)
             book.set_language("en")
             chapters = []
@@ -2358,6 +2483,9 @@ class OpalEngine:
 
     @classmethod
     def _epub_to_text(cls, src: Path) -> ConversionResult:
+        bad = cls._require_ext(src, (".epub",), "EPUB extraction")
+        if bad is not None:
+            return bad
         try:
             import ebooklib
             from ebooklib import epub
@@ -2375,6 +2503,9 @@ class OpalEngine:
 
     @classmethod
     def _epub_to_html(cls, src: Path) -> ConversionResult:
+        bad = cls._require_ext(src, (".epub",), "EPUB to HTML")
+        if bad is not None:
+            return bad
         try:
             import ebooklib
             from ebooklib import epub
@@ -2393,6 +2524,9 @@ class OpalEngine:
 
     @classmethod
     def _epub_to_pdf(cls, src: Path) -> ConversionResult:
+        bad = cls._require_ext(src, (".epub",), "EPUB to PDF")
+        if bad is not None:
+            return bad
         try:
             import ebooklib
             from ebooklib import epub
@@ -2412,6 +2546,9 @@ class OpalEngine:
 
     @classmethod
     def _md_to_html(cls, src: Path) -> ConversionResult:
+        bad = cls._require_ext(src, (".md", ".markdown"), "Markdown to HTML")
+        if bad is not None:
+            return bad
         try:
             import markdown as md_lib
             text = src.read_text(encoding="utf-8", errors="replace")
@@ -2430,6 +2567,9 @@ class OpalEngine:
     @classmethod
     def _md_or_html_to_pdf(cls, src: Path) -> ConversionResult:
         """Markdown/HTML -> PDF using PyMuPDF Story (real typesetting, not a text dump)."""
+        bad = cls._require_ext(src, (".md", ".markdown", ".html", ".htm"), "Markdown/HTML to PDF")
+        if bad is not None:
+            return bad
         try:
             import markdown as md_lib
             import fitz
@@ -2472,22 +2612,56 @@ class OpalEngine:
             return ConversionResult(False, message=f"PDF creation failed: {str(e)}")
 
     @classmethod
+    def _office_convert(cls, job: str, src: Path, tmp: Path) -> Optional[str]:
+        """Run a Word/Excel COM conversion in a helper process.
+
+        Word and Excel are out-of-process COM servers: when Office misbehaves,
+        its RPC layer can abort the calling process, and a document conversion
+        must never be able to kill Opal.  The work happens in a child process,
+        so the worst case is a failed conversion.
+
+        Returns the success message, or None when Office could not do the job
+        - the caller then falls back to the pure-Python engine.
+        """
+        script = Path(__file__).with_name("office_worker.py")
+        payload = {"job": job, "src": str(src), "tmp": str(tmp)}
+        workdir = Path(tempfile.mkdtemp(prefix="opal_office_"))
+        payload_path = workdir / "payload.json"
+        try:
+            payload_path.write_text(json.dumps(payload), encoding="utf-8")
+            if getattr(sys, "frozen", False):
+                cmd = [sys.executable, "--opal-office-worker", str(payload_path)]
+            else:
+                cmd = [sys.executable, str(script), str(payload_path)]
+            if sys.platform == "win32":
+                proc = subprocess.run(cmd, capture_output=True, timeout=180, shell=False,
+                                      creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            else:
+                proc = subprocess.run(cmd, capture_output=True, timeout=180, shell=False)
+            if proc.returncode != 0:
+                return None
+            body = proc.stdout.decode("utf-8", "replace").strip()
+            data = json.loads(body or "{}")
+            return str(data.get("message")) if data.get("ok") else None
+        except Exception:
+            return None
+        finally:
+            shutil.rmtree(workdir, ignore_errors=True)
+
+    @classmethod
     def _docx_to_pdf(cls, src: Path) -> ConversionResult:
         """DOCX -> PDF with Word when installed, otherwise faithful python-docx typesetting."""
+        bad = cls._require_ext(src, (".docx", ".doc"), "Word to PDF")
+        if bad is not None:
+            return bad
         try:
-            import win32com.client
-            word = win32com.client.Dispatch("Word.Application")
-            word.Visible = False
-            try:
-                dst = cls._resolve_dest_path(src, "", ".pdf")
-                tmp = _partial_sibling(dst)
-                doc = word.Documents.Open(str(src.resolve()))
-                doc.SaveAs(str(tmp.resolve()), FileFormat=17)
-                doc.Close()
-            finally:
-                word.Quit()
+            dst = cls._resolve_dest_path(src, "", ".pdf")
+            tmp = _partial_sibling(dst)
+            message = cls._office_convert("docx_to_pdf", src, tmp)
+            if message is None:
+                raise RuntimeError("Office worker unavailable")
             os.replace(str(tmp), str(dst))
-            return ConversionResult(True, str(dst), "Word printed to PDF.")
+            return ConversionResult(True, str(dst), message)
         except Exception:
             pass
 
@@ -2524,6 +2698,9 @@ class OpalEngine:
 
     @classmethod
     def _docx_to_html(cls, src: Path) -> ConversionResult:
+        bad = cls._require_ext(src, (".docx",), "Word to HTML")
+        if bad is not None:
+            return bad
         try:
             import docx as docx_lib
             d = docx_lib.Document(str(src))
@@ -2555,6 +2732,9 @@ class OpalEngine:
 
     @classmethod
     def _pptx_to_pdf(cls, src: Path) -> ConversionResult:
+        bad = cls._require_ext(src, (".pptx", ".ppt"), "Slides to PDF")
+        if bad is not None:
+            return bad
         try:
             from pptx import Presentation
             import fitz, io
@@ -2590,6 +2770,9 @@ class OpalEngine:
 
     @classmethod
     def _pptx_to_text(cls, src: Path) -> ConversionResult:
+        bad = cls._require_ext(src, (".pptx", ".ppt"), "Slides to text")
+        if bad is not None:
+            return bad
         try:
             from pptx import Presentation
             prs = Presentation(str(src))
@@ -2608,20 +2791,17 @@ class OpalEngine:
 
     @classmethod
     def _xlsx_to_pdf(cls, src: Path) -> ConversionResult:
+        bad = cls._require_ext(src, (".xlsx", ".xls"), "Spreadsheet to PDF")
+        if bad is not None:
+            return bad
         try:
-            import win32com.client
-            xl = win32com.client.Dispatch("Excel.Application")
-            xl.Visible = False
-            try:
-                dst = cls._resolve_dest_path(src, "", ".pdf")
-                tmp = _partial_sibling(dst)
-                wb = xl.Workbooks.Open(str(src.resolve()))
-                wb.ExportAsFixedFormat(0, str(tmp.resolve()))
-                wb.Close(False)
-            finally:
-                xl.Quit()
-            os.replace(str(tmp), str(dst))
-            return ConversionResult(True, str(dst), "Excel exported to PDF.")
+            dst = cls._resolve_dest_path(src, "", ".pdf")
+            tmp = _partial_sibling(dst)
+            message = cls._office_convert("xlsx_to_pdf", src, tmp)
+            if message is None:
+                raise RuntimeError("Office worker unavailable")
+            os.replace(tmp, dst)
+            return ConversionResult(True, str(dst), message)
         except Exception:
             pass
 
@@ -2652,6 +2832,9 @@ class OpalEngine:
 
     @classmethod
     def _xlsx_to_csv(cls, src: Path) -> ConversionResult:
+        bad = cls._require_ext(src, (".xlsx", ".xls"), "Spreadsheet to CSV")
+        if bad is not None:
+            return bad
         try:
             import openpyxl
             wb = openpyxl.load_workbook(str(src), data_only=True)
@@ -2672,6 +2855,9 @@ class OpalEngine:
 
     @classmethod
     def _csv_to_xlsx(cls, src: Path) -> ConversionResult:
+        bad = cls._require_ext(src, (".csv", ".tsv"), "CSV to XLSX")
+        if bad is not None:
+            return bad
         try:
             import openpyxl
             wb = openpyxl.Workbook()
@@ -2694,6 +2880,9 @@ class OpalEngine:
 
     @classmethod
     def _csv_to_json(cls, src: Path) -> ConversionResult:
+        bad = cls._require_ext(src, (".csv", ".tsv"), "CSV to JSON")
+        if bad is not None:
+            return bad
         try:
             with open(src, "r", newline="", encoding="utf-8", errors="replace") as f:
                 rows = list(csv.DictReader(f))
@@ -2705,6 +2894,9 @@ class OpalEngine:
 
     @classmethod
     def _json_to_csv(cls, src: Path) -> ConversionResult:
+        bad = cls._require_ext(src, (".json",), "JSON to CSV")
+        if bad is not None:
+            return bad
         try:
             data = json.loads(src.read_text(encoding="utf-8"))
             if isinstance(data, dict):
@@ -2725,6 +2917,9 @@ class OpalEngine:
 
     @classmethod
     def _convert_subtitles(cls, src: Path, target: str) -> ConversionResult:
+        bad = cls._require_ext(src, (".srt", ".vtt"), "Subtitle conversion")
+        if bad is not None:
+            return bad
         try:
             text = src.read_text(encoding="utf-8", errors="replace")
             if src.suffix.lower() == ".srt":
@@ -2740,6 +2935,9 @@ class OpalEngine:
 
     @classmethod
     def _subtitles_to_text(cls, src: Path) -> ConversionResult:
+        bad = cls._require_ext(src, (".srt", ".vtt"), "Dialogue extraction")
+        if bad is not None:
+            return bad
         try:
             text = src.read_text(encoding="utf-8", errors="replace")
             lines = []
@@ -2757,6 +2955,9 @@ class OpalEngine:
 
     @classmethod
     def _subtitles_shift(cls, src: Path, options: Dict[str, Any]) -> ConversionResult:
+        bad = cls._require_ext(src, (".srt", ".vtt"), "Subtitle shifting")
+        if bad is not None:
+            return bad
         try:
             seconds = float(options.get("shift_seconds", 5))
             text = src.read_text(encoding="utf-8", errors="replace")
@@ -2807,6 +3008,45 @@ class OpalEngine:
             return ConversionResult(True, str(dst), f"Font report for '{name_of(1)}' saved.")
         except Exception as e:
             return ConversionResult(False, message=f"Font report failed: {str(e)}")
+
+    @classmethod
+    def _font_subset(cls, src: Path, options: Dict[str, Any]) -> ConversionResult:
+        """Builds a smaller font that keeps only the characters that are needed."""
+        bad = cls._require_ext(src, (".ttf", ".otf", ".woff", ".woff2"), "Font subsetting")
+        if bad is not None:
+            return bad
+        try:
+            from fontTools import subset
+        except Exception:
+            return ConversionResult(False, message="Font subsetting needs fonttools on this machine.")
+        text = str(options.get("text", "") or "")
+        dst = cls._resolve_dest_path(src, "_subset", src.suffix)
+        try:
+            font = subset.load_font(str(src), subset.Options())
+            opts = subset.Options()
+            opts.layout_features = ["*"]
+            opts.name_IDs = ["*"]
+            opts.notdef_outline = True
+            opts.recalc_bounds = True
+            opts.drop_tables += ["DSIG"]
+            subsetter = subset.Subsetter(options=opts)
+            if text.strip():
+                subsetter.populate(text=text)
+                label = f"{len(set(text))} character(s)"
+            else:
+                subsetter.populate(unicodes=list(range(32, 127)))
+                label = "the printable ASCII set"
+            subsetter.subset(font)
+            subset.save_font(font, str(dst), opts)
+            before = src.stat().st_size
+            after = dst.stat().st_size
+            saved = max(0, before - after)
+            pct = (saved * 100 // before) if before else 0
+            return ConversionResult(True, str(dst),
+                                    f"Subset font with {label} written - {dst.name} "
+                                    f"({before // 1024} KB -> {after // 1024} KB, {pct}% smaller)")
+        except Exception as e:
+            return ConversionResult(False, message=f"Font subsetting failed: {str(e)}")
 
     @classmethod
     def _font_preview_png(cls, src: Path) -> ConversionResult:
@@ -3240,27 +3480,106 @@ class OpalEngine:
 
     @classmethod
     def _pdf_dsc_sign(cls, src: Path, options: Dict[str, Any]) -> ConversionResult:
-        """Signs a PDF with a real digital signature certificate (.pfx / .p12)."""
+        """Signs a PDF with a real digital signature certificate - either a
+        .pfx / .p12 file (options["pfx_path"]/["password"]) or a plugged-in DSC
+        USB token (options["token"] = {"lib", "slot", "cert_label", "pin"})."""
         try:
             from opal_studio import dsc_sign
         except Exception as e:
             return ConversionResult(False, message=f"Signing engine unavailable: {e}")
+        token = options.get("token") or {}
         pfx = options.get("pfx_path") or options.get("certificate") or ""
-        if not pfx:
-            return ConversionResult(False, message="No certificate file was given.")
-        password = options.get("password", "")
+        if not token and not pfx:
+            return ConversionResult(False, message="No certificate was given - pass a .pfx "
+                                                    "file or a plugged-in DSC token.")
         page_no = int(options.get("page", 0))
         rect = options.get("rect") or (60, 60, 250, 120)
         dst = cls._resolve_dest_path(src, "_signed", ".pdf")
         try:
-            dsc_sign.sign_pdf(str(src), str(dst), str(pfx), str(password),
-                              page_no=page_no, rect=tuple(rect),
-                              reason=options.get("reason", "Approved by the signer"),
-                              location=options.get("location", "India"))
+            if token:
+                pin = token.get("pin") or options.get("password") or ""
+                dsc_sign.sign_pdf_token(str(src), str(dst), str(token.get("lib", "")), pin,
+                                        slot_no=int(token.get("slot", 0)),
+                                        cert_label=token.get("cert_label"),
+                                        page_no=page_no, rect=tuple(rect),
+                                        reason=options.get("reason", "Approved by the signer"),
+                                        location=options.get("location", "India"),
+                                        tsa_url=str(options.get("tsa_url", "")))
+                detail = "USB token"
+            else:
+                dsc_sign.sign_pdf(str(src), str(dst), str(pfx), str(options.get("password", "")),
+                                  page_no=page_no, rect=tuple(rect),
+                                  reason=options.get("reason", "Approved by the signer"),
+                                  location=options.get("location", "India"),
+                                  tsa_url=str(options.get("tsa_url", "")))
+                detail = "certificate file"
         except Exception as e:
             return ConversionResult(False, message=f"Signing failed: {e}")
         return ConversionResult(True, str(dst),
-                                f"PDF signed with your digital signature certificate - {dst.name}")
+                                f"PDF signed with your digital signature certificate "
+                                f"({detail}) - {dst.name}")
+
+    @classmethod
+    def _pdf_verify_signature(cls, src: Path, options: Dict[str, Any]) -> ConversionResult:
+        """Cryptographically validates every embedded signature (pyHanko):
+        intact, signer certificate, chain trust, revocation. Offline."""
+        try:
+            from opal_studio import dsc_sign
+        except Exception as e:
+            return ConversionResult(False, message=f"Signing engine unavailable: {e}")
+        res = dsc_sign.verify_signature_deep(str(src))
+        if res.get("error"):
+            return ConversionResult(False, message=f"Could not read signatures: {res['error']}")
+        sigs = res.get("signatures", [])
+        if not sigs:
+            return ConversionResult(True, str(src), "No digital signatures in this document.")
+        lines = []
+        ok = True
+        for s in sigs:
+            if s.get("error"):
+                ok = False
+                lines.append(f"{s['field']}: could not be validated ({s['error']})")
+            else:
+                good = bool(s.get("intact")) and not s.get("revoked")
+                ok = ok and good
+                lines.append(f"{s['field']}: {'valid' if good else 'PROBLEM'} - "
+                             f"intact={s['intact']}, trusted={s['trusted']}, "
+                             f"revoked={s['revoked']}, signer={str(s.get('signer', '?'))[:60]}")
+        return ConversionResult(ok, str(src),
+                                f"{len(sigs)} signature(s) - " + "; ".join(lines))
+
+    @classmethod
+    def _pdf_search_redact(cls, src: Path, options: Dict[str, Any]) -> ConversionResult:
+        """Search-and-redact: every occurrence of the query text is blacked out
+        on every page - Acrobat's 'Search and Redact'."""
+        query = str(options.get("query") or options.get("search") or "").strip()
+        if not query:
+            return ConversionResult(False, message='Pass the text to redact, e.g. '
+                                                    '--options \'{"query": "PAN number"}\'')
+        if not fitz:
+            return ConversionResult(False, message="PDF engine unavailable.")
+        doc = fitz.open(str(src))
+        try:
+            total = 0
+            for page in doc:
+                rects = page.search_for(query)
+                for r in rects:
+                    page.add_redact_annot(r, fill=(0, 0, 0))
+                if rects:
+                    page.apply_redactions()
+                    total += len(rects)
+            if total == 0:
+                return ConversionResult(True, str(src),
+                                        f'No occurrences of "{query}" found - nothing redacted.')
+            dst = cls._resolve_dest_path(src, "_redacted", ".pdf")
+            doc.save(str(dst), deflate=True, garbage=4)
+            return ConversionResult(True, str(dst),
+                                    f'Redacted {total} occurrence(s) of "{query}" - {dst.name}')
+        except Exception as e:
+            return ConversionResult(False, message=f"Redaction failed: {e}")
+        finally:
+            if not doc.is_closed:
+                doc.close()
 
     @classmethod
     def _pdf_remove_blank_pages(cls, src: Path, options: Dict[str, Any]) -> ConversionResult:
@@ -3309,7 +3628,8 @@ class OpalEngine:
             import cv2
             import numpy as np
         except Exception:
-            return cls._copy_with_note(src, dst, "Face blur needs the vision engine")
+            return ConversionResult(False, message="Face blur needs the vision engine. "
+                                                  "Install it from Settings > AI engines.")
         try:
             with Image.open(src) as img:
                 img.load()
@@ -3350,7 +3670,8 @@ class OpalEngine:
             import cv2
             import numpy as np
         except Exception:
-            return cls._copy_with_note(src, dst, "Object removal needs the vision engine")
+            return ConversionResult(False, message="Object removal needs the vision engine. "
+                                                  "Install it from Settings > AI engines.")
         try:
             with Image.open(src) as img:
                 img.load()
@@ -3360,21 +3681,47 @@ class OpalEngine:
             box = options.get("box")
             if box and len(box) == 4:
                 x0, y0, x1, y1 = [int(v) for v in box]
+                what = "the marked area"
             else:
-                # Default: a centred square the user can adjust in the studio
-                side = int(min(w, h) * 0.28)
-                cx, cy = w // 2, h // 2
-                x0, y0 = max(0, cx - side // 2), max(0, cy - side // 2)
-                x1, y1 = min(w, x0 + side), min(h, y0 + side)
+                # No region was marked: find the main subject with the local
+                # cutout model instead of guessing a centred square.
+                region = cls._salient_subject_box(base)
+                if region is None:
+                    return ConversionResult(False,
+                                            message="Could not find a subject to remove. "
+                                                    "Mark the object in the Image Lab first.")
+                x0, y0, x1, y1 = region
+                what = "the main subject"
             mask = np.zeros((h, w), dtype=np.uint8)
             mask[y0:y1, x0:x1] = 255
             cleaned = cv2.inpaint(array, mask, 5, cv2.INPAINT_TELEA)
             out = Image.fromarray(cv2.cvtColor(cleaned, cv2.COLOR_BGR2RGB))
             cls._pil_save_atomic(out, dst)
             return ConversionResult(True, str(dst),
-                                    f"Cleaned the marked area - {dst.name}")
+                                    f"Cleaned {what} - {dst.name}")
         except Exception as e:
             return ConversionResult(False, message=f"Object removal failed: {e}")
+
+    @classmethod
+    def _salient_subject_box(cls, img) -> Optional[Tuple[int, int, int, int]]:
+        """Bounding box of the main subject, found with the local cutout model."""
+        try:
+            from opal_studio.engines import EngineManager
+            rgba = EngineManager.remove_background(img)
+        except Exception:
+            return None
+        try:
+            alpha = rgba.getchannel("A")
+            bbox = alpha.point(lambda v: 255 if v > 80 else 0).getbbox()
+        except Exception:
+            return None
+        if not bbox:
+            return None
+        x0, y0, x1, y1 = bbox
+        w, h = img.size
+        if x1 - x0 < 4 or y1 - y0 < 4:
+            return None
+        return max(0, x0), max(0, y0), min(w, x1), min(h, y1)
 
     @classmethod
     def _copy_with_note(cls, src: Path, dst: Path, note: str) -> ConversionResult:
@@ -3561,8 +3908,11 @@ class OpalEngine:
                                      rect.x1 + margin, rect.y1 + margin) & page.rect
                 if new_rect.is_empty or new_rect.width < 10 or new_rect.height < 10:
                     new_rect = page.rect
-                out.insert_pdf(doc, from_page=page.number, to_page=page.number,
-                               annots=False)
+                # Rebuild the page at the trimmed size and place the original
+                # content into it, so the white margins really disappear.
+                new_page = out.new_page(width=new_rect.width, height=new_rect.height)
+                new_page.show_pdf_page(new_page.rect, doc, page.number,
+                                       clip=new_rect)
             out.save(str(dst), deflate=True, garbage=4)
             out.close()
             doc.close()
@@ -3738,7 +4088,11 @@ class OpalEngine:
             {"id": "docx", "label": "PDF → Word", "kind": "pdf", "desc": "Editable DOCX"},
             {"id": "epub", "label": "PDF → EPUB", "kind": "pdf", "desc": "E-book export"},
             {"id": "pdf_dsc_sign", "label": "Sign with DSC", "kind": "pdf",
-             "desc": "Apply a real digital signature certificate (.pfx/.p12)"},
+             "desc": "Real digital signature - .pfx/.p12 file or plugged-in USB token"},
+            {"id": "pdf_verify_signature", "label": "Verify Signatures", "kind": "pdf",
+             "desc": "Cryptographically check every signature (intact, signer, chain)"},
+            {"id": "pdf_search_redact", "label": "Search & Redact", "kind": "pdf",
+             "desc": "Black out every occurrence of a text (options: query)"},
             {"id": "pdf_pagenum", "label": "Page Numbers", "kind": "pdf", "desc": "Footer numbering"},
             {"id": "pdf_watermark", "label": "Watermark PDF", "kind": "pdf", "desc": "Diagonal stamp"},
             {"id": "pdf_ocr", "label": "OCR Searchable", "kind": "pdf", "desc": "Offline scan OCR"},

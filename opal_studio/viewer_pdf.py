@@ -1277,7 +1277,8 @@ class PdfStudio(QWidget):
     # --- Digital Signature Certificate (DSC) ---
 
     def _open_dsc(self):
-        """Picks a certificate, shows its details, then lets the user place the signature."""
+        """Asks how to sign - plugged-in USB token or a .pfx file - then picks
+        the certificate, shows its details, and lets the user place the signature."""
         try:
             from opal_studio import dsc_sign
         except Exception as e:
@@ -1287,6 +1288,35 @@ class PdfStudio(QWidget):
             QMessageBox.warning(self, "Signing Unavailable",
                                 "The PDF signing engine is not installed on this machine.")
             return
+        choice = QDialog(self)
+        choice.setWindowTitle("Sign with a DSC")
+        choice.setStyleSheet(INK_STYLE)
+        cl = QVBoxLayout(choice)
+        cl.addWidget(QLabel("Sign this document with:"))
+        row = QHBoxLayout()
+        token_btn = QPushButton("🔌  USB token\n(plugged-in DSC)")
+        file_btn = QPushButton("📁  Certificate file\n(.pfx / .p12)")
+        token_btn.setMinimumWidth(190)
+        file_btn.setMinimumWidth(190)
+        row.addWidget(token_btn)
+        row.addWidget(file_btn)
+        cl.addLayout(row)
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.clicked.connect(choice.reject)
+        cl.addWidget(cancel_btn)
+        picked = {"which": None}
+        token_btn.clicked.connect(lambda: (picked.__setitem__("which", "token"), choice.accept()))
+        file_btn.clicked.connect(lambda: (picked.__setitem__("which", "file"), choice.accept()))
+        if choice.exec() != QDialog.Accepted or not picked["which"]:
+            return
+        if picked["which"] == "token":
+            self._open_dsc_token()
+        else:
+            self._open_dsc_file()
+
+    def _open_dsc_file(self):
+        """The .pfx / .p12 file flow."""
+        from opal_studio import dsc_sign
         path, _ = QFileDialog.getOpenFileName(
             self, "Choose your Digital Signature Certificate",
             "", "Certificates (*.pfx *.p12 *.p7b);;All Files (*.*)")
@@ -1302,7 +1332,78 @@ class PdfStudio(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Certificate Error", str(e))
             return
+        if not self._confirm_certificate(info):
+            return
+        self.dsc_context = {"pfx": path, "password": password, "info": info}
+        self.set_tool("dsc")
+        self.status.setText("Certificate loaded - click on the page to place the signature.")
 
+    def _open_dsc_token(self):
+        """The plugged-in USB token flow (PKCS#11). The private key never
+        leaves the token; the PIN is asked for here and held in memory only."""
+        from opal_studio import dsc_sign
+        if not dsc_sign.token_available():
+            QMessageBox.warning(self, "Signing Unavailable",
+                                "Token signing needs the python-pkcs11 package, which is "
+                                "not installed on this machine.")
+            return
+        try:
+            devices, errors = dsc_sign.list_dsc_devices()
+        except Exception as e:
+            QMessageBox.critical(self, "Token Error", str(e))
+            return
+        if not devices:
+            msg = ("No DSC USB token was found.\n\nMake sure the token is plugged in "
+                   "and its driver is installed. The driver can also be pointed at "
+                   "directly with the OPAL_PKCS11_LIB environment variable.")
+            if errors:
+                msg += "\n\nDrivers tried but unusable:\n" + "\n".join(
+                    f"  {Path(k).name}: {str(v).splitlines()[0]}"
+                    for k, v in list(errors.items())[:5])
+            QMessageBox.warning(self, "No Token Found", msg)
+            return
+        if len(devices) == 1:
+            dev = devices[0]
+        else:
+            labels = [f"{d['label']} - {d['manufacturer']} {d['model']} (slot {d['slot']})"
+                      for d in devices]
+            label, ok = QInputDialog.getItem(self, "Choose Token",
+                                             "More than one token was found:", labels, 0, False)
+            if not ok:
+                return
+            dev = devices[labels.index(label)]
+        try:
+            certs = dsc_sign.inspect_token(dev["module"], int(dev["slot"]))
+        except Exception as e:
+            QMessageBox.critical(self, "Token Error", str(e))
+            return
+        if len(certs) == 1:
+            cert = certs[0]
+        else:
+            labels = [f"{c['label']} - {str(c['subject'])[:60]}" for c in certs]
+            label, ok = QInputDialog.getItem(self, "Choose Certificate",
+                                             "The token holds more than one certificate:",
+                                             labels, 0, False)
+            if not ok:
+                return
+            cert = certs[labels.index(label)]
+        pin, ok = QInputDialog.getText(self, "Token PIN",
+                                       "Enter the PIN of the USB token:",
+                                       QLineEdit.Password)
+        if not ok:
+            return
+        if not self._confirm_certificate(cert):
+            return
+        self.dsc_context = {"token": {"lib": dev["module"], "slot": int(dev["slot"]),
+                                      "cert_label": cert["label"]},
+                            "pin": pin, "info": cert}
+        self.set_tool("dsc")
+        self.status.setText("Token certificate loaded - click on the page to place the "
+                            "signature. The PIN is held in memory only, never saved.")
+
+    def _confirm_certificate(self, info: dict) -> bool:
+        """Shows the certificate details and asks the user to confirm. Works
+        for both .pfx files and token certificates (same fields)."""
         detail = QDialog(self)
         detail.setWindowTitle("Certificate Details")
         detail.setStyleSheet(INK_STYLE)
@@ -1335,18 +1436,14 @@ class PdfStudio(QWidget):
         row.addWidget(ok_btn)
         row.addWidget(cancel_btn)
         lay.addLayout(row)
-        if detail.exec() != QDialog.Accepted:
-            return
-
-        self.dsc_context = {"pfx": path, "password": password, "info": info}
-        self.set_tool("dsc")
-        self.status.setText("Certificate loaded - click on the page to place the signature.")
+        return detail.exec() == QDialog.Accepted
 
     def sign_with_dsc(self, page_index: int, point: "fitz.Point") -> Optional[str]:
         """
-        Signs the page with the loaded certificate and returns the path of the
-        signed copy (saved next to the original). Pure logic - no dialogs, so it
-        can be driven from scripts and tests as well as the UI.
+        Signs the page with the loaded certificate - .pfx file or plugged-in
+        USB token - and returns the path of the signed copy (saved next to the
+        original). Pure logic - no dialogs, so it can be driven from scripts
+        and tests as well as the UI.
         """
         ctx = getattr(self, "dsc_context", None)
         if not ctx:
@@ -1359,10 +1456,18 @@ class PdfStudio(QWidget):
         y1 = max(0.0, min(point.y, page.rect.height - 10))
         rect = (x0, max(0.0, y1 - height), x0 + width, y1)
         out = self._sibling_output("_signed.pdf")
-        dsc_sign.sign_pdf(self.file_path, out, ctx["pfx"], ctx["password"],
-                          page_no=page_index, rect=rect,
-                          reason="Approved by the signer",
-                          location="India")
+        if "token" in ctx:
+            t = ctx["token"]
+            dsc_sign.sign_pdf_token(self.file_path, out, t["lib"], ctx["pin"],
+                                    slot_no=t["slot"], cert_label=t["cert_label"],
+                                    page_no=page_index, rect=rect,
+                                    reason="Approved by the signer",
+                                    location="India")
+        else:
+            dsc_sign.sign_pdf(self.file_path, out, ctx["pfx"], ctx["password"],
+                              page_no=page_index, rect=rect,
+                              reason="Approved by the signer",
+                              location="India")
         return out
 
     def place_dsc_signature(self, page_index: int, point: "fitz.Point"):
@@ -1378,10 +1483,17 @@ class PdfStudio(QWidget):
             return
         from opal_studio import dsc_sign
         check = dsc_sign.verify_signature(out)
+        deep = dsc_sign.verify_signature_deep(out)
+        if deep.get("all_intact") and deep.get("signatures"):
+            crypto = "Cryptographic check: INTACT - the file is unmodified and covered by the signature."
+        elif deep.get("signatures"):
+            crypto = "Cryptographic check: PROBLEM - see Verify Signatures for details."
+        else:
+            crypto = "Cryptographic check: no embedded signature found."
         QMessageBox.information(
             self, "Document Signed",
             f"Signed successfully.\n\nSaved to:\n{out}\n\n"
-            f"Signature fields: {check.get('count', 0)}\n"
+            f"Signature fields: {check.get('count', 0)}\n{crypto}\n"
             f"The file is saved next to the original - nothing else to do.")
         self.status.setText(f"Signed copy saved: {Path(out).name}")
 

@@ -9,6 +9,8 @@ from PySide6.QtGui import (QIcon, QPixmap, QPainter, QColor, QBrush, QPen,
                            QLinearGradient)
 from PySide6.QtWidgets import QSystemTrayIcon, QMenu, QFileDialog, QApplication, QMessageBox
 
+from opal_studio.version import __version__
+
 
 def create_opal_icon(size: int = 64) -> QIcon:
     """The Opal mark for the system tray."""
@@ -106,7 +108,7 @@ class OpalTray(QSystemTrayIcon):
         QMessageBox.information(
             None,
             "About Opal",
-            "Opal v2.0.1\n\n"
+            f"Opal v{__version__}\n\n"
             "Every file, in every light.\n"
             "• Shift = Convert Formats\n"
             "• Alt = File Tools\n"

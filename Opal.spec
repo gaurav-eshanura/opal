@@ -20,12 +20,11 @@ DIST_NAME = os.environ.get("OPAL_DIST_NAME", "Opal")
 _binaries = []
 if not CORE_BUILD:
     if IS_WINDOWS:
-        _ffmpeg = 'assets\\bin\\ffmpeg.exe'
-    elif IS_MAC:
-        _ffmpeg = 'assets\\bin\\ffmpeg'
+        _ffmpeg = os.path.join('assets', 'bin', 'ffmpeg.exe')
     else:
-        _ffmpeg = ''
-    if _ffmpeg and os.path.isfile(_ffmpeg):
+        # macOS and Linux both use a plain "ffmpeg" binary.
+        _ffmpeg = os.path.join('assets', 'bin', 'ffmpeg')
+    if os.path.isfile(_ffmpeg):
         _binaries.append((_ffmpeg, '.'))
 
 _entry = 'opal_studio\\main.py' if IS_WINDOWS else 'opal_studio/main.py'
@@ -171,3 +170,28 @@ coll = COLLECT(
     upx_exclude=[],
     name=DIST_NAME,
 )
+
+if IS_MAC:
+    # macOS needs a real bundle. The Qt frameworks only load from inside an
+    # .app, and the bundle is what lets Finder show the right-click menu for
+    # the file types Opal handles.
+    import importlib.util
+    _spec = importlib.util.spec_from_file_location(
+        "opal_version", os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                     "opal_studio", "version.py"))
+    _version_module = importlib.util.module_from_spec(_spec)
+    _spec.loader.exec_module(_version_module)
+
+    app = BUNDLE(
+        coll,
+        name=f'{DIST_NAME}.app',
+        icon=None,
+        bundle_identifier='studio.opal.app',
+        version=_version_module.__version__,
+        info_plist={
+            'CFBundleName': 'Opal',
+            'CFBundleDisplayName': 'Opal',
+            'NSHighResolutionCapable': True,
+            'LSMinimumSystemVersion': '11.0',
+        },
+    )

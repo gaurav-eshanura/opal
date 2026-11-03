@@ -21,6 +21,8 @@ import tempfile
 import traceback
 from pathlib import Path
 
+import pytest
+
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 ROOT = Path(__file__).resolve().parent.parent
@@ -67,15 +69,16 @@ def skip(name, reason=""):
     """Records a check this environment cannot make, without failing it.
 
     A build machine with no clipboard tool and no terminal emulator is not a
-    defect in the app, so the check is reported as skipped rather than
-    failed.
+    defect in the app, so the check is reported as skipped rather than failed.
+    A skip is never a pass: the report shows it separately.
     """
     print(f"[SKIP] {name} {('- ' + str(reason)) if reason else ''}")
     SKIPPED.append(name)
     RESULTS.append({
         "name": name,
         "area": AREA.get("kind", ""),
-        "ok": True,
+        "ok": False,
+        "skipped": True,
         "detail": str(reason),
         "kind": "environment",
     })
@@ -900,6 +903,20 @@ def run_catalog(app):
 # SECTION 2 - every module in the package imports cleanly
 # ---------------------------------------------------------------------------
 
+@pytest.fixture(scope="session")
+def sandbox():
+    """The sample files the checks below open.
+
+    Run as a script, main() builds them before the checks start.  Under
+    pytest nothing had built them, so the checks were opening files that
+    were not there - and one of them walked into a modal error box that
+    could never be dismissed, which froze the whole run.
+    """
+    if not (SANDBOX / "photo.jpg").exists() or not (SANDBOX / "contract.pdf").exists():
+        setup()
+    return SANDBOX
+
+
 def test_module_imports(app):
     section("MODULES - every opal_studio module imports cleanly")
     import importlib
@@ -923,7 +940,7 @@ def test_module_imports(app):
 # SECTION 3 - every dialog and modal surface
 # ---------------------------------------------------------------------------
 
-def test_dialogs(app):
+def test_dialogs(app, sandbox):
     from PySide6.QtWidgets import QApplication, QLineEdit
 
     section("DIALOGS - every modal surface opens")
@@ -1334,13 +1351,17 @@ def test_platform_compat():
     # reveal / open / terminal - these really touch the desktop
     probe_file = PROBE_DIR / "probe.txt"
     probe_file.write_text("Opal platform probe", encoding="utf-8")
-    try:
-        ok = pc.reveal_in_file_manager(str(probe_file))
-        check("reveal_in_file_manager() opens Explorer on the file", ok is True,
-              f"returned {ok}")
-    except Exception as e:
-        check("reveal_in_file_manager() opens Explorer on the file", False,
-              f"{type(e).__name__}: {e}", "product")
+    if os.environ.get("CI"):
+        skip("reveal_in_file_manager() opens Explorer on the file",
+             "no interactive desktop on a build machine")
+    else:
+        try:
+            ok = pc.reveal_in_file_manager(str(probe_file))
+            check("reveal_in_file_manager() opens Explorer on the file", ok is True,
+                  f"returned {ok}")
+        except Exception as e:
+            check("reveal_in_file_manager() opens Explorer on the file", False,
+                  f"{type(e).__name__}: {e}", "product")
 
     # Opening a file with its default app, and opening a terminal, both start
     # an interactive program for a person to use. On a build machine there is
@@ -1394,7 +1415,7 @@ def run_cli(args, timeout=900):
     return proc
 
 
-def test_cli():
+def test_cli(sandbox):
     section("COMMAND LINE")
     cli = str(ROOT / "opal_studio" / "cli.py")
 
@@ -1452,6 +1473,17 @@ def test_cli():
         check("CLI --convert exits 0", False, f"{type(e).__name__}: {e}", "product")
 
     try:
+        # The CLI runs in its own process, and that process has to load the
+        # AI model too.  If this process is still holding a model open, the
+        # two of them fight over the memory and the child dies without a
+        # word - so the parent lets go first.
+        try:
+            from opal_studio.engines import EngineManager
+            EngineManager._rembg_sessions.clear()
+            EngineManager._esrgan_sessions.clear()
+        except Exception:
+            pass
+
         proc = run_cli(["--tool", str(SANDBOX / "portrait.jpg"), "--to", "remove_bg",
                         "--options", '{"bg_model": "u2netp"}'])
         noise = f"{proc.stdout}\n{proc.stderr}"
@@ -1541,7 +1573,8 @@ def _network_ok():
 
 
 def write_report():
-    failures = [r for r in RESULTS if not r["ok"]]
+    failures = [r for r in RESULTS if not r["ok"] and not r.get("skipped")]
+    skipped = [r for r in RESULTS if r.get("skipped")]
     product = [r for r in failures if r["kind"] == "product"]
     env = [r for r in failures if r["kind"] == "env"]
     harness = [r for r in failures if r["kind"] == "harness"]
@@ -1551,8 +1584,8 @@ def write_report():
     lines.append("")
     lines.append(f"- Generated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     lines.append(f"- Suite: `tests/test_every_feature.py`")
-    lines.append(f"- Result: **{len(PASS)} passed, {len(FAIL)} failed** "
-                 f"({len(RESULTS)} checks in total)")
+    lines.append(f"- Result: **{len(PASS)} passed, {len(FAIL)} failed, "
+                 f"{len(skipped)} skipped** ({len(RESULTS)} checks in total)")
     lines.append("")
     lines.append("The suite runs every action in `OpalEngine.get_catalog()` against real "
                  "sample files, opens every dialog and modal surface headless, exercises "
@@ -1569,7 +1602,7 @@ def write_report():
     for r in RESULTS:
         seen.setdefault(r["area"], [0, 0])
         seen[r["area"]][0] += 1
-        if not r["ok"]:
+        if not r["ok"] and not r.get("skipped"):
             seen[r["area"]][1] += 1
     for area, (total, bad) in seen.items():
         lines.append(f"| {area} | {total} ({total - bad} passed, {bad} failed) |")
@@ -1610,8 +1643,9 @@ def write_report():
         detail = r["detail"].replace("|", "\\|").replace("\n", " ")
         if len(detail) > 220:
             detail = detail[:217] + "..."
+        status = "SKIP" if r.get("skipped") else ("PASS" if r["ok"] else "FAIL")
         lines.append(f"| {i} | {r['area']} | {r['name']} | "
-                     f"{'PASS' if r['ok'] else 'FAIL'} | {detail} |")
+                     f"{status} | {detail} |")
     lines.append("")
 
     lines.append("## Failures")

@@ -54,6 +54,7 @@ class OpalApp:
         self.history_dialog = None
 
         self.current_worker = None
+        self._action_queue: list = []
         self.watch_folder_worker = None
 
         self._connect_signals()
@@ -74,6 +75,7 @@ class OpalApp:
         if self.config.get("watch_folder_enabled", True):
             self.watch_folder_worker = WatchFolderWorker(self.config.get("watch_folder_path"))
             self.watch_folder_worker.file_processed_signal.connect(self.on_watch_folder_file_processed)
+            self.watch_folder_worker.file_failed_signal.connect(self.on_watch_folder_file_failed)
             self.watch_folder_worker.start()
 
     def _on_about_to_quit(self):
@@ -120,6 +122,8 @@ class OpalApp:
                 worker.wait(1500)
             except Exception:
                 pass
+        # Drop anything still queued so no worker starts during teardown.
+        self._action_queue.clear()
         try:
             self.hotkey_mgr.unregister(self.app)
         except Exception:
@@ -139,6 +143,10 @@ class OpalApp:
     def on_watch_folder_file_processed(self, original_name: str, output_path: str, message: str):
         self.toast.show_message("Auto-Converted", message, target_path=output_path, is_error=False)
 
+    def on_watch_folder_file_failed(self, original_name: str, reason: str):
+        self.toast.show_message("Auto-Convert failed", f"{original_name} was moved to Failed/: {reason}",
+                                is_error=True)
+
     def _connect_signals(self):
         # Dashboard events
         self.dashboard.files_selected.connect(self.on_files_dropped)
@@ -147,6 +155,7 @@ class OpalApp:
         self.dashboard.history_requested.connect(self.open_history)
         self.dashboard.toggle_orb_requested.connect(self.toggle_orb)
         self.dashboard.studio_requested.connect(self.show_studio)
+        self.dashboard.feature_requested.connect(self.on_feature_requested)
 
         # Drop orb events
         self.drop_orb.files_dropped.connect(self.on_files_dropped)
@@ -254,6 +263,66 @@ class OpalApp:
         pos = QCursor.pos()
         self.radial_menu.show_for_files(file_paths, pos, initial_mode="convert")
 
+    def on_feature_requested(self, feature_key: str):
+        """A dashboard feature card was clicked - run the feature it advertises."""
+        if feature_key == "remove_bg":
+            paths = self._pick_for_feature("Choose a photo", "Images (*.png *.jpg *.jpeg *.webp *.bmp)")
+            if paths:
+                self._run_action(paths, "remove_bg")
+        elif feature_key == "pdf_studio":
+            paths = self._pick_for_feature("Choose a PDF", "PDF files (*.pdf)")
+            if paths:
+                self.studio.open_file(paths[0])
+                self.studio.show()
+                self.studio.raise_()
+                self.studio.activateWindow()
+        elif feature_key == "whatsapp":
+            paths = self._pick_for_feature(
+                "Choose photos or PDFs to make share-ready",
+                "All files (*.*)")
+            if paths:
+                action = "photo_whatsapp" if Path(paths[0]).suffix.lower() in (
+                    ".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif") else "pdf_whatsapp"
+                self._run_action(paths, action)
+        elif feature_key == "watch_folder":
+            self.open_settings()
+
+    def _pick_for_feature(self, title: str, file_filter: str) -> List[str]:
+        paths, _ = QFileDialog.getOpenFileNames(self, title, "", file_filter)
+        return list(paths)
+
+    def _run_action(self, file_paths: List[str], action_id: str):
+        """Queue one action over the given files and report the outcome."""
+        self._enqueue_action(file_paths, action_id)
+
+    def _enqueue_action(self, file_paths: List[str], action_id: str):
+        """Queue an action behind the one running, if any.
+
+        Only one conversion batch runs at a time: the AI models are the
+        heavy part, and two batches at once fight over memory and can kill
+        each other.  Starting a second action used to silently replace the
+        first; now it waits its turn."""
+        self._action_queue.append((list(file_paths), action_id))
+        running = self.current_worker is not None and self.current_worker.isRunning()
+        if not running:
+            self._start_next_action()
+        self._update_queue_status()
+
+    def _update_queue_status(self):
+        running = self.current_worker is not None and self.current_worker.isRunning()
+        self.dashboard.set_queue_status(running, len(self._action_queue))
+
+    def _start_next_action(self):
+        if not self._action_queue:
+            return
+        file_paths, action_id = self._action_queue.pop(0)
+        count = len(file_paths)
+        target_desc = Path(file_paths[0]).name if count == 1 else f"{count} files"
+        self.toast.show_message("Opal", f"Processing {target_desc}...")
+        self.current_worker = ConversionWorker(file_paths, action_id)
+        self.current_worker.finished_signal.connect(self.on_conversion_finished)
+        self.current_worker.start()
+
     def on_global_drag_detected(self, file_paths: List[str], screen_pos: QPoint, mode: str):
         self.radial_menu.show_for_files(file_paths, screen_pos, initial_mode=mode)
 
@@ -327,11 +396,7 @@ class OpalApp:
 
         count = len(file_paths)
         target_desc = Path(file_paths[0]).name if count == 1 else f"{count} files"
-        self.toast.show_message("Opal", f"Processing {target_desc}...")
-
-        self.current_worker = ConversionWorker(file_paths, action_id)
-        self.current_worker.finished_signal.connect(self.on_conversion_finished)
-        self.current_worker.start()
+        self._enqueue_action(file_paths, action_id)
 
     def on_conversion_finished(self, batch_result):
         if batch_result.succeeded > 0:
@@ -340,9 +405,21 @@ class OpalApp:
             self.toast.show_message("Conversion Complete", f"{batch_result.message}{saved_str}", target_path=first_output, is_error=False)
         else:
             self.toast.show_message("Conversion Error", batch_result.message, is_error=True)
+        # The job that just finished is done; start the next queued one.
+        self.current_worker = None
+        if self._action_queue:
+            self._start_next_action()
+        self._update_queue_status()
 
 
 def main():
+    # A packaged Opal can be asked to serve as the Office COM helper: the
+    # engine runs Word/Excel conversions in a child process so a misbehaving
+    # Office can never abort the app itself.
+    if len(sys.argv) == 3 and sys.argv[1] == "--opal-office-worker":
+        from opal_studio import office_worker
+        sys.exit(office_worker.main_with_payload(sys.argv[2]))
+
     # Command line mode: no window, just do the work and report.
     argv = sys.argv[1:]
     cli_flags = ("--convert", "--tool", "--catalog", "--info", "--list-formats", "--to")
@@ -363,27 +440,27 @@ def main():
     from opal_studio.theme import build_stylesheet
     app.setStyleSheet(build_stylesheet())
 
-    tangerine = OpalApp(app)
+    opal = OpalApp(app)
 
     # If launched with file arguments (e.g. from context menu)
     if len(sys.argv) > 1:
         args_files = [f for f in sys.argv[1:] if os.path.exists(f)]
         studio_requested = "--studio" in sys.argv
         if args_files:
-            tangerine.tray.show()
-            if studio_requested or tangerine.config.get("open_in_studio", False):
+            opal.tray.show()
+            if studio_requested or opal.config.get("open_in_studio", False):
                 for f in args_files:
-                    tangerine.studio.open_file(f)
-                tangerine.studio.show()
-                tangerine.studio.raise_()
-                tangerine.studio.activateWindow()
+                    opal.studio.open_file(f)
+                opal.studio.show()
+                opal.studio.raise_()
+                opal.studio.activateWindow()
             else:
-                tangerine.radial_menu.show_for_files(args_files, QCursor.pos(),
-                                                     initial_mode="convert")
+                opal.radial_menu.show_for_files(args_files, QCursor.pos(),
+                                                initial_mode="convert")
         else:
-            tangerine.show()
+            opal.show()
     else:
-        tangerine.show()
+        opal.show()
 
     sys.exit(app.exec())
 

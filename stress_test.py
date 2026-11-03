@@ -143,7 +143,7 @@ def run_stress_tests():
     # TEST 10: JSON Formatting
     print("\n[TEST 10] Testing JSON formatting...")
     raw_json = TEST_DIR / "sample.json"
-    raw_json.write_text('{"app":"tangerine","status":"ready","tests":[1,2,3]}', encoding="utf-8")
+    raw_json.write_text('{"app":"opal","status":"ready","tests":[1,2,3]}', encoding="utf-8")
     json_res = OpalEngine.execute_single(str(raw_json), "format_json")
     if json_res.success and Path(json_res.output_path).exists():
         print(f" -> PASS: Cleanly formatted JSON: {Path(json_res.output_path).name}")

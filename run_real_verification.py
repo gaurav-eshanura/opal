@@ -98,7 +98,7 @@ def setup_files():
 
 def run_full_suite():
     print("==================================================")
-    print("RUNNING TANGERINE LIVE ON REAL MEDIA FILES")
+    print("RUNNING OPAL LIVE ON REAL MEDIA FILES")
     print("==================================================")
 
     img_p, aud_p, vid_p, pdf_p, doc_p, json_p = setup_files()

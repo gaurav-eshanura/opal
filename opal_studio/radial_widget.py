@@ -42,7 +42,7 @@ class RadialMenuWidget(QWidget):
         self.options: List[Dict[str, str]] = []
         self.hovered_index = -1
 
-        # Brand colours: warm off-white wheel, one tangerine accent
+        # Brand colours: warm off-white wheel, one fire accent
         self.color_fire = QColor("#8A5CF6")
         self.color_fire_glow = QColor("#EE4E8A")
         self.color_dark_bg = QColor(22, 27, 42, 238)

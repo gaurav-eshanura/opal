@@ -388,19 +388,28 @@ def _corner_box(rect: "fitz.Rect", position: str, margin: int) -> "fitz.Rect":
 # ---------------------------------------------------------------------------
 
 def flatten(src: str, dst: Optional[str] = None) -> str:
+    """Bakes annotations, signatures and form fields into the page content.
+
+    PyMuPDF's Document.bake() renders every annotation and widget into the
+    page's content stream and removes the interactive object, which is what
+    "flatten" means: the result can no longer be edited or re-signed.
+    """
     doc = open_pdf(src)
     try:
-        for page in doc:
-            # Bake annotations: render each annot's appearance then remove it.
-            for annot in list(page.annots()):
-                try:
-                    page.apply_redactions.__name__  # no-op touch
-                except Exception:
-                    pass
-            try:
-                page.flatten() if hasattr(page, "flatten") else None
-            except Exception:
-                pass
+        if hasattr(doc, "bake"):
+            doc.bake(annots=True, widgets=True)
+        else:  # pragma: no cover - older PyMuPDF without bake()
+            # Fall back to rasterising each page so the annotations become pixels.
+            rendered = fitz.open()
+            for page in doc:
+                pix = page.get_pixmap(matrix=fitz.Matrix(2, 2), alpha=False)
+                new_page = rendered.new_page(width=page.rect.width,
+                                             height=page.rect.height)
+                new_page.insert_image(new_page.rect, stream=pix.tobytes("png"))
+            out = dst or _sibling(src, "_flat")
+            rendered.save(out, deflate=True)
+            rendered.close()
+            return out
         return _save_or_copy(doc, src, dst, "_flat")
     finally:
         if not doc.is_closed:
@@ -745,3 +754,45 @@ def compress_pdf(src: str, dst: Optional[str] = None, image_quality: int = 60,
     finally:
         if not doc.is_closed:
             doc.close()
+
+
+# ---------------------------------------------------------------------------
+# Signature fields: find an existing EMPTY signature field to sign into
+# ---------------------------------------------------------------------------
+
+def signed_field_names(src: str) -> set:
+    """Names of signature fields that already carry a CMS signature.
+
+    PyMuPDF does not expose the signature value reliably, so pyHanko's reader
+    is the source of truth here.
+    """
+    try:
+        from pyhanko.pdf_utils.reader import PdfFileReader
+        with open(src, "rb") as fh:
+            reader = PdfFileReader(fh)
+            return {s.field_name for s in reader.embedded_signatures}
+    except Exception:
+        return set()
+
+
+def find_empty_sig_field(src: str, page_no: Optional[int] = None) -> Optional[Tuple[int, str]]:
+    """(page_index, field_name) of an existing UNSIGNED signature field, the
+    one on page_no preferred; None when there is none. Forms such as INC-33
+    ship a prepared empty signature field - Acrobat signs into it, and so do we.
+    """
+    if fitz is None:
+        return None
+    signed = signed_field_names(src)
+    doc = fitz.open(str(src))
+    try:
+        fallback = None
+        for i in range(len(doc)):
+            for w in (doc[i].widgets() or []):
+                if w.field_type == 6 and w.field_name not in signed:  # 6 == signature
+                    if page_no is not None and i == page_no:
+                        return (i, w.field_name)
+                    if fallback is None:
+                        fallback = (i, w.field_name)
+        return fallback
+    finally:
+        doc.close()

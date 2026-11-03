@@ -8,6 +8,9 @@ website/
 ├── index.html                     # the whole site (one page)
 ├── css/styles.css                 # design system + all styles
 ├── js/main.js                     # language switch, reveal, tour tabs, FAQ, copy
+├── firebase.json                  # Firebase Hosting rules for this folder
+├── .firebaserc                    # which Firebase project to publish to
+├── downloads/                     # release zips (built, never committed)
 └── assets/
     ├── brand/                     # logo, favicon, app icon sizes, OG image
     └── screenshots/               # real captures of the app (regenerate them!)
@@ -30,14 +33,39 @@ Any static host works — there is no build step.
 |---|---|
 | **Netlify / Cloudflare Pages** | drag the `website/` folder onto the dashboard, or connect the repo and set the publish directory to `website` |
 | **GitHub Pages** | push `website/` to a `gh-pages` branch (or `/docs`) and enable Pages in the repo settings |
-| **Firebase Hosting** | `firebase init hosting` → public directory `website` → `firebase deploy` (use a **separate** Firebase project; the repo root already hosts the Bajrangi site) |
+| **Firebase Hosting** | `firebase deploy --only hosting` from the `website/` folder (the config lives here: `website/firebase.json` and `website/.firebaserc`) |
 | **Any web server** | copy the folder to the document root |
 
-Before you publish, point the download button at the real installer. Right now it
-links to `../dist/Opal-v2.0.0-Windows-x64.zip` (core, 105 MB) and
-`../dist/Opal-Full-v2.0.0-Windows-x64.zip` (with the AI engines, 247 MB),
-which only work from a checkout — on a live site, change them to your hosted
-file URLs in `index.html` (search for `dist/Opal`).
+> **Use your own Firebase project.** The repository root's `firebase.json`
+> belongs to a different site (`bajrangi-disposables`) — do not publish Opal
+> through it. `website/.firebaserc` names a placeholder project
+> (`opal-studio-site`); change it to the real project id before the first
+> deploy, or run `firebase use --add` in the `website/` folder.
+
+## The download button
+
+The two buttons in `index.html` point at files inside this folder:
+
+```
+downloads/Opal-v2.0.1-Windows-x64.zip        core    (~98 MB)
+downloads/Opal-Full-v2.0.1-Windows-x64.zip   full    (~222 MB)
+```
+
+Those archives are **built, not committed** — `website/downloads/` is in
+`.gitignore`. The build produces them:
+
+```powershell
+python build_release.py            # full build  -> Opal-Full-v2.0.1-<platform>.zip
+python build_release.py --core     # core build  -> Opal-v2.0.1-<platform>.zip
+```
+
+`build_release.py` writes each zip into `dist/` and copies it into
+`website/downloads/`, so after a build the links on the site work as they
+are. If you host the files somewhere else (a CDN, an S3 bucket), change the
+two `href`s in `index.html` to those URLs and the buttons keep working.
+
+To publish a release: build both variants, then deploy the folder with the
+downloads still in it.
 
 ## Editing the copy
 
@@ -92,9 +120,13 @@ land here knowing this is a different thing.
 
 ## Checklist before launch
 
-- [ ] Point the download button at a hosted installer
+- [x] Download buttons point at real archives (`downloads/Opal-v2.0.1-*.zip`)
+- [ ] Run `python build_release.py` and `python build_release.py --core`, then
+      publish the folder with `website/downloads/` still in it
+- [ ] Set the real Firebase project id in `website/.firebaserc`
 - [ ] Swap the placeholder "Opal" copy for your final wording
 - [ ] Add a privacy policy page and a contact/press-kit page
 - [ ] Write the OG image (`assets/brand/icon-512.png` is the fallback now)
 - [ ] Check the site on a phone — the layout is responsive but worth a look
-- [ ] Put the real version number in the footer
+- [x] Version number in the footer (keep it in step with
+      `opal_studio/version.py`, which the app and the build both read)

@@ -450,13 +450,26 @@ class EngineManager:
 
     @classmethod
     def ffmpeg_bin(cls) -> Optional[str]:
+        # The binary is named for the platform: "ffmpeg.exe" on Windows, plain
+        # "ffmpeg" on macOS and Linux - and the build puts it next to the
+        # executable, which is the first place worth looking.
         exe_dir = Path(sys.executable).parent
-        for candidate in (exe_dir / "ffmpeg.exe", exe_dir / "_internal" / "ffmpeg.exe"):
+        candidates = []
+        for name in ("ffmpeg.exe", "ffmpeg"):
+            candidates.append(exe_dir / name)
+            candidates.append(exe_dir / "_internal" / name)
+            # Inside a macOS .app the binaries sit next to the frameworks.
+            candidates.append(exe_dir.parent / "Frameworks" / name)
+        # A build that is lying around in dist/ (what a developer tests from).
+        dist_root = Path(__file__).resolve().parent.parent / "dist"
+        if dist_root.is_dir():
+            for item in dist_root.iterdir():
+                candidates.append(item / "ffmpeg.exe")
+                candidates.append(item / "ffmpeg")
+                candidates.append(item / "Contents" / "MacOS" / "ffmpeg")
+        for candidate in candidates:
             if candidate.exists():
                 return str(candidate)
-        dist_cand = Path(__file__).resolve().parent.parent / "dist" / "Opal" / "ffmpeg.exe"
-        if dist_cand.exists():
-            return str(dist_cand)
         # An engine pack installed on demand lives in the user data folder.
         try:
             from opal_studio.engine_packs import engines_dir
@@ -483,12 +496,22 @@ class EngineManager:
 
     @classmethod
     def ffprobe_bin(cls) -> Optional[str]:
-        for base in (Path(sys.executable).parent,
-                     Path(__file__).resolve().parent.parent / "dist" / "Opal",
+        exe_dir = Path(sys.executable).parent
+        candidates = []
+        for name in ("ffprobe.exe", "ffprobe"):
+            candidates.append(exe_dir / name)
+            candidates.append(exe_dir / "_internal" / name)
+            candidates.append(exe_dir.parent / "Frameworks" / name)
+        for base in (Path(__file__).resolve().parent.parent / "dist",
                      Path(__file__).resolve().parent.parent / "ffmpeg_backup"):
-            cand = base / "ffprobe.exe"
-            if cand.exists():
-                return str(cand)
+            if base.is_dir():
+                for item in base.iterdir():
+                    candidates.append(item / "ffprobe.exe")
+                    candidates.append(item / "ffprobe")
+                    candidates.append(item / "Contents" / "MacOS" / "ffprobe")
+        for candidate in candidates:
+            if candidate.exists():
+                return str(candidate)
         return shutil.which("ffprobe")
 
     @classmethod
