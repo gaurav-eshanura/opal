@@ -10,6 +10,7 @@ never written to disk, logged, or put on a command line.
 """
 
 import os
+import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -72,7 +73,9 @@ def candidate_modules() -> List[str]:
 
     env = os.environ.get("OPAL_PKCS11_LIB")
     if env:
-        add(env)
+        # An explicit driver path is an override, not a hint: use exactly it
+        # and load no other vendor module into this process.
+        return [env]
 
     # Windows registers each smart card's PKCS#11 module here.
     try:
@@ -97,8 +100,14 @@ def candidate_modules() -> List[str]:
     except Exception:
         pass
 
-    for system_dir in (os.environ.get("SystemRoot", r"C:\Windows") + r"\System32",
-                       os.environ.get("SystemRoot", r"C:\Windows") + r"\SysWOW64"):
+    # SysWOW64 holds the 32-bit copies of every DLL; loading one into a 64-bit
+    # process is a hard crash, not a catchable error, so only scan it when we
+    # really are a 32-bit interpreter.
+    _sysroot = os.environ.get("SystemRoot", r"C:\Windows")
+    _system_dirs = [_sysroot + r"\System32"]
+    if sys.maxsize <= 2 ** 32:
+        _system_dirs.append(_sysroot + r"\SysWOW64")
+    for system_dir in _system_dirs:
         try:
             for name in os.listdir(system_dir):
                 if _looks_like_pkcs11(name):

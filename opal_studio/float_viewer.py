@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushB
                                QWidget, QFileDialog, QMessageBox, QListWidget, QListWidgetItem,
                                QGridLayout, QScrollArea, QFrame, QApplication, QSizePolicy)
 
+from opal_studio.theme import BG_RAISED, RADIUS, ACCENT, ACCENT_HI, TEXT_DIM
 from opal_studio.viewer_pdf import PdfStudio
 from opal_studio.viewer_image import ImageLab
 from opal_studio.viewer_doc import DocStudio
@@ -42,9 +43,9 @@ def _chrome_btn(text: str, tip: str = "", size: int = 26) -> QPushButton:
     b.setFixedSize(size, size)
     b.setCursor(Qt.PointingHandCursor)
     b.setStyleSheet(f"""
-        QPushButton {{ background: transparent; color: #A8B2C8; border: none;
+        QPushButton {{ background: transparent; color: {TEXT_DIM}; border: none;
                        border-radius: {size // 2}px; font-size: 12px; font-weight: 700; }}
-        QPushButton:hover {{ background: rgba(108,99,255,0.16); color: #A79FFF; }}
+        QPushButton:hover {{ background: rgba(108,99,255,0.16); color: {ACCENT_HI}; }}
     """)
     return b
 
@@ -210,10 +211,10 @@ class FloatStudio(QWidget):
         bar.addWidget(self.btn_pin)
         self.btn_opacity = _chrome_btn("100%", "Fade the window", 52)
         self.btn_opacity.setIcon(opacity_icon(18))
-        self.btn_opacity.setStyleSheet("""
-            QPushButton { background: transparent; color: #A8B2C8; border: none;
-                          border-radius: 15px; font-size: 11px; font-weight: 700; padding-right: 10px; }
-            QPushButton:hover { background: rgba(108,99,255,0.16); color: #A79FFF; }
+        self.btn_opacity.setStyleSheet(f"""
+            QPushButton {{ background: transparent; color: {TEXT_DIM}; border: none;
+                          border-radius: {RADIUS}px; font-size: 11px; font-weight: 700; padding-right: 10px; }}
+            QPushButton:hover {{ background: rgba(108,99,255,0.16); color: {ACCENT_HI}; }}
         """)
         self.btn_opacity.clicked.connect(self._toggle_opacity)
         bar.addWidget(self.btn_opacity)
@@ -227,9 +228,9 @@ class FloatStudio(QWidget):
         bar.addWidget(self.btn_max)
         self.btn_close = _chrome_btn("", "Close the studio", 30)
         self.btn_close.setIcon(close_icon(18, "#EDF1FA"))
-        self.btn_close.setStyleSheet("""
-            QPushButton { background: transparent; border: none; border-radius: 15px; }
-            QPushButton:hover { background: #E5484D; }
+        self.btn_close.setStyleSheet(f"""
+            QPushButton {{ background: transparent; border: none; border-radius: {RADIUS}px; }}
+            QPushButton:hover {{ background: #E5484D; }}
         """)
         self.btn_close.clicked.connect(self.close)
         bar.addWidget(self.btn_close)
@@ -240,13 +241,13 @@ class FloatStudio(QWidget):
         self.tabs.setTabsClosable(True)
         self.tabs.setMovable(True)
         self.tabs.setDocumentMode(True)
-        self.tabs.setStyleSheet("""
-            QTabWidget::pane { border: 1px solid rgba(255,255,255,0.10); border-radius: 12px; background: #101625; }
-            QTabBar::tab { background: rgba(255,255,255,0.05); color: #A8B2C8; padding: 7px 14px; margin-right: 2px;
-                           border-top-left-radius: 10px; border-top-right-radius: 10px; font-size: 11px; }
-            QTabBar::tab:selected { background: #6C63FF; color: #FFFFFF; }
-            QTabBar::tab:hover { color: #EDF1FA; }
-            QTabBar::close-button { subcontrol-position: right; }
+        self.tabs.setStyleSheet(f"""
+            QTabWidget::pane {{ border: 1px solid rgba(255,255,255,0.10); border-radius: {RADIUS}px; background: {BG_RAISED}; }}
+            QTabBar::tab {{ background: rgba(255,255,255,0.05); color: {TEXT_DIM}; padding: 7px 14px; margin-right: 2px;
+                           border-top-left-radius: 8px; border-top-right-radius: 8px; font-size: 11px; }}
+            QTabBar::tab:selected {{ background: {ACCENT}; color: #FFFFFF; }}
+            QTabBar::tab:hover {{ color: #EDF1FA; }}
+            QTabBar::close-button {{ subcontrol-position: right; }}
         """)
         self.tabs.tabCloseRequested.connect(self._close_tab)
         self.tabs.currentChanged.connect(self._tab_changed)
@@ -356,7 +357,7 @@ class FloatStudio(QWidget):
             self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
         else:
             self.setWindowFlags(self.windowFlags() & ~Qt.WindowStaysOnTopHint)
-        self.btn_pin.setIcon(pin_icon(18, "#FF9A3C" if self.is_pinned else "#727E96"))
+        self.btn_pin.setIcon(pin_icon(18, ACCENT_HI if self.is_pinned else TEXT_DIM))
         self.show()
         self._apply_ghost()
 
@@ -374,7 +375,7 @@ class FloatStudio(QWidget):
         """Click-through mode: mouse clicks reach the window underneath."""
         from opal_studio.icons import ghost_icon
         self.ghost_mode = not self.ghost_mode
-        self.btn_ghost.setIcon(ghost_icon(18, "#FF9A3C" if self.ghost_mode else "#727E96"))
+        self.btn_ghost.setIcon(ghost_icon(18, ACCENT_HI if self.ghost_mode else TEXT_DIM))
         self._apply_ghost()
         self.info_label.setText("Ghost mode: clicks pass through" if self.ghost_mode else "")
 

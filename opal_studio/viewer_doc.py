@@ -26,6 +26,8 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushB
                                QListWidget, QListWidgetItem, QStackedWidget, QTextBrowser)
 
 from opal_studio.safepath import safe_path
+from opal_studio.theme import (BG_SUNK, RADIUS, ACCENT, ACCENT_HI, ACCENT_DEEP,
+                              TEXT_DIM)
 
 CITRUS = QColor(255, 122, 24)
 
@@ -43,12 +45,12 @@ def _btn(text: str, tip: str = "") -> QPushButton:
     b = QPushButton(text)
     b.setToolTip(tip or text)
     b.setCursor(Qt.PointingHandCursor)
-    b.setStyleSheet("""
-        QPushButton { background: rgba(255,255,255,0.05); color: #EDF1FA; border: 1px solid rgba(255,255,255,0.16);
-                      border-radius: 10px; padding: 5px 11px; font-size: 11px; font-weight: 600; }
-        QPushButton:hover { background: #6C63FF; color: #FFFFFF; border-color: #8A83FF; }
-        QPushButton:pressed { background: #D55223; color: #FFFFFF; }
-        QPushButton:disabled { background: #101625; color: rgba(237,241,250,0.28); border-color: rgba(255,255,255,0.09); }
+    b.setStyleSheet(f"""
+        QPushButton {{ background: rgba(255,255,255,0.05); color: #EDF1FA; border: 1px solid rgba(255,255,255,0.16);
+                      border-radius: {RADIUS}px; padding: 5px 11px; font-size: 11px; font-weight: 600; }}
+        QPushButton:hover {{ background: {ACCENT}; color: #FFFFFF; border-color: {ACCENT_HI}; }}
+        QPushButton:pressed {{ background: {ACCENT_DEEP}; color: #FFFFFF; }}
+        QPushButton:disabled {{ background: {BG_SUNK}; color: rgba(237,241,250,0.28); border-color: rgba(255,255,255,0.09); }}
     """)
     return b
 
@@ -88,9 +90,9 @@ class DocStudio(QWidget):
         self.find_edit = QLineEdit()
         self.find_edit.setPlaceholderText("🔍 Find in document...")
         self.find_edit.setFixedWidth(240)
-        self.find_edit.setStyleSheet("QLineEdit { background:rgba(255,255,255,0.05); color:#EDF1FA; "
-                                     "border:1px solid rgba(255,255,255,0.16); border-radius:10px; padding:4px 8px; }"
-                                     "QLineEdit::placeholder { color:#727E96; }")
+        self.find_edit.setStyleSheet(f"QLineEdit {{ background:rgba(255,255,255,0.05); color:#EDF1FA; "
+                                     f"border:1px solid rgba(255,255,255,0.16); border-radius:{RADIUS}px; padding:6px 10px; }}"
+                                     f"QLineEdit::placeholder {{ color:{TEXT_DIM}; }}")
         self.find_edit.textChanged.connect(self._find)
         header.addWidget(self.find_edit)
 
@@ -160,12 +162,12 @@ class DocStudio(QWidget):
         lay.setContentsMargins(0, 0, 0, 0)
         self.table = QTableWidget()
         self.table.setAlternatingRowColors(True)
-        self.table.setStyleSheet("QTableWidget { background:rgba(255,255,255,0.05); color:#EDF1FA; "
-                                  "border:1px solid rgba(255,255,255,0.10); gridline-color:rgba(255,255,255,0.10); "
-                                  "alternate-background-color:#FAFAF8; }"
-                                  "QHeaderView::section { background:rgba(108,99,255,0.18); color:#A79FFF; "
-                                  "border:none; border-bottom:1px solid rgba(255,255,255,0.10); padding:6px; }"
-                                  "QTableWidget::item { padding:4px; }")
+        self.table.setStyleSheet(f"QTableWidget {{ background:rgba(255,255,255,0.05); color:#EDF1FA; "
+                                  f"border:1px solid rgba(255,255,255,0.10); border-radius:{RADIUS}px; gridline-color:rgba(255,255,255,0.10); "
+                                  f"alternate-background-color:rgba(255,255,255,0.03); }}"
+                                  f"QHeaderView::section {{ background:rgba(108,99,255,0.18); color:{ACCENT_HI}; "
+                                  f"border:none; border-bottom:1px solid rgba(255,255,255,0.10); padding:6px; }}"
+                                  f"QTableWidget::item {{ padding:4px; }}")
         lay.addWidget(self.table, 1)
         self.stack.addWidget(w)
 
@@ -183,8 +185,8 @@ class DocStudio(QWidget):
         split.addWidget(self.tree)
         self.tree_json = QTextEdit()
         self.tree_json.setReadOnly(True)
-        self.tree_json.setStyleSheet("QTextEdit { background:rgba(255,255,255,0.05); color:#EDF1FA; "
-                                      "border:1px solid rgba(255,255,255,0.10); font-family:Consolas; }")
+        self.tree_json.setStyleSheet(f"QTextEdit {{ background:rgba(255,255,255,0.05); color:#EDF1FA; "
+                                      f"border:1px solid rgba(255,255,255,0.10); border-radius:{RADIUS}px; padding:6px; font-family:Consolas; }}")
         split.addWidget(self.tree_json)
         split.setSizes([420, 420])
         lay.addWidget(split)

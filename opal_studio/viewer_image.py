@@ -27,20 +27,23 @@ try:
 except ImportError:
     fitz = None
 
+from opal_studio.theme import (BG_SUNK, RADIUS, RADIUS_LARGE, ACCENT, ACCENT_HI,
+                              ACCENT_SOFT, TEXT_DIM)
+
 CITRUS = QColor(255, 122, 24)
-INK_STYLE = """
-    QDialog, QWidget { background-color: rgba(255,255,255,0.05); color: #EDF1FA; }
-    QPushButton { background-color: rgba(255,255,255,0.05); color: #EDF1FA; border: 1px solid rgba(255,255,255,0.16);
-                  border-radius: 10px; padding: 6px 14px; font-weight: 600; }
-    QPushButton:hover { background-color: #6C63FF; color: #FFFFFF; border-color: #8A83FF; }
-    QPushButton:disabled { background-color: #101625; color: rgba(237,241,250,0.28); border-color: rgba(255,255,255,0.09); }
-    QLineEdit, QComboBox, QSpinBox { background: rgba(255,255,255,0.05); color: #EDF1FA;
-                  border: 1px solid rgba(255,255,255,0.16); border-radius: 10px; padding: 5px; }
-    QLabel { color: #EDF1FA; }
-    QGroupBox { border: 1px solid rgba(255,255,255,0.10); border-radius: 12px; margin-top: 10px;
-                padding-top: 10px; font-weight: 600; color: #A79FFF; }
-    QSlider::groove:horizontal { background: rgba(255,255,255,0.05); height: 4px; border-radius: 2px; }
-    QSlider::handle:horizontal { background: #6C63FF; width: 14px; margin: -5px 0; border-radius: 7px; }
+INK_STYLE = f"""
+    QDialog, QWidget {{ background-color: rgba(255,255,255,0.05); color: #EDF1FA; }}
+    QPushButton {{ background-color: rgba(255,255,255,0.05); color: #EDF1FA; border: 1px solid rgba(255,255,255,0.16);
+                  border-radius: {RADIUS}px; padding: 6px 14px; font-weight: 600; }}
+    QPushButton:hover {{ background-color: {ACCENT}; color: #FFFFFF; border-color: {ACCENT_HI}; }}
+    QPushButton:disabled {{ background-color: {BG_SUNK}; color: rgba(237,241,250,0.28); border-color: rgba(255,255,255,0.09); }}
+    QLineEdit, QComboBox, QSpinBox {{ background: rgba(255,255,255,0.05); color: #EDF1FA;
+                  border: 1px solid rgba(255,255,255,0.16); border-radius: {RADIUS}px; padding: 5px; }}
+    QLabel {{ color: #EDF1FA; }}
+    QGroupBox {{ border: 1px solid rgba(255,255,255,0.10); border-radius: {RADIUS}px; margin-top: 10px;
+                padding-top: 10px; font-weight: 600; color: {ACCENT_HI}; }}
+    QSlider::groove:horizontal {{ background: rgba(255,255,255,0.05); height: 4px; border-radius: 2px; }}
+    QSlider::handle:horizontal {{ background: {ACCENT}; width: 14px; margin: -5px 0; border-radius: 7px; }}
 """
 
 
@@ -50,14 +53,14 @@ def _tool_btn(text: str, tooltip: str = "", checkable: bool = False) -> QPushBut
     btn.setCheckable(checkable)
     btn.setCursor(Qt.PointingHandCursor)
     btn.setMinimumHeight(32)
-    btn.setStyleSheet("""
-        QPushButton { background: transparent; color: #A8B2C8; border: 1px solid transparent;
-                      border-radius: 10px; padding: 7px 12px; font-size: 12px; font-weight: 500;
-                      text-align: left; }
-        QPushButton:hover { background: rgba(40,43,41,0.05); color: #EDF1FA; }
-        QPushButton:checked { background: rgba(108,99,255,0.18); color: #C9C4FF;
-                              border-color: rgba(255, 82, 0, 0.35); font-weight: 700; }
-        QPushButton:disabled { color: #AEB4AC; }
+    btn.setStyleSheet(f"""
+        QPushButton {{ background: transparent; color: {TEXT_DIM}; border: 1px solid transparent;
+                      border-radius: {RADIUS}px; padding: 7px 12px; font-size: 12px; font-weight: 500;
+                      text-align: left; }}
+        QPushButton:hover {{ background: rgba(255,255,255,0.06); color: #EDF1FA; }}
+        QPushButton:checked {{ background: {ACCENT_SOFT}; color: #C9C4FF;
+                              border-color: rgba(138,131,255,0.50); font-weight: 700; }}
+        QPushButton:disabled {{ color: rgba(168,178,200,0.40); }}
     """)
     return btn
 
@@ -67,12 +70,12 @@ def _chip_btn(text: str, tooltip: str = "") -> QPushButton:
     btn = QPushButton(text)
     btn.setToolTip(tooltip or text)
     btn.setCursor(Qt.PointingHandCursor)
-    btn.setMinimumHeight(28)
-    btn.setStyleSheet("""
-        QPushButton { background: rgba(255,255,255,0.05); color: #EDF1FA; border: 1px solid rgba(255,255,255,0.13);
-                      border-radius: 10px; padding: 5px 12px; font-size: 11.5px; font-weight: 600; }
-        QPushButton:hover { background: rgba(255,255,255,0.05); color: #C9C4FF; border-color: rgba(255,82,0,0.5); }
-        QPushButton:pressed { background: rgba(255,255,255,0.05); }
+    btn.setMinimumHeight(32)
+    btn.setStyleSheet(f"""
+        QPushButton {{ background: rgba(255,255,255,0.05); color: #EDF1FA; border: 1px solid rgba(255,255,255,0.13);
+                      border-radius: {RADIUS}px; padding: 5px 12px; font-size: 11.5px; font-weight: 600; }}
+        QPushButton:hover {{ background: rgba(255,255,255,0.08); color: #C9C4FF; border-color: rgba(138,131,255,0.50); }}
+        QPushButton:pressed {{ background: rgba(255,255,255,0.10); }}
     """)
     return btn
 
@@ -161,8 +164,8 @@ class ImageCanvas(QWidget):
         self.compare_split: Optional[float] = None  # 0..1 before/after divider
         self.setMinimumSize(400, 300)
         self.setMouseTracking(True)
-        self.setStyleSheet("background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10); "
-                           "border-radius: 14px;")
+        self.setStyleSheet(f"background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10); "
+                           f"border-radius: {RADIUS_LARGE}px;")
 
     def set_image(self, image: QImage):
         self.image = image
@@ -200,7 +203,7 @@ class ImageCanvas(QWidget):
         painter.fillRect(self.rect(), stage)
         painter.setPen(QPen(QColor(255, 255, 255, 26)))
         painter.setBrush(Qt.NoBrush)
-        painter.drawRoundedRect(self.rect().adjusted(1, 1, -1, -1), 14, 14)
+        painter.drawRoundedRect(self.rect().adjusted(1, 1, -1, -1), RADIUS_LARGE, RADIUS_LARGE)
 
         if not self.image:
             painter.setPen(QPen(QColor(140, 144, 164)))
@@ -350,15 +353,15 @@ class ImageLab(QWidget):
         self.quick_remove.setMinimumHeight(64)
         self.quick_remove.setProperty("accent", "true")
         self.quick_remove.setCursor(Qt.PointingHandCursor)
-        self.quick_remove.setStyleSheet("""
-            QPushButton { background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
+        self.quick_remove.setStyleSheet(f"""
+            QPushButton {{ background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
                                                     stop: 0 #8A5CF6, stop: 0.55 #EE4E8A, stop: 1 #FF9A3C);
                           color: #FFFFFF; border: none;
-                          border-radius: 14px; font-size: 12.5px; font-weight: 800;
-                          line-height: 118%; padding: 8px 6px; }
-            QPushButton:hover { background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
-                                                          stop: 0 #9B7BFF, stop: 0.55 #FF6BA0, stop: 1 #FFB35C); }
-            QPushButton:disabled { background: rgba(0,0,0,0.22); color: #AEB4AC; }
+                          border-radius: {RADIUS_LARGE}px; font-size: 12.5px; font-weight: 800;
+                          line-height: 118%; padding: 8px 6px; }}
+            QPushButton:hover {{ background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
+                                                          stop: 0 #9B7BFF, stop: 0.55 #FF6BA0, stop: 1 #FFB35C); }}
+            QPushButton:disabled {{ background: rgba(0,0,0,0.22); color: #AEB4AC; }}
         """)
         self.quick_remove.clicked.connect(self._quick_remove_background)
         rail_lay.addWidget(self.quick_remove)
@@ -507,7 +510,7 @@ class ImageLab(QWidget):
                 "QPushButton { background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,"
                 " stop: 0 #8A5CF6, stop: 0.55 #EE4E8A, stop: 1 #FF9A3C);"
                 " color: #fff; border: none;"
-                " border-radius: 10px; padding: 8px 16px; font-weight: 700; }"
+                f" border-radius: {RADIUS}px; padding: 8px 16px; font-weight: 700; }}"
                 "QPushButton:hover { background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,"
                 " stop: 0 #9B7BFF, stop: 0.55 #FF6BA0, stop: 1 #FFB35C); }"
                 "QPushButton:disabled { background: rgba(255,255,255,0.05); color: rgba(237,241,250,0.28); }")
@@ -812,9 +815,9 @@ class ImageLab(QWidget):
         self.options_lay.addWidget(QLabel("Hidden camera, device and GPS data:"))
         self.exif_view = QTextEdit()
         self.exif_view.setReadOnly(True)
-        self.exif_view.setStyleSheet("QTextEdit { background:#101625; color:#EDF1FA; "
-                                     "border:1px solid rgba(255,255,255,0.10); border-radius:10px; padding:6px; "
-                                     "font-family: Consolas; font-size: 10px; }")
+        self.exif_view.setStyleSheet(f"QTextEdit {{ background:{BG_SUNK}; color:#EDF1FA; "
+                                     f"border:1px solid rgba(255,255,255,0.10); border-radius:{RADIUS}px; padding:6px; "
+                                     f"font-family: Consolas; font-size: 10px; }}")
         self.options_lay.addWidget(self.exif_view)
         strip = _tool_btn("🧹 Strip All Metadata")
         strip.clicked.connect(self._strip_metadata)

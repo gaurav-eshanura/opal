@@ -21,6 +21,8 @@ from PySide6.QtWidgets import (
 )
 
 from opal_studio.config import ConfigManager
+from opal_studio.theme import (BG, BG_SUNK, SURFACE, TEXT_DIM, ACCENT_HI,
+                              ACCENT_WASH, LEAF, LEAF_SOFT, RADIUS, RADIUS_LARGE)
 from opal_studio.tray import create_opal_icon
 
 
@@ -125,7 +127,7 @@ class DashboardDropZone(QFrame):
         painter.drawText(QRectF(0, cy + 34, w, 24), Qt.AlignCenter, label_text)
 
         painter.setFont(QFont("Segoe UI", 9))
-        painter.setPen(QPen(QColor("#727E96")))
+        painter.setPen(QPen(QColor(TEXT_DIM)))
         sub_text = ("Hold Shift to convert  •  Alt for tools  •  Ctrl for actions")
         painter.drawText(QRectF(0, cy + 60, w, 20), Qt.AlignCenter, sub_text)
 
@@ -147,51 +149,53 @@ class OpalDashboard(QWidget):
         self.resize(680, 560)
         self.setMinimumSize(620, 520)
 
-        self.setStyleSheet("""
-            QWidget {
-                background-color: #101625;
+        self.setStyleSheet(f"""
+            QWidget {{
+                background-color: {BG};
                 color: #EDF1FA;
                 font-family: 'Segoe UI Variable Text', 'Segoe UI', sans-serif;
-            }
-            QPushButton {
+            }}
+            QPushButton {{
                 background-color: rgba(255,255,255,0.05);
                 color: #EDF1FA;
                 border: 1px solid rgba(255,255,255,0.16);
-                border-radius: 12px;
-                padding: 10px 18px;
+                border-radius: {RADIUS}px;
+                padding: 8px 16px;
+                min-height: 34px;
                 font-weight: 600;
-                font-size: 11px;
-            }
-            QPushButton:hover {
-                background-color: rgba(255,255,255,0.05);
-                border-color: #6C63FF;
+                font-size: 11.5px;
+            }}
+            QPushButton:hover {{
+                background-color: rgba(255,255,255,0.08);
+                border-color: {ACCENT_HI};
                 color: #C9C4FF;
-            }
-            QPushButton#primaryBtn {
+            }}
+            QPushButton#primaryBtn {{
                 background-color: #6C63FF;
                 border: 1px solid #6C63FF;
                 color: #FFFFFF;
-                font-size: 12px;
-                padding: 12px 22px;
-            }
-            QPushButton#primaryBtn:hover {
+                font-size: 11.5px;
+                padding: 8px 18px;
+                min-height: 34px;
+            }}
+            QPushButton#primaryBtn:hover {{
                 background-color: #8A83FF;
-            }
-            QCheckBox {
+            }}
+            QCheckBox {{
                 font-size: 11px;
-                color: #A8B2C8;
-            }
-            QCheckBox::indicator {
+                color: {TEXT_DIM};
+            }}
+            QCheckBox::indicator {{
                 width: 16px;
                 height: 16px;
                 border-radius: 4px;
-                border: 1px solid rgba(40,43,41,0.20);
+                border: 1px solid rgba(255,255,255,0.16);
                 background-color: rgba(255,255,255,0.05);
-            }
-            QCheckBox::indicator:checked {
+            }}
+            QCheckBox::indicator:checked {{
                 background-color: #6C63FF;
                 border-color: #6C63FF;
-            }
+            }}
         """)
 
         self._setup_ui()
@@ -223,11 +227,11 @@ class OpalDashboard(QWidget):
 
         self.status_pill = QLabel("Active & Running")
         self.status_pill.setFont(QFont("Segoe UI", 8, QFont.Bold))
-        self.status_pill.setStyleSheet("""
-            background-color: rgba(47, 158, 99, 0.10);
-            color: #2F7D52;
-            border: 1px solid rgba(47, 158, 99, 0.30);
-            border-radius: 10px;
+        self.status_pill.setStyleSheet(f"""
+            background-color: {LEAF_SOFT};
+            color: {LEAF};
+            border: 1px solid rgba(55, 201, 138, 0.35);
+            border-radius: 999px;
             padding: 3px 10px;
         """)
         title_row.addWidget(self.status_pill)
@@ -236,7 +240,7 @@ class OpalDashboard(QWidget):
 
         sub_label = QLabel("Convert, edit and sign files on your own computer — nothing is ever uploaded.")
         sub_label.setFont(QFont("Segoe UI", 9))
-        sub_label.setStyleSheet("color: #727E96;")
+        sub_label.setStyleSheet(f"color: {TEXT_DIM};")
         title_box.addWidget(sub_label)
 
         header.addLayout(title_box)
@@ -278,14 +282,15 @@ class OpalDashboard(QWidget):
         studio_btn = QPushButton("Open Floating Studio")
         studio_btn.setToolTip("PDF editor, AI image lab, media player and document viewer")
         studio_btn.setProperty("accent", "true")
-        studio_btn.setStyleSheet("""
-            QPushButton { background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
+        studio_btn.setStyleSheet(f"""
+            QPushButton {{ background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
                                                     stop: 0 #8A5CF6, stop: 0.55 #EE4E8A, stop: 1 #FF9A3C);
                           color: #FFFFFF; border: none;
-                          border-radius: 12px; padding: 9px 20px;
-                          font-size: 12px; font-weight: 700; }
-            QPushButton:hover { background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
-                                                          stop: 0 #9B7BFF, stop: 0.55 #FF6BA0, stop: 1 #FFB35C); }
+                          border-radius: {RADIUS}px; padding: 8px 18px;
+                          min-height: 34px;
+                          font-size: 11.5px; font-weight: 700; }}
+            QPushButton:hover {{ background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
+                                                          stop: 0 #9B7BFF, stop: 0.55 #FF6BA0, stop: 1 #FFB35C); }}
         """)
         studio_btn.clicked.connect(self.studio_requested.emit)
         btn_row.addWidget(studio_btn)
@@ -295,18 +300,18 @@ class OpalDashboard(QWidget):
         # 4. Feature Cards Banner
         cards_frame = QFrame()
         cards_frame.setObjectName("cardsFrame")
-        cards_frame.setStyleSheet("""
-            QFrame#cardsFrame {
-                background-color: rgba(255,255,255,0.05);
+        cards_frame.setStyleSheet(f"""
+            QFrame#cardsFrame {{
+                background-color: {SURFACE};
                 border: 1px solid rgba(255,255,255,0.10);
-                border-radius: 18px;
-            }
-            QFrame#cardsFrame QFrame#featureCard {
-                background-color: #0B0E18;
-                border: 1px solid rgba(255,255,255,0.09);
-                border-radius: 14px;
-            }
-            QFrame#cardsFrame QLabel { background: transparent; border: none; }
+                border-radius: {RADIUS_LARGE}px;
+            }}
+            QFrame#cardsFrame QFrame#featureCard {{
+                background-color: {BG_SUNK};
+                border: 1px solid rgba(255,255,255,0.08);
+                border-radius: {RADIUS}px;
+            }}
+            QFrame#cardsFrame QLabel {{ background: transparent; border: none; }}
         """)
         cards_layout = QHBoxLayout(cards_frame)
         cards_layout.setSpacing(12)
@@ -328,9 +333,9 @@ class OpalDashboard(QWidget):
 
         # 5. Bottom Status / Options Bar
         bottom_row = QHBoxLayout()
-        hotkey_lbl = QLabel("Global Hotkey: <b style='color:#A79FFF;'>Ctrl + Alt + T</b>")
+        hotkey_lbl = QLabel(f"Global Hotkey: <b style='color:{ACCENT_HI};'>Ctrl + Alt + T</b>")
         hotkey_lbl.setFont(QFont("Segoe UI", 9))
-        hotkey_lbl.setStyleSheet("color: #727E96;")
+        hotkey_lbl.setStyleSheet(f"color: {TEXT_DIM};")
         bottom_row.addWidget(hotkey_lbl)
 
         bottom_row.addStretch()
@@ -360,14 +365,14 @@ class OpalDashboard(QWidget):
         """
         card = QFrame()
         card.setObjectName("featureCard")
-        card.setStyleSheet("""
-            QFrame#featureCard {
-                background-color: #0B0E18;
-                border: 1px solid rgba(255,255,255,0.09);
-                border-radius: 14px;
-            }
-            QFrame#featureCard:hover { border-color: rgba(255,82,0,0.45); }
-            QFrame#featureCard QLabel { background: transparent; border: none; }
+        card.setStyleSheet(f"""
+            QFrame#featureCard {{
+                background-color: {BG_SUNK};
+                border: 1px solid rgba(255,255,255,0.08);
+                border-radius: {RADIUS}px;
+            }}
+            QFrame#featureCard:hover {{ border-color: rgba(138,131,255,0.50); }}
+            QFrame#featureCard QLabel {{ background: transparent; border: none; }}
         """)
         if feature_key:
             card.setCursor(Qt.PointingHandCursor)
@@ -379,18 +384,18 @@ class OpalDashboard(QWidget):
 
         t_lbl = QLabel(title)
         t_lbl.setFont(QFont("Segoe UI", 10, QFont.Bold))
-        t_lbl.setStyleSheet("color: #A79FFF; background: transparent;")
+        t_lbl.setStyleSheet(f"color: {ACCENT_HI}; background: transparent;")
         layout.addWidget(t_lbl)
 
         d_lbl = QLabel(desc)
         d_lbl.setFont(QFont("Segoe UI", 9))
-        d_lbl.setStyleSheet("color: #A8B2C8; background: transparent;")
+        d_lbl.setStyleSheet(f"color: {TEXT_DIM}; background: transparent;")
         d_lbl.setWordWrap(True)
         layout.addWidget(d_lbl)
 
         h_lbl = QLabel(hint)
         h_lbl.setFont(QFont("Segoe UI", 8))
-        h_lbl.setStyleSheet("color: #727E96; background: transparent;")
+        h_lbl.setStyleSheet("color: #8B96AD; background: transparent;")
         h_lbl.setWordWrap(True)
         layout.addWidget(h_lbl)
 
@@ -445,20 +450,20 @@ class OpalDashboard(QWidget):
         if running:
             text = f"Working · {queued} queued" if queued else "Working…"
             self.status_pill.setText(text)
-            self.status_pill.setStyleSheet("""
-                background-color: rgba(108, 99, 255, 0.12);
-                color: #8A83FF;
+            self.status_pill.setStyleSheet(f"""
+                background-color: {ACCENT_WASH};
+                color: {ACCENT_HI};
                 border: 1px solid rgba(108, 99, 255, 0.40);
-                border-radius: 10px;
+                border-radius: 999px;
                 padding: 3px 10px;
             """)
         else:
             self.status_pill.setText("Active & Running")
-            self.status_pill.setStyleSheet("""
-                background-color: rgba(47, 158, 99, 0.10);
-                color: #2F7D52;
-                border: 1px solid rgba(47, 158, 99, 0.30);
-                border-radius: 10px;
+            self.status_pill.setStyleSheet(f"""
+                background-color: {LEAF_SOFT};
+                color: {LEAF};
+                border: 1px solid rgba(55, 201, 138, 0.35);
+                border-radius: 999px;
                 padding: 3px 10px;
             """)
 

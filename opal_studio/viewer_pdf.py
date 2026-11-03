@@ -26,6 +26,9 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushB
                                QFormLayout)
 from PySide6.QtPrintSupport import QPrintDialog, QPrinter
 
+from opal_studio.theme import (BG_RAISED, RADIUS, ACCENT_SOFT, ACCENT_HI,
+                              TEXT_DIM)
+
 try:
     import fitz
 except ImportError:
@@ -38,15 +41,15 @@ except ImportError:
 
 CITRUS = QColor(255, 122, 24)
 
-INK_STYLE = """
-    QDialog { background-color: #101625; color: #EDF1FA; }
-    QPushButton { background-color: rgba(255,255,255,0.06); color: #EDF1FA; border: 1px solid rgba(255,255,255,0.16);
-                  border-radius: 10px; padding: 6px 14px; font-weight: 600; }
-    QPushButton:hover { background-color: rgba(255,255,255,0.13); color: #FFFFFF; border-color: rgba(255,255,255,0.30); }
-    QPushButton:disabled { background-color: rgba(255,255,255,0.03); color: rgba(237,241,250,0.28); border-color: rgba(255,255,255,0.06); }
-    QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox { background: rgba(255,255,255,0.05); color: #EDF1FA;
-                  border: 1px solid rgba(255,255,255,0.16); border-radius: 10px; padding: 5px; }
-    QLabel { color: #EDF1FA; }
+INK_STYLE = f"""
+    QDialog {{ background-color: {BG_RAISED}; color: #EDF1FA; }}
+    QPushButton {{ background-color: rgba(255,255,255,0.06); color: #EDF1FA; border: 1px solid rgba(255,255,255,0.16);
+                  border-radius: {RADIUS}px; padding: 6px 14px; font-weight: 600; }}
+    QPushButton:hover {{ background-color: rgba(255,255,255,0.13); color: #FFFFFF; border-color: rgba(255,255,255,0.30); }}
+    QPushButton:disabled {{ background-color: rgba(255,255,255,0.03); color: rgba(237,241,250,0.28); border-color: rgba(255,255,255,0.06); }}
+    QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox {{ background: rgba(255,255,255,0.05); color: #EDF1FA;
+                  border: 1px solid rgba(255,255,255,0.16); border-radius: {RADIUS}px; padding: 5px; }}
+    QLabel {{ color: #EDF1FA; }}
 """
 
 
@@ -59,37 +62,37 @@ def _tool_btn(text: str, tooltip: str = "", checkable: bool = False, accent: boo
     btn.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
     if accent:
         # The lit control: the fire inside the stone.
-        btn.setStyleSheet("""
-            QToolButton {
+        btn.setStyleSheet(f"""
+            QToolButton {{
                 background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
                                 stop: 0 #8A5CF6, stop: 0.55 #EE4E8A, stop: 1 #FF9A3C);
                 color: #FFFFFF; border: none;
-                border-radius: 10px; padding: 5px 10px; font-size: 11px; font-weight: 700;
-            }
-            QToolButton:hover {
+                border-radius: {RADIUS}px; padding: 5px 10px; font-size: 11px; font-weight: 700;
+            }}
+            QToolButton:hover {{
                 background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
                                 stop: 0 #9B7BFF, stop: 0.55 #FF6BA0, stop: 1 #FFB35C);
-            }
+            }}
         """)
     else:
-        btn.setStyleSheet("""
-            QToolButton {
+        btn.setStyleSheet(f"""
+            QToolButton {{
                 background-color: rgba(255,255,255,0.06); color: #EDF1FA;
                 border: 1px solid rgba(255,255,255,0.14);
-                border-radius: 10px; padding: 5px 10px; font-size: 11px; font-weight: 600;
-            }
-            QToolButton:hover {
+                border-radius: {RADIUS}px; padding: 5px 10px; font-size: 11px; font-weight: 600;
+            }}
+            QToolButton:hover {{
                 background-color: rgba(255,255,255,0.13);
                 border-color: rgba(255,255,255,0.30); color: #FFFFFF;
-            }
-            QToolButton:checked {
+            }}
+            QToolButton:checked {{
                 background-color: rgba(108,99,255,0.35);
                 border-color: rgba(140,131,255,0.75); color: #FFFFFF;
-            }
-            QToolButton:disabled {
+            }}
+            QToolButton:disabled {{
                 background-color: rgba(255,255,255,0.03);
                 color: rgba(237,241,250,0.28); border-color: rgba(255,255,255,0.06);
-            }
+            }}
         """)
     return btn
 
@@ -757,8 +760,8 @@ class PdfStudio(QWidget):
 
     def _build_ui(self):
         root = QVBoxLayout(self)
-        root.setContentsMargins(0, 0, 0, 0)
-        root.setSpacing(4)
+        root.setContentsMargins(12, 12, 12, 12)
+        root.setSpacing(8)
 
         root.addLayout(self._file_toolbar())
         root.addLayout(self._organize_toolbar())
@@ -772,11 +775,11 @@ class PdfStudio(QWidget):
         self.thumb_list.setViewMode(QListWidget.IconMode)
         self.thumb_list.setIconSize(QSize(86, 122))
         self.thumb_list.setSpacing(6)
-        self.thumb_list.setFixedWidth(118)
-        self.thumb_list.setStyleSheet("""
-            QListWidget { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10); border-radius: 8px; }
-            QListWidget::item { border-radius: 4px; padding: 2px; }
-            QListWidget::item:selected { background: rgba(255,122,24,0.25); }
+        self.thumb_list.setFixedWidth(128)
+        self.thumb_list.setStyleSheet(f"""
+            QListWidget {{ background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10); border-radius: {RADIUS}px; }}
+            QListWidget::item {{ border-radius: 6px; padding: 6px; }}
+            QListWidget::item:selected {{ background: {ACCENT_SOFT}; }}
         """)
         self.thumb_list.itemClicked.connect(self._thumb_clicked)
         self.thumb_list.setDragDropMode(QListWidget.InternalMove)
@@ -790,7 +793,7 @@ class PdfStudio(QWidget):
         self.page_scroll = QScrollArea()
         self.page_scroll.setWidgetResizable(True)
         self.page_scroll.setStyleSheet(
-            "QScrollArea { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10); border-radius: 8px; }")
+            f"QScrollArea {{ background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10); border-radius: {RADIUS}px; }}")
         self.page_container = QWidget()
         self.page_layout = QVBoxLayout(self.page_container)
         self.page_layout.setSpacing(10)
@@ -803,15 +806,16 @@ class PdfStudio(QWidget):
         splitter.addWidget(center)
 
         right = QTabWidget()
-        right.setStyleSheet("QTabWidget::pane { border: 1px solid rgba(255,255,255,0.10); } "
-                            "QTabBar::tab { background:rgba(255,255,255,0.05); color:#727E96; padding:5px 10px; } "
-                            "QTabBar::tab:selected { color:#8A83FF; }")
+        right.setStyleSheet(f"QTabWidget::pane {{ border: 1px solid rgba(255,255,255,0.10); border-radius: {RADIUS}px; }} "
+                            f"QTabBar::tab {{ background:rgba(255,255,255,0.05); color:{TEXT_DIM}; padding:5px 10px; "
+                            f"border-top-left-radius: 8px; border-top-right-radius: 8px; }} "
+                            f"QTabBar::tab:selected {{ color:{ACCENT_HI}; }}")
         right.addTab(self._outline_tab(), "Outline")
         right.addTab(self._comments_tab(), "Comments")
         right.addTab(self._inspector_tab(), "Inspector")
         splitter.addWidget(right)
         splitter.setStretchFactor(1, 1)
-        splitter.setSizes([118, 800, 300])
+        splitter.setSizes([128, 800, 300])
 
         root.addWidget(splitter, 1)
 
@@ -822,7 +826,7 @@ class PdfStudio(QWidget):
         root.addWidget(self.progress)
 
         self.status = QLabel("")
-        self.status.setStyleSheet("color: #727E96; font-size: 10px; padding: 2px 6px;")
+        self.status.setStyleSheet(f"color: {TEXT_DIM}; font-size: 10px; padding: 4px 8px;")
         root.addWidget(self.status)
 
     def _file_toolbar(self) -> QHBoxLayout:
@@ -1413,9 +1417,9 @@ class PdfStudio(QWidget):
         lay.addWidget(summary)
         table = QTextEdit()
         table.setReadOnly(True)
-        table.setStyleSheet("QTextEdit { background:#101625; color:#EDF1FA; "
-                            "border:1px solid rgba(255,255,255,0.10); border-radius:10px; padding:8px; "
-                            "font-family: Consolas, monospace; font-size: 11px; }")
+        table.setStyleSheet(f"QTextEdit {{ background:{BG_RAISED}; color:#EDF1FA; "
+                            f"border:1px solid rgba(255,255,255,0.10); border-radius:{RADIUS}px; padding:8px; "
+                            f"font-family: Consolas, monospace; font-size: 11px; }}")
         body = (f"Subject : {info['subject']}\n"
                 f"Issuer  : {info['issuer']}\n"
                 f"Serial  : {info['serial']}\n"
@@ -2142,7 +2146,7 @@ class PdfStudio(QWidget):
         self.compare_scroll = QScrollArea()
         self.compare_scroll.setWidgetResizable(True)
         self.compare_scroll.setStyleSheet(
-            "QScrollArea { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10); border-radius: 8px; }")
+            f"QScrollArea {{ background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10); border-radius: {RADIUS}px; }}")
         self.compare_container = QWidget()
         c_layout = QVBoxLayout(self.compare_container)
         c_layout.setSpacing(10)

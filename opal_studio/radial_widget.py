@@ -12,6 +12,7 @@ from PySide6.QtGui import QPainter, QColor, QFont, QPen, QBrush, QPainterPath, Q
 from PySide6.QtWidgets import QWidget
 
 from opal_studio.engine import OpalEngine
+from opal_studio.theme import RADIUS
 
 
 class RadialMenuWidget(QWidget):
@@ -30,7 +31,7 @@ class RadialMenuWidget(QWidget):
         self.setAttribute(Qt.WA_DeleteOnClose, False)
         self.setMouseTracking(True)
 
-        self.size_px = 400
+        self.size_px = 440
         self.resize(self.size_px, self.size_px)
 
         self.center_radius = 62
@@ -111,7 +112,7 @@ class RadialMenuWidget(QWidget):
         dy = pos.y() - self.center_pt.y()
         dist = math.hypot(dx, dy)
 
-        if dist < self.center_radius or dist > self.outer_radius + 40:
+        if dist < self.center_radius or dist > self.outer_radius + 16:
             new_hover = -1
         else:
             if not self.options:
@@ -205,7 +206,7 @@ class RadialMenuWidget(QWidget):
         center_path = QPainterPath()
         center_path.addEllipse(QPoint(cx, cy), self.center_radius, self.center_radius)
         painter.setBrush(QBrush(self.color_inner))
-        painter.setPen(QPen(QColor(255, 154, 60, 220), 2.5))
+        painter.setPen(QPen(QColor(138, 131, 255, 220), 2.5))
         painter.drawPath(center_path)
 
         # Center Content
@@ -231,28 +232,28 @@ class RadialMenuWidget(QWidget):
             }.get(self.mode, "Opal")
 
             pill_rect = QRectF(cx - 44, cy - 9, 88, 20)
-            painter.setBrush(QBrush(QColor(255, 154, 60, 0.16)))
-            painter.setPen(QPen(self.color_fire, 1))
+            painter.setBrush(QBrush(QColor(108, 99, 255, 0.20)))
+            painter.setPen(QPen(QColor(138, 131, 255, 255), 1))
             painter.drawRoundedRect(pill_rect, 10, 10)
 
             painter.setFont(QFont("Segoe UI", 8, QFont.DemiBold))
-            painter.setPen(QPen(self.color_fire))
+            painter.setPen(QPen(QColor(201, 196, 255)))
             painter.drawText(pill_rect, Qt.AlignCenter, mode_text)
 
             # Shortcut Tip
-            painter.setFont(QFont("Segoe UI", 7))
+            painter.setFont(QFont("Segoe UI", 9))
             painter.setPen(QPen(self.color_text_dim))
             painter.drawText(QRectF(cx - 55, cy + 16, 110, 16), Qt.AlignCenter, "Shift / Alt / Ctrl")
 
-        # 3. Active Description Banner
+        # 3. Active Description Banner — sits fully below the ring, never on it
         if 0 <= self.hovered_index < len(self.options):
             active_opt = self.options[self.hovered_index]
-            banner_rect = QRectF(cx - 120, self.size_px - 34, 240, 26)
-            painter.setBrush(QBrush(QColor(30, 36, 54, 240)))
-            painter.setPen(QPen(QColor(255, 154, 60, 150), 1.2))
-            painter.drawRoundedRect(banner_rect, 13, 13)
+            banner_rect = QRectF(cx - 120, cy + self.outer_radius + 10, 240, 26)
+            painter.setBrush(QBrush(QColor(20, 26, 43, 244)))
+            painter.setPen(QPen(QColor(138, 131, 255, 150), 1.2))
+            painter.drawRoundedRect(banner_rect, RADIUS, RADIUS)
 
-            painter.setFont(QFont("Segoe UI", 8, QFont.DemiBold))
+            painter.setFont(QFont("Segoe UI", 9, QFont.DemiBold))
             painter.setPen(QPen(self.color_text))
             painter.drawText(banner_rect, Qt.AlignCenter, active_opt.get("desc", active_opt["label"]))
 
