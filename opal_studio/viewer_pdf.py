@@ -830,27 +830,35 @@ class PdfStudio(QWidget):
         root.addWidget(self.status)
 
     def _file_toolbar(self) -> QHBoxLayout:
+        from opal_studio.icons import ICONS
         row = QHBoxLayout()
-        for text, tip, slot in [
-            ("📂 Open", "Open another PDF in a new tab", self._open_external),
-            ("💾 Save", "Save changes (Ctrl+S)", self._save_document),
-            ("🖨️ Print", "Print document (Ctrl+P)", self._print_document),
-            ("📋 Text", "Copy all text to the clipboard", self._copy_all_text),
-            ("📁 Folder", "Reveal file in Explorer", self._reveal_file),
-            ("🗕 Compare", "Open a second document side-by-side", self._open_compare),
-            ("✍️ Sign", "Draw or type a signature", self.open_signature_pad),
-            ("🔏 Sign with DSC", "Apply a real digital signature certificate (.pfx/.p12)",
-             self._open_dsc),
+        for text, tip, slot, icon in [
+            ("Open", "Open another PDF in a new tab", self._open_external, "folder"),
+            ("Save", "Save changes (Ctrl+S)", self._save_document, "save"),
+            ("Print", "Print document (Ctrl+P)", self._print_document, "printer"),
+            ("Text", "Copy all text to the clipboard", self._copy_all_text, "text"),
+            ("Folder", "Reveal file in Explorer", self._reveal_file, "folder"),
+            ("Compare", "Open a second document side-by-side", self._open_compare, "copy"),
+            ("Sign", "Draw or type a signature", self.open_signature_pad, "pen"),
+            ("Sign with DSC", "Apply a real digital signature certificate (.pfx/.p12)",
+             self._open_dsc, "pen"),
         ]:
             btn = _tool_btn(text, tip)
+            btn.setIcon(ICONS[icon](16))
+            btn.setIconSize(QSize(16, 16))
+            btn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
             btn.clicked.connect(slot)
             row.addWidget(btn)
         row.addStretch()
-        zoom_out = _tool_btn("－", "Zoom out")
+        zoom_out = _tool_btn("", "Zoom out")
+        zoom_out.setIcon(ICONS["minus"](14))
+        zoom_out.setIconSize(QSize(14, 14))
         zoom_out.clicked.connect(lambda: self.set_zoom(self.zoom - 0.25))
         self.zoom_lbl = QLabel("125%")
         self.zoom_lbl.setStyleSheet("color: #EDF1FA; font-size: 11px;")
-        zoom_in = _tool_btn("＋", "Zoom in")
+        zoom_in = _tool_btn("", "Zoom in")
+        zoom_in.setIcon(ICONS["plus"](14))
+        zoom_in.setIconSize(QSize(14, 14))
         zoom_in.clicked.connect(lambda: self.set_zoom(self.zoom + 0.25))
         fit_w = _tool_btn("Fit Width", "Fit page width to the window")
         fit_w.clicked.connect(self._fit_width)
@@ -958,20 +966,25 @@ class PdfStudio(QWidget):
         bar = QWidget()
         lay = QHBoxLayout(bar)
         lay.setContentsMargins(0, 0, 0, 0)
+        from opal_studio.icons import ICONS
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("🔍 Find in document (Ctrl+F)...")
+        self.search_input.setPlaceholderText("Find in document (Ctrl+F)...")
         self.search_input.setStyleSheet(
-            "QLineEdit { background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.16); "
-            "border-radius: 6px; padding: 5px 9px; }")
+            f"QLineEdit {{ background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.16); "
+            f"border-radius: {RADIUS}px; padding: 5px 9px; }}")
         self.search_input.textChanged.connect(self._run_search)
         self.search_input.returnPressed.connect(self._search_next)
-        prev = _tool_btn("▲", "Previous match")
+        prev = _tool_btn("", "Previous match")
+        prev.setIcon(ICONS["up"](14)); prev.setIconSize(QSize(14, 14))
         prev.clicked.connect(self._search_prev)
-        nxt = _tool_btn("▼", "Next match")
+        nxt = _tool_btn("", "Next match")
+        nxt.setIcon(ICONS["down"](14)); nxt.setIconSize(QSize(14, 14))
         nxt.clicked.connect(self._search_next)
         self.search_count = QLabel("")
-        self.search_count.setStyleSheet("color: #727E96; font-size: 10px;")
-        read_aloud = _tool_btn("🔊 Read", "Read the current page aloud (offline)")
+        self.search_count.setStyleSheet(f"color: {TEXT_DIM}; font-size: 10px;")
+        read_aloud = _tool_btn("Read", "Read the current page aloud (offline)")
+        read_aloud.setIcon(ICONS["speaker"](16)); read_aloud.setIconSize(QSize(16, 16))
+        read_aloud.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         read_aloud.clicked.connect(self._read_aloud)
         lay.addWidget(self.search_input, 1)
         lay.addWidget(prev)

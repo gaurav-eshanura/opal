@@ -255,7 +255,8 @@ class FloatStudio(QWidget):
 
         self.home = HomeTab()
         self.home.run_action.connect(self._on_home_action)
-        self.tabs.addTab(self.home, "🏠 Home")
+        from opal_studio.icons import home_icon
+        self.tabs.addTab(self.home, home_icon(16), "Home")
 
         # Shortcuts
         QShortcut(QKeySequence("Ctrl+W"), self, self._close_current_tab)
@@ -322,7 +323,7 @@ class FloatStudio(QWidget):
     def _tab_changed(self, index: int):
         widget = self.tabs.widget(index)
         name = self.tabs.tabText(index)
-        self.title_label.setText(name if name != "🏠 Home" else "Opal Studio")
+        self.title_label.setText(name if name != "Home" else "Opal Studio")
         if isinstance(widget, PdfStudio):
             self.info_label.setText(f"PDF Studio | {len(widget.doc) if widget.doc else 0} pages")
         elif isinstance(widget, ImageLab):

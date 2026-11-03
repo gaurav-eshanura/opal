@@ -88,7 +88,7 @@ class DocStudio(QWidget):
         header.addStretch()
 
         self.find_edit = QLineEdit()
-        self.find_edit.setPlaceholderText("🔍 Find in document...")
+        self.find_edit.setPlaceholderText("Find in document...")
         self.find_edit.setFixedWidth(240)
         self.find_edit.setStyleSheet(f"QLineEdit {{ background:rgba(255,255,255,0.05); color:#EDF1FA; "
                                      f"border:1px solid rgba(255,255,255,0.16); border-radius:{RADIUS}px; padding:6px 10px; }}"
@@ -96,13 +96,16 @@ class DocStudio(QWidget):
         self.find_edit.textChanged.connect(self._find)
         header.addWidget(self.find_edit)
 
-        for text, tip, slot in [
-            ("📋 Copy", "Copy the whole document", self._copy_all),
-            ("📄 → PDF", "Export this document to PDF", self._export_pdf),
-            ("🔤 → TXT", "Export the text of this document", self._export_txt),
-            ("📁 Folder", "Show in Explorer", self._reveal),
+        from opal_studio.icons import ICONS
+        for text, tip, slot, icon in [
+            ("Copy", "Copy the whole document", self._copy_all, "copy"),
+            ("PDF", "Export this document to PDF", self._export_pdf, "doc"),
+            ("TXT", "Export the text of this document", self._export_txt, "text"),
+            ("Folder", "Show in Explorer", self._reveal, "folder"),
         ]:
             b = _btn(text, tip)
+            b.setIcon(ICONS[icon](15))
+            b.setIconSize(QSize(15, 15))
             b.clicked.connect(slot)
             header.addWidget(b)
         root.addLayout(header)
