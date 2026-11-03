@@ -140,7 +140,7 @@ class SettingsDialog(QDialog):
         self.cmb_bg_model = QComboBox()
         from opal_studio.engines import CUTOUT_MODELS, EngineManager
         for mid, (label, _size) in CUTOUT_MODELS.items():
-            mark = "✓" if EngineManager.cutout_cached(mid) else "☁"
+            mark = "✓" if EngineManager.cutout_cached(mid) else "↓"
             self.cmb_bg_model.addItem(f"{label} {mark}", mid)
         ai_layout.addRow("Background removal model", self.cmb_bg_model)
 
@@ -151,7 +151,7 @@ class SettingsDialog(QDialog):
         from opal_studio.engines import ESRGAN_MODELS
         for mid, meta in ESRGAN_MODELS.items():
             label, _size = meta[0], meta[1]
-            mark = "✓" if EngineManager.esrgan_cached(mid) else "☁"
+            mark = "✓" if EngineManager.esrgan_cached(mid) else "↓"
             self.cmb_upscale_model.addItem(f"{label} {mark}", mid)
         ai_layout.addRow("Upscaling model", self.cmb_upscale_model)
 

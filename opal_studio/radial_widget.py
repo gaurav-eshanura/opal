@@ -41,6 +41,8 @@ class RadialMenuWidget(QWidget):
         self.file_paths: List[str] = []
         self.mode = "convert"  # 'convert' (Shift), 'tools' (Alt), 'actions' (Ctrl)
         self.options: List[Dict[str, str]] = []
+        self.all_options: List[Dict[str, str]] = []
+        self.option_offset = 0
         self.hovered_index = -1
 
         # Brand colours: warm off-white wheel, one fire accent
@@ -55,6 +57,7 @@ class RadialMenuWidget(QWidget):
     def show_for_files(self, file_paths: List[str], screen_pos: Optional[QPoint] = None, initial_mode: str = "convert"):
         self.file_paths = file_paths
         self.mode = initial_mode
+        self.option_offset = 0
         self.load_options()
 
         if screen_pos is None:
@@ -74,16 +77,34 @@ class RadialMenuWidget(QWidget):
     def show_for_file(self, file_path: str, screen_pos: Optional[QPoint] = None, initial_mode: str = "convert"):
         self.show_for_files([file_path], screen_pos, initial_mode)
 
+    MAX_SLICES = 10          # past this, each wedge is too thin to read
+    MORE_ID = "__more__"
+
     def load_options(self):
         if not self.file_paths:
             self.options = []
+            self.all_options = []
             return
-        self.options = OpalEngine.get_options_for_files(self.file_paths, self.mode)
+        self.all_options = OpalEngine.get_options_for_files(self.file_paths, self.mode)
+        page = self.all_options[self.option_offset:self.option_offset + self.MAX_SLICES]
+        if len(self.all_options) > self.MAX_SLICES:
+            remaining = len(self.all_options) - (self.option_offset + self.MAX_SLICES)
+            if remaining > 0:
+                page = page + [{"id": self.MORE_ID,
+                                "label": f"More · {remaining}",
+                                "desc": "Show the next group of actions"}]
+            else:
+                # Last partial page: offer the way back to the first group.
+                page = page + [{"id": self.MORE_ID,
+                                "label": "First",
+                                "desc": "Back to the first group of actions"}]
+        self.options = page
         self.update()
 
     def set_mode(self, mode: str):
         if self.mode != mode:
             self.mode = mode
+            self.option_offset = 0
             self.load_options()
             self.hovered_index = -1
             self.update()
@@ -140,6 +161,15 @@ class RadialMenuWidget(QWidget):
     def _trigger_current(self):
         if 0 <= self.hovered_index < len(self.options):
             selected = self.options[self.hovered_index]
+            if selected["id"] == self.MORE_ID:
+                # Page forward through the long option lists instead of
+                # drawing wedges too thin to read.
+                self.option_offset += self.MAX_SLICES
+                if self.option_offset >= len(self.all_options):
+                    self.option_offset = 0
+                self.hovered_index = -1
+                self.load_options()
+                return
             self.close()
             self.action_selected.emit(self.file_paths, selected["id"])
 

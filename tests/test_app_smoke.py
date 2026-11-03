@@ -69,7 +69,19 @@ def main():
     pump(app, 120)
     tool_ids = [o["id"] for o in opal.radial_menu.options]
     check("tools wheel offers AI background removal", "remove_bg" in tool_ids, tool_ids)
-    check("tools wheel offers upscaling", "upscale_2x" in tool_ids)
+    # Long tool lists page through a "More" wedge - walk the pages like a user.
+    seen_tools = set(tool_ids)
+    for _ in range(6):
+        if "upscale_2x" in seen_tools:
+            break
+        ids_now = [o["id"] for o in opal.radial_menu.options]
+        if "__more__" not in ids_now:
+            break
+        opal.radial_menu.hovered_index = ids_now.index("__more__")
+        opal.radial_menu._trigger_current()
+        pump(app, 60)
+        seen_tools.update(o["id"] for o in opal.radial_menu.options)
+    check("tools wheel offers upscaling", "upscale_2x" in seen_tools, sorted(seen_tools))
     opal.radial_menu.set_mode("actions")
     pump(app, 120)
     action_ids = [o["id"] for o in opal.radial_menu.options]

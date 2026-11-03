@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 from typing import Optional, List
 
-from PySide6.QtCore import Qt, QTimer, Signal, QUrl, QRectF, QPointF
+from PySide6.QtCore import Qt, QTimer, Signal, QUrl, QRectF, QPointF, QSize
 from PySide6.QtGui import QColor, QFont, QPainter, QPen, QBrush, QPixmap, QImage
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QSlider,
                                QMessageBox, QFileDialog, QComboBox, QSpinBox, QApplication,
@@ -27,11 +27,16 @@ except Exception:
 
 CITRUS = QColor(255, 122, 24)
 
+from opal_studio.icons import ICONS
 
-def _btn(text: str, tip: str = "") -> QPushButton:
+
+def _btn(text: str, tip: str = "", icon: str = "") -> QPushButton:
     b = QPushButton(text)
     b.setToolTip(tip or text)
     b.setCursor(Qt.PointingHandCursor)
+    if icon and icon in ICONS:
+        b.setIcon(ICONS[icon](15))
+        b.setIconSize(QSize(15, 15))
     b.setStyleSheet("""
         QPushButton { background: rgba(255,255,255,0.05); color: #EDF1FA; border: 1px solid rgba(255,255,255,0.16);
                       border-radius: 10px; padding: 5px 11px; font-size: 11px; font-weight: 600; }
@@ -161,14 +166,14 @@ class MediaStudio(QWidget):
         header.addWidget(self.title_label)
         header.addWidget(self.meta_label)
         header.addStretch()
-        for text, tip, slot in [
-            ("📷 Frame", "Save the current frame as PNG", self._snapshot),
-            ("🎬 → MP4", "Convert to MP4", lambda: self._convert("mp4")),
-            ("🎞️ → GIF", "Convert to GIF", lambda: self._convert("gif")),
-            ("🎵 → MP3", "Extract the audio", lambda: self._convert("mp3")),
-            ("✂️ Trim", "Trim using the waveform selection", self._trim_selection),
+        for icon, text, tip, slot in [
+            ("camera", "Frame", "Save the current frame as PNG", self._snapshot),
+            ("film", "MP4", "Convert to MP4", lambda: self._convert("mp4")),
+            ("film", "GIF", "Convert to GIF", lambda: self._convert("gif")),
+            ("music", "MP3", "Extract the audio", lambda: self._convert("mp3")),
+            ("scissors", "Trim", "Trim using the waveform selection", self._trim_selection),
         ]:
-            b = _btn(text, tip)
+            b = _btn(text, tip, icon=icon)
             b.clicked.connect(slot)
             header.addWidget(b)
         root.addLayout(header)
@@ -181,9 +186,9 @@ class MediaStudio(QWidget):
             self.video_widget.setStyleSheet("background:#1A1A1A; border-radius:12px;")
             video_lay.addWidget(self.video_widget, 1)
         else:
-            art = QLabel("🎧")
+            art = QLabel()
             art.setAlignment(Qt.AlignCenter)
-            art.setStyleSheet("font-size:64px; color:#8A83FF;")
+            art.setPixmap(ICONS["headphones"](64, "#8A83FF").pixmap(64, 64))
             video_lay.addWidget(art, 1)
         root.addWidget(self.video_area, 1)
 
@@ -191,7 +196,8 @@ class MediaStudio(QWidget):
         root.addWidget(self.waveform)
 
         controls = QHBoxLayout()
-        self.play_btn = _btn("▶", "Play / pause")
+        self.play_btn = _btn("", "Play / pause", icon="play")
+        self.play_btn.setFixedWidth(38)
         self.play_btn.clicked.connect(self._toggle_play)
         controls.addWidget(self.play_btn)
         self.position_lbl = QLabel("0:00")
@@ -207,7 +213,9 @@ class MediaStudio(QWidget):
         self.duration_lbl = QLabel("0:00")
         self.duration_lbl.setStyleSheet("color:#A8B2C8; font-size:10px;")
         controls.addWidget(self.duration_lbl)
-        controls.addWidget(QLabel("🔊"))
+        vol_icon = QLabel()
+        vol_icon.setPixmap(ICONS["speaker"](16).pixmap(16, 16))
+        controls.addWidget(vol_icon)
         self.volume = QSlider(Qt.Horizontal)
         self.volume.setRange(0, 100)
         self.volume.setValue(70)
@@ -311,7 +319,9 @@ class MediaStudio(QWidget):
             self.player.play()
 
     def _on_state(self, state):
-        self.play_btn.setText("❚❚" if state == QMediaPlayer.PlayingState else "▶")
+        key = "pause" if state == QMediaPlayer.PlayingState else "play"
+        self.play_btn.setIcon(ICONS[key](15))
+        self.play_btn.setIconSize(QSize(15, 15))
 
     def _on_duration(self, ms):
         if ms > 0:

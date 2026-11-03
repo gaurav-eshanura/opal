@@ -29,6 +29,7 @@ except ImportError:
 
 from opal_studio.theme import (BG_SUNK, RADIUS, RADIUS_LARGE, ACCENT, ACCENT_HI,
                               ACCENT_SOFT, TEXT_DIM)
+from opal_studio.icons import ICONS
 
 CITRUS = QColor(255, 122, 24)
 INK_STYLE = f"""
@@ -47,12 +48,15 @@ INK_STYLE = f"""
 """
 
 
-def _tool_btn(text: str, tooltip: str = "", checkable: bool = False) -> QPushButton:
+def _tool_btn(text: str, tooltip: str = "", checkable: bool = False, icon: str = "") -> QPushButton:
     btn = QPushButton(text)
     btn.setToolTip(tooltip or text)
     btn.setCheckable(checkable)
     btn.setCursor(Qt.PointingHandCursor)
     btn.setMinimumHeight(32)
+    if icon and icon in ICONS:
+        btn.setIcon(ICONS[icon](15))
+        btn.setIconSize(QSize(15, 15))
     btn.setStyleSheet(f"""
         QPushButton {{ background: transparent; color: {TEXT_DIM}; border: 1px solid transparent;
                       border-radius: {RADIUS}px; padding: 7px 12px; font-size: 12px; font-weight: 500;
@@ -546,7 +550,7 @@ class ImageLab(QWidget):
         from opal_studio.engines import CUTOUT_MODELS, EngineManager
         cached = {m for m, _, s in EngineManager.available_cutout_models() if s == "cached"}
         for mid, (label, _size) in CUTOUT_MODELS.items():
-            self.bg_model.addItem(f"{label} {'✓' if mid in cached else '☁'}", mid)
+            self.bg_model.addItem(f"{label} {'✓' if mid in cached else '↓'}", mid)
         if "u2netp" in cached:
             self.bg_model.setCurrentIndex(list(CUTOUT_MODELS).index("u2netp"))
         form.addRow("AI model", self.bg_model)
@@ -626,7 +630,7 @@ class ImageLab(QWidget):
                                   "16:9 Wide", "3:2 Photo"])
         self.crop_ratio.currentIndexChanged.connect(self._update_crop_ratio)
         form.addRow("Aspect", self.crop_ratio)
-        apply_btn = _tool_btn("✂️ Apply Crop")
+        apply_btn = _tool_btn("Apply Crop", icon="scissors")
         apply_btn.clicked.connect(self._apply_crop)
         self.options_lay.addWidget(apply_btn)
         clear_btn = _tool_btn("Clear Selection")
@@ -644,13 +648,13 @@ class ImageLab(QWidget):
 
     def _opts_rotate(self):
         form = self._add_group("Rotate & Flip")
-        for label, slot in [
-            ("↺ Rotate Left", lambda: self._rotate_qimage(-90)),
-            ("↻ Rotate Right", lambda: self._rotate_qimage(90)),
-            ("↕ Flip Vertical", lambda: self._flip_qimage(True)),
-            ("↔ Flip Horizontal", lambda: self._flip_qimage(False)),
+        for icon, label, slot in [
+            ("rotate_left", "Rotate Left", lambda: self._rotate_qimage(-90)),
+            ("rotate_right", "Rotate Right", lambda: self._rotate_qimage(90)),
+            ("flip_v", "Flip Vertical", lambda: self._flip_qimage(True)),
+            ("flip_h", "Flip Horizontal", lambda: self._flip_qimage(False)),
         ]:
-            btn = _tool_btn(label)
+            btn = _tool_btn(label, icon=icon)
             btn.clicked.connect(slot)
             self.options_lay.addWidget(btn)
 
@@ -686,7 +690,7 @@ class ImageLab(QWidget):
         form.addRow("Position", self.sig_position)
         self.sig_scale = self._add_slider_row(form, "Width", 10, 60, 28, "% of photo")
         self.sig_opacity = self._add_slider_row(form, "Opacity", 20, 100, 100, "%")
-        add_btn = _tool_btn("✍️ Draw or type a signature")
+        add_btn = _tool_btn("Draw or type a signature", icon="pen")
         add_btn.clicked.connect(self._add_signature_to_photo)
         self.options_lay.addWidget(add_btn)
         hint = QLabel("Customers often need their signature stamped on a photo "
@@ -820,7 +824,7 @@ class ImageLab(QWidget):
                                      f"border:1px solid rgba(255,255,255,0.10); border-radius:{RADIUS}px; padding:6px; "
                                      f"font-family: Consolas; font-size: 10px; }}")
         self.options_lay.addWidget(self.exif_view)
-        strip = _tool_btn("🧹 Strip All Metadata")
+        strip = _tool_btn("Strip All Metadata", icon="broom")
         strip.clicked.connect(self._strip_metadata)
         self.options_lay.addWidget(strip)
         self._load_exif()

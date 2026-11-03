@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushB
 from opal_studio.safepath import safe_path
 from opal_studio.theme import (BG_SUNK, RADIUS, ACCENT, ACCENT_HI, ACCENT_DEEP,
                               TEXT_DIM)
+from opal_studio.icons import ICONS
 
 CITRUS = QColor(255, 122, 24)
 
@@ -41,10 +42,13 @@ FONT_EXT = {".ttf", ".otf", ".woff", ".woff2"}
 ARCHIVE_EXT = {".zip", ".tar", ".gz", ".tgz"}
 
 
-def _btn(text: str, tip: str = "") -> QPushButton:
+def _btn(text: str, tip: str = "", icon: str = "") -> QPushButton:
     b = QPushButton(text)
     b.setToolTip(tip or text)
     b.setCursor(Qt.PointingHandCursor)
+    if icon and icon in ICONS:
+        b.setIcon(ICONS[icon](15))
+        b.setIconSize(QSize(15, 15))
     b.setStyleSheet(f"""
         QPushButton {{ background: rgba(255,255,255,0.05); color: #EDF1FA; border: 1px solid rgba(255,255,255,0.16);
                       border-radius: {RADIUS}px; padding: 5px 11px; font-size: 11px; font-weight: 600; }}
@@ -240,10 +244,10 @@ class DocStudio(QWidget):
         self.archive_info.setStyleSheet("color: #727E96; font-size: 10px;")
         bar.addWidget(self.archive_info)
         bar.addStretch()
-        extract_btn = _btn("📦 Extract All", "Extract the archive next to the original file")
+        extract_btn = _btn("Extract All", "Extract the archive next to the original file", icon="archive")
         extract_btn.clicked.connect(self._extract_archive)
         bar.addWidget(extract_btn)
-        open_btn = _btn("📂 Open Selected", "Open the selected file inside the archive")
+        open_btn = _btn("Open Selected", "Open the selected file inside the archive", icon="folder")
         open_btn.clicked.connect(self._open_archive_item)
         bar.addWidget(open_btn)
         lay.addLayout(bar)

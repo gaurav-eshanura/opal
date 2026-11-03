@@ -28,6 +28,7 @@ from PySide6.QtPrintSupport import QPrintDialog, QPrinter
 
 from opal_studio.theme import (BG_RAISED, RADIUS, ACCENT_SOFT, ACCENT_HI,
                               TEXT_DIM)
+from opal_studio.icons import ICONS
 
 try:
     import fitz
@@ -53,13 +54,18 @@ INK_STYLE = f"""
 """
 
 
-def _tool_btn(text: str, tooltip: str = "", checkable: bool = False, accent: bool = False) -> QToolButton:
+def _tool_btn(text: str, tooltip: str = "", checkable: bool = False, accent: bool = False,
+              icon: str = "") -> QToolButton:
     btn = QToolButton()
     btn.setText(text)
     btn.setToolTip(tooltip or text)
     btn.setCheckable(checkable)
     btn.setCursor(Qt.PointingHandCursor)
     btn.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+    if icon and icon in ICONS:
+        btn.setIcon(ICONS[icon](15))
+        btn.setIconSize(QSize(15, 15))
+        btn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
     if accent:
         # The lit control: the fire inside the stone.
         btn.setStyleSheet(f"""
@@ -868,19 +874,19 @@ class PdfStudio(QWidget):
 
     def _organize_toolbar(self) -> QHBoxLayout:
         row = QHBoxLayout()
-        for text, tip, slot in [
-            ("➕ Blank Page", "Insert a blank page", self._insert_blank),
-            ("📎 From PDF", "Insert pages from another PDF", self._insert_from_pdf),
-            ("🖼️ From Images", "Insert images as pages", self._insert_images),
-            ("✂️ Extract", "Extract a page range to a new PDF", self._extract_range),
-            ("🗑️ Delete", "Delete the current page", self._delete_page),
-            ("↺ Rotate L", "Rotate current page left", lambda: self._rotate_page(-90)),
-            ("↻ Rotate R", "Rotate current page right", lambda: self._rotate_page(90)),
-            ("🔃 Reverse", "Reverse all pages", self._reverse_pages),
-            ("📑 Split", "Split into one PDF per page", self._split_pages),
-            ("🧩 Merge", "Merge another PDF into this one", self._merge_pdfs),
+        for icon, text, tip, slot in [
+            ("page_plus", "Blank Page", "Insert a blank page", self._insert_blank),
+            ("clip", "From PDF", "Insert pages from another PDF", self._insert_from_pdf),
+            ("image", "From Images", "Insert images as pages", self._insert_images),
+            ("scissors", "Extract", "Extract a page range to a new PDF", self._extract_range),
+            ("trash", "Delete", "Delete the current page", self._delete_page),
+            ("rotate_left", "Rotate L", "Rotate current page left", lambda: self._rotate_page(-90)),
+            ("rotate_right", "Rotate R", "Rotate current page right", lambda: self._rotate_page(90)),
+            ("reverse", "Reverse", "Reverse all pages", self._reverse_pages),
+            ("split", "Split", "Split into one PDF per page", self._split_pages),
+            ("merge", "Merge", "Merge another PDF into this one", self._merge_pdfs),
         ]:
-            btn = _tool_btn(text, tip)
+            btn = _tool_btn(text, tip, icon=icon)
             btn.clicked.connect(slot)
             row.addWidget(btn)
         row.addStretch()
@@ -889,32 +895,32 @@ class PdfStudio(QWidget):
     def _annotate_toolbar(self) -> QHBoxLayout:
         row = QHBoxLayout()
         self.tool_buttons: Dict[str, QToolButton] = {}
-        for tool, text, tip in [
-            ("select", "⤣ Select", "Pan the document"),
-            ("highlight", "🖍 Highlight", "Drag over text to highlight"),
-            ("underline", "U̲ Underline", "Drag over text to underline"),
-            ("strikeout", "S̶ Strike", "Drag over text to strike out"),
-            ("note", "📝 Note", "Click to attach a note"),
-            ("draw", "✏️ Draw", "Freehand ink drawing"),
-            ("rect", "▭ Rectangle", "Drag a rectangle"),
-            ("ellipse", "◯ Ellipse", "Drag an ellipse"),
-            ("line", "╱ Line", "Drag a line"),
-            ("arrow", "→ Arrow", "Drag an arrow"),
-            ("text", "🔤 Text", "Click to type on the page"),
-            ("stamp", "★ Stamp", "Click to stamp star / date / approved"),
-            ("sign", "✍️ Sign", "Click the page to place your signature"),
-            ("dsc", "🔏 DSC", "Sign with a digital signature certificate"),
-            ("redact", "⬛ Redact", "Drag to permanently remove content"),
-            ("eraser", "🧽 Eraser", "Click an annotation to delete it"),
-            ("form", "📋 Fill Form", "Click form fields to fill them"),
-            ("form_build", "➕ Text Field", "Add a fillable text field to the page"),
-            ("form_check", "☑ Checkbox", "Add a fillable tick box to the page"),
+        for tool, icon, text, tip in [
+            ("select", "cursor", "Select", "Pan the document"),
+            ("highlight", "marker", "Highlight", "Drag over text to highlight"),
+            ("underline", "underline", "Underline", "Drag over text to underline"),
+            ("strikeout", "strike", "Strike", "Drag over text to strike out"),
+            ("note", "note", "Note", "Click to attach a note"),
+            ("draw", "pen", "Draw", "Freehand ink drawing"),
+            ("rect", "box", "Rectangle", "Drag a rectangle"),
+            ("ellipse", "ellipse", "Ellipse", "Drag an ellipse"),
+            ("line", "line", "Line", "Drag a line"),
+            ("arrow", "arrow", "Arrow", "Drag an arrow"),
+            ("text", "text_t", "Text", "Click to type on the page"),
+            ("stamp", "star", "Stamp", "Click to stamp star / date / approved"),
+            ("sign", "pen", "Sign", "Click the page to place your signature"),
+            ("dsc", "lock", "DSC", "Sign with a digital signature certificate"),
+            ("redact", "redact", "Redact", "Drag to permanently remove content"),
+            ("eraser", "eraser", "Eraser", "Click an annotation to delete it"),
+            ("form", "clipboard", "Fill Form", "Click form fields to fill them"),
+            ("form_build", "page_plus", "Text Field", "Add a fillable text field to the page"),
+            ("form_check", "checkbox", "Checkbox", "Add a fillable tick box to the page"),
         ]:
-            btn = _tool_btn(text, tip, checkable=True)
+            btn = _tool_btn(text, tip, checkable=True, icon=icon)
             btn.clicked.connect(lambda checked=False, t=tool: self.set_tool(t))
             self.tool_buttons[tool] = btn
             row.addWidget(btn)
-        self.color_btn = _tool_btn("🎨 Color", "Annotation color")
+        self.color_btn = _tool_btn("Color", "Annotation color", icon="palette")
         self.color_btn.clicked.connect(self._pick_color)
         self.width_combo = QComboBox()
         self.width_combo.addItems(["1", "2", "3", "5", "8"])
@@ -923,7 +929,7 @@ class PdfStudio(QWidget):
         self.width_combo.setFixedWidth(48)
         self.width_combo.currentTextChanged.connect(
             lambda t: setattr(self, "tool_width", int(t)))
-        fields_btn = _tool_btn("◻️ Fields", "Highlight form fields")
+        fields_btn = _tool_btn("Fields", "Highlight form fields", icon="box")
         fields_btn.setCheckable(True)
         fields_btn.setChecked(True)
         fields_btn.clicked.connect(lambda: setattr(self, "show_form_fields",
@@ -936,27 +942,27 @@ class PdfStudio(QWidget):
 
     def _convert_toolbar(self) -> QHBoxLayout:
         row = QHBoxLayout()
-        for text, tip, slot in [
-            ("📝 Word", "Export to an editable Word document", lambda: self._run_worker("docx")),
-            ("📽️ PowerPoint", "Export to PowerPoint slides", lambda: self._run_worker("pptx")),
-            ("🖼️ PNG Pages", "Export every page as PNG", lambda: self._export_images("png")),
-            ("🏞️ JPG Pages", "Export every page as JPG", lambda: self._export_images("jpg")),
-            ("📄 HTML", "Export as HTML", self._export_html),
-            ("📚 EPUB", "Export as EPUB e-book", self._export_epub),
-            ("🗜️ Compress", "Shrink file size", self._compress_document),
-            ("💧 Watermark", "Add a diagonal watermark", self._watermark_dialog),
-            ("🔢 Page #", "Add page numbers", self._pagenum_dialog),
-            ("📌 Flatten", "Flatten annotations permanently", self._flatten_document),
-            ("🔤 OCR", "Make scans searchable (offline AI)", lambda: self._run_worker("ocr")),
-            ("🔒 Protect", "Add password protection", self._protect_dialog),
-            ("🔓 Unlock", "Remove password protection", self._unlock_document),
-            ("🛠 Repair", "Rebuild a damaged PDF", self._repair_document),
-            ("✂ Trim", "Cut away white scanner margins", self._trim_margins),
-            ("◐ B&W", "Black and white photocopy", self._grayscale_document),
-            ("📝 Summary", "Key points, extracted offline", self._summarize_document),
-            ("📎 Attachments", "Extract embedded files", self._extract_attachments),
+        for icon, text, tip, slot in [
+            ("doc", "Word", "Export to an editable Word document", lambda: self._run_worker("docx")),
+            ("presentation", "PowerPoint", "Export to PowerPoint slides", lambda: self._run_worker("pptx")),
+            ("image", "PNG Pages", "Export every page as PNG", lambda: self._export_images("png")),
+            ("image", "JPG Pages", "Export every page as JPG", lambda: self._export_images("jpg")),
+            ("code", "HTML", "Export as HTML", self._export_html),
+            ("book", "EPUB", "Export as EPUB e-book", self._export_epub),
+            ("compress", "Compress", "Shrink file size", self._compress_document),
+            ("drop", "Watermark", "Add a diagonal watermark", self._watermark_dialog),
+            ("hash", "Page #", "Add page numbers", self._pagenum_dialog),
+            ("layers", "Flatten", "Flatten annotations permanently", self._flatten_document),
+            ("scan", "OCR", "Make scans searchable (offline AI)", lambda: self._run_worker("ocr")),
+            ("lock", "Protect", "Add password protection", self._protect_dialog),
+            ("unlock", "Unlock", "Remove password protection", self._unlock_document),
+            ("wrench", "Repair", "Rebuild a damaged PDF", self._repair_document),
+            ("scissors", "Trim", "Cut away white scanner margins", self._trim_margins),
+            ("contrast", "B&W", "Black and white photocopy", self._grayscale_document),
+            ("text", "Summary", "Key points, extracted offline", self._summarize_document),
+            ("clip", "Attachments", "Extract embedded files", self._extract_attachments),
         ]:
-            btn = _tool_btn(text, tip)
+            btn = _tool_btn(text, tip, icon=icon)
             btn.clicked.connect(slot)
             row.addWidget(btn)
         row.addStretch()
@@ -1003,7 +1009,7 @@ class PdfStudio(QWidget):
             "QTreeWidget::item:selected { background:#6C63FF; color:#fff; }")
         self.outline_tree.itemClicked.connect(self._outline_clicked)
         lay.addWidget(self.outline_tree)
-        b = _tool_btn("＋ Bookmark this page", "Add a bookmark for the current page")
+        b = _tool_btn("Bookmark this page", "Add a bookmark for the current page", icon="plus")
         b.clicked.connect(self._add_bookmark)
         lay.addWidget(b)
         return w
@@ -1015,7 +1021,7 @@ class PdfStudio(QWidget):
         self.comment_list.setStyleSheet(
             "QListWidget { background:rgba(255,255,255,0.05); color:#EDF1FA; border:1px solid rgba(255,255,255,0.10); }")
         lay.addWidget(self.comment_list)
-        b = _tool_btn("🗑 Delete selected", "Delete the selected annotation")
+        b = _tool_btn("Delete selected", "Delete the selected annotation", icon="trash")
         b.clicked.connect(self._delete_selected_comment)
         lay.addWidget(b)
         return w
@@ -1289,7 +1295,7 @@ class PdfStudio(QWidget):
         color = QColorDialog.getColor(self.tool_color, self, "Annotation Color")
         if color.isValid():
             self.tool_color = color
-            self.color_btn.setText("🎨 " + color.name())
+            self.color_btn.setText(color.name())
 
     # --- Digital Signature Certificate (DSC) ---
 
@@ -1311,8 +1317,12 @@ class PdfStudio(QWidget):
         cl = QVBoxLayout(choice)
         cl.addWidget(QLabel("Sign this document with:"))
         row = QHBoxLayout()
-        token_btn = QPushButton("🔌  USB token\n(plugged-in DSC)")
-        file_btn = QPushButton("📁  Certificate file\n(.pfx / .p12)")
+        token_btn = QPushButton("  USB token\n(plugged-in DSC)")
+        token_btn.setIcon(ICONS["plug"](26))
+        token_btn.setIconSize(QSize(26, 26))
+        file_btn = QPushButton("  Certificate file\n(.pfx / .p12)")
+        file_btn.setIcon(ICONS["folder"](26))
+        file_btn.setIconSize(QSize(26, 26))
         token_btn.setMinimumWidth(190)
         file_btn.setMinimumWidth(190)
         row.addWidget(token_btn)
