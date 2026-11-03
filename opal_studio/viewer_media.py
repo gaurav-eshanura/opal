@@ -150,8 +150,8 @@ class MediaStudio(QWidget):
 
     def _build_ui(self):
         root = QVBoxLayout(self)
-        root.setContentsMargins(0, 0, 0, 0)
-        root.setSpacing(4)
+        root.setContentsMargins(12, 12, 12, 12)
+        root.setSpacing(8)
 
         header = QHBoxLayout()
         self.title_label = QLabel(Path(self.file_path).name)

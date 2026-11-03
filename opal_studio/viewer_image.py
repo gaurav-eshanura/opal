@@ -329,20 +329,21 @@ class ImageLab(QWidget):
 
     def _build_ui(self):
         root = QHBoxLayout(self)
-        root.setContentsMargins(0, 0, 0, 0)
+        root.setContentsMargins(12, 12, 12, 12)
+        root.setSpacing(12)
 
         rail = QWidget()
         rail.setObjectName("toolRail")
         rail.setFixedWidth(186)
-        rail.setStyleSheet("QWidget#toolRail { background: rgba(255,255,255,0.05); "
-                           "border: 1px solid rgba(255,255,255,0.10); border-radius: 18px; }")
+        rail.setStyleSheet(f"QWidget#toolRail {{ background: rgba(255,255,255,0.05); "
+                           f"border: 1px solid rgba(255,255,255,0.10); border-radius: {RADIUS_LARGE}px; }}")
         rail_lay = QVBoxLayout(rail)
         rail_lay.setSpacing(3)
-        rail_lay.setContentsMargins(12, 14, 12, 14)
+        rail_lay.setContentsMargins(12, 12, 12, 12)
 
         brand = QLabel("OPAL  ·  IMAGE LAB")
-        brand.setStyleSheet("color: #A79FFF; font-size: 10px; font-weight: 700; "
-                            "letter-spacing: 2px; background: transparent;")
+        brand.setStyleSheet(f"color: {ACCENT_HI}; font-size: 10px; font-weight: 700; "
+                            f"letter-spacing: 2px; background: transparent;")
         rail_lay.addWidget(brand)
         rail_lay.addSpacing(10)
 

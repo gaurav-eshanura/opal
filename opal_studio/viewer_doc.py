@@ -75,7 +75,7 @@ class DocStudio(QWidget):
 
     def _build_ui(self):
         root = QVBoxLayout(self)
-        root.setContentsMargins(16, 12, 16, 12)
+        root.setContentsMargins(12, 12, 12, 12)
         root.setSpacing(8)
 
         header = QHBoxLayout()

@@ -59,7 +59,7 @@ class HomeTab(QWidget):
         super().__init__(parent)
         self.setAcceptDrops(True)
         lay = QVBoxLayout(self)
-        lay.setContentsMargins(24, 20, 24, 20)
+        lay.setContentsMargins(12, 12, 12, 12)
         lay.setSpacing(14)
 
         title = QLabel("Opal Floating Studio")
@@ -183,7 +183,7 @@ class FloatStudio(QWidget):
 
     def _build_ui(self):
         root = QVBoxLayout(self)
-        root.setContentsMargins(14, 12, 14, 14)
+        root.setContentsMargins(12, 12, 12, 12)
         root.setSpacing(8)
 
         # Title bar
