@@ -12,9 +12,9 @@ the app keeps its promises.
 
 ### Fixed
 
-- **The Home grid did nothing.** The 36 tiles on the Home screen were wired to
+- **The Home grid did nothing.** The 38 tiles on the Home screen were wired to
   a signal whose arguments were in the wrong order, so every click fell
-  through to a dead handler. All 36 now run their real action.
+  through to a dead handler. All 38 now run their real action.
 - **The radial wheel offered tools that had no handler.** Several entries in
   the Shift / Alt / Ctrl wheel pointed at menu ids that no route matched. Each
   one now points at an id that actually exists, so the wheel no longer opens a
@@ -60,8 +60,8 @@ It is now **pytest**, and it can fail:
 - **Real artifacts.** Every output is re-opened with the matching reader and
   checked. A "successful" conversion that produced a file no reader can open
   counts as a failure.
-- **Real assertions.** The menu contract is 300 cases (one per wheel entry per
-  file type), the catalog contract covers all 36 catalog actions plus the
+- **Real assertions.** The menu contract is 298 cases (one per wheel entry per
+  file type), the catalog contract covers all 38 catalog actions plus the
   guards around them, and the old print-only suites run as subprocesses where
   a failed check is a failed test.
 - **Honest skips.** Slow AI upscaling and the desktop-only suites are reported

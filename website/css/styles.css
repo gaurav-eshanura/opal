@@ -643,6 +643,7 @@ h3 { font-size: 1.4rem; line-height: 1.15; }
   overflow-x: auto;
 }
 .c-cmd { color: var(--fire-amber); }
+.c-cmt { color: rgba(169, 179, 201, 0.55); font-style: italic; }
 
 /* ------------------------------------------------------------------ faq -- */
 .faq { display: grid; gap: 0; border-top: 1px solid rgba(255, 255, 255, 0.08); }

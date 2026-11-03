@@ -263,12 +263,15 @@
       </div>
       <div class="studio-copy">
         <h3 data-en="A PDF editor, not a PDF viewer" data-hing="PDF viewer nahi, PDF editor">A PDF editor, not a PDF viewer</h3>
-        <p class="lede" data-en="Every tool Acrobat has, and a few it does not. Annotate, redact, sign, fill, OCR a scan, compare two versions, flatten, protect."
-           data-hing="Acrobat ke saare tools, aur kuch jo uske paas nahi. Note, redact, sign, form bharo, scan OCR, do version compare, flatten, protect.">
-          Every tool Acrobat has, and a few it does not. Annotate, redact, sign, fill, OCR a scan, compare two versions, flatten, protect.
+        <p class="lede" data-en="Every tool Acrobat has, and a few it does not. Annotate, search &amp; redact, sign, verify signatures, fill, OCR a scan, compare two versions, flatten, protect."
+           data-hing="Acrobat ke saare tools, aur kuch jo uske paas nahi. Note, search &amp; redact, sign, signature verify, form bharo, scan OCR, do version compare, flatten, protect.">
+          Every tool Acrobat has, and a few it does not. Annotate, search &amp; redact, sign, verify signatures, fill, OCR a scan, compare two versions, flatten, protect.
         </p>
         <ul class="checklist">
           <li data-en="Sign with a real DSC — the plugged-in USB token or a .pfx / .p12 file; the key never leaves the token" data-hing="Asli DSC se sign — lagaya hua USB token ya .pfx / .p12 file; key kabhi token se bahar nahi niklti">Sign with a real DSC — the plugged-in USB token or a .pfx / .p12 file; the key never leaves the token</li>
+          <li data-en="Signs into the form's own empty signature field, like Acrobat" data-hing="Form ke khali signature field mein sign, Acrobat ki tarah">Signs into the form's own empty signature field, like Acrobat</li>
+          <li data-en="Verify signatures — intact, trusted, revoked — checked fully offline" data-hing="Signature verify karo — intact, trusted, revoked — poori tarah offline">Verify signatures — intact, trusted, revoked — checked fully offline</li>
+          <li data-en="Search &amp; redact every occurrence, plus an optional timestamp from an allow-listed TSA" data-hing="Har occurrence ko search &amp; redact karo, plus allow-listed TSA se optional timestamp">Search &amp; redact every occurrence, plus an optional timestamp from an allow-listed TSA</li>
           <li data-en="Draw, type, or upload a signature picture" data-hing="Draw karo, type karo, ya signature image upload karo">Draw, type, or upload a signature picture</li>
           <li data-en="Searchable text out of a scanned page" data-hing="Scan se searchable text">Searchable text out of a scanned page</li>
         </ul>
@@ -319,9 +322,9 @@
 <section class="proof">
   <div class="shell proof-grid">
     <div class="proof-item reveal">
-      <div class="figure">101</div>
-      <p data-en="actions in the wheel. Every one that makes a file is run against a real file, and the result is opened again to prove it works."
-         data-hing="wheel mein 101 actions. File banane wala har action asli file pe chalta hai, aur result dobara khola jaata hai.">actions in the wheel. Every one that makes a file is run against a real file, and the result is opened again to prove it works.</p>
+      <div class="figure">103</div>
+      <p data-en="actions in the wheel, 38 more in the catalogue. Every one that makes a file is run against a real file in a 391-test suite, and the result is opened again to prove it works."
+         data-hing="wheel mein 103 actions, catalogue mein 38 aur. File banane wala har action 391-test suite mein asli file pe chalta hai, aur result dobara khola jaata hai.">actions in the wheel, 38 more in the catalogue. Every one that makes a file is run against a real file in a 391-test suite, and the result is opened again to prove it works.</p>
     </div>
     <div class="proof-item reveal" data-reveal-delay="1">
       <div class="figure">0</div>
@@ -363,7 +366,7 @@
       </div>
       <div class="counter-row">
         <span class="counter-ask" data-en="“Scan pe sign karo.”" data-hing="“Scan pe sign karo.”">“Scan pe sign karo.”</span>
-        <span class="counter-tool" data-en="Signed PDF, DSC certificate applied" data-hing="Signed PDF, DSC certificate lag gaya">Signed PDF, DSC certificate applied</span>
+        <span class="counter-tool" data-en="Signed PDF — computed inside the DSC USB token" data-hing="Signed PDF — DSC USB token ke andar compute hua">Signed PDF — computed inside the DSC USB token</span>
         <span class="counter-time">~2.8s</span>
       </div>
       <div class="counter-row">
@@ -437,6 +440,8 @@
       <pre id="cli-code" class="cli-body"><code><span class="c-cmd">opal_cli.bat</span> --convert photo.HEIC --to png
 <span class="c-cmd">opal_cli.bat</span> --tool photo.jpg --to remove_bg
 <span class="c-cmd">opal_cli.bat</span> --convert invoice.pdf --to docx --out C:\Reports
+<span class="c-cmd">opal_cli.bat</span> --sign contract.pdf --token                  <span class="c-cmt"># DSC USB token plugged in</span>
+<span class="c-cmd">opal_cli.bat</span> --verify-signature signed.pdf           <span class="c-cmt"># intact / trusted / revoked</span>
 <span class="c-cmd">opal_cli.bat</span> --info report.pdf</code></pre>
     </div>
   </div>
@@ -451,9 +456,9 @@
     <div class="faq reveal" data-reveal-delay="1" style="margin-top: 44px;">
       <details>
         <summary data-en="Does it really work without internet?" data-hing="Kya ye bina internet ke sach mein chalta hai?">Does it really work without internet?</summary>
-        <p data-en="Yes. The full build carries the cut-out model inside, so background removal works with the cable unplugged. The only thing that ever touches the network is the one-time download of an optional extra model. Everything else — conversion, PDF editing, OCR, signing — is local."
-           data-hing="Haan. Full build mein cut-out model andar hota hai, to background removal bina internet ke chalta hai. Network se sirf optional extra model ek baar download hota hai. Baaki sab — conversion, PDF editing, OCR, signing — sab local.">
-          Yes. The full build carries the cut-out model inside, so background removal works with the cable unplugged. The only thing that ever touches the network is the one-time download of an optional extra model. Everything else — conversion, PDF editing, OCR, signing — is local.
+        <p data-en="Yes. The full build carries the cut-out model inside, so background removal works with the cable unplugged. The only things that ever touch the network are the one-time download of an optional extra model and — only if you pass --tsa while signing — an allow-listed timestamp server, which receives just the hash of the signature, never the document. Everything else — conversion, PDF editing, OCR, signing, verifying — is local."
+           data-hing="Haan. Full build mein cut-out model andar hota hai, to background removal bina internet ke chalta hai. Network se sirf do cheezein touch karti hain: optional extra model ek baar download hota hai, aur — sirf agar aap sign karte waqt --tsa dein — ek allow-listed timestamp server, jise sirf signature ka hash jaata hai, document kabhi nahi. Baaki sab — conversion, PDF editing, OCR, signing, verifying — sab local.">
+          Yes. The full build carries the cut-out model inside, so background removal works with the cable unplugged. The only things that ever touch the network are the one-time download of an optional extra model and — only if you pass --tsa while signing — an allow-listed timestamp server, which receives just the hash of the signature, never the document. Everything else — conversion, PDF editing, OCR, signing, verifying — is local.
         </p>
       </details>
       <details>
@@ -472,9 +477,9 @@
       </details>
       <details>
         <summary data-en="Which digital signature certificates work?" data-hing="Kaun se digital signature certificate chalte hain?">Which digital signature certificates work?</summary>
-        <p data-en="Any PKCS#12 (.pfx / .p12) file — the format Indian certificate authorities hand out as a DSC. Opal shows the certificate subject, issuer and validity before you sign, and the private key never leaves your computer."
-           data-hing="Koi bhi PKCS#12 (.pfx / .p12) file — Indian CA jo DSC dete hain wahi format hai. Opal sign karne se pehle subject, issuer aur validity dikhata hai, aur private key aapke computer se bahar nahi jaata.">
-          Any PKCS#12 (.pfx / .p12) file — the format Indian certificate authorities hand out as a DSC. Opal shows the certificate subject, issuer and validity before you sign, and the private key never leaves your computer.
+        <p data-en="A .pfx / .p12 file — the format Indian certificate authorities hand out as a DSC — or the DSC USB token itself, plugged in. Opal finds the token's driver by itself, shows the certificate subject, issuer, serial and validity before you sign, and computes the signature inside the token: the private key never leaves the device. With a .pfx file the key never leaves your computer."
+           data-hing=".pfx / .p12 file — Indian CA jo DSC dete hain wahi format — ya lagaya hua DSC USB token hi. Opal token ka driver khud dhoondh leta hai, sign se pehle subject, issuer, serial aur validity dikhata hai, aur signature token ke andar banata hai: private key kabhi device se bahar nahi niklti. .pfx file mein key kabhi computer se bahar nahi jaati.">
+          A .pfx / .p12 file — the format Indian certificate authorities hand out as a DSC — or the DSC USB token itself, plugged in. Opal finds the token's driver by itself, shows the certificate subject, issuer, serial and validity before you sign, and computes the signature inside the token: the private key never leaves the device. With a .pfx file the key never leaves your computer.
         </p>
       </details>
       <details>

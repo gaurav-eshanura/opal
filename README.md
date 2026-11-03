@@ -63,7 +63,7 @@ profile, and leaves nothing behind on a shared or counter PC.
 
 ## ✨ What it does
 
-**101 actions in the wheel, 38 more in the catalogue. Every action that makes a
+**103 actions in the wheel, 38 more in the catalogue. Every action that makes a
 file is run against a real file, and the result is opened again to prove it
 works.**
 
@@ -287,7 +287,7 @@ python -m pytest tests/ -q -k menu      # one part of it
 
 | Suite | What it covers |
 |---|---|
-| `test_menu_contract.py` | every wheel action × the file types it applies to (297 cases) |
+| `test_menu_contract.py` | every wheel action × the file types it applies to (298 cases) |
 | `test_catalog_contract.py` | all 38 catalogue actions, plus the guards around them |
 | `test_watch_folder.py` | a file dropped into a watched folder, end to end |
 | `test_every_feature.py` | every dialog, the cross-platform layer and the CLI |

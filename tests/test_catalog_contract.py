@@ -1,6 +1,6 @@
 """Every action the catalog advertises must really work.
 
-`OpalEngine.get_catalog()` is the public menu of 36 actions shown on the Home
+`OpalEngine.get_catalog()` is the public menu of 38 actions shown on the Home
 grid and in the CLI.  Each one is run here against a real sample file, and a
 test passes only when the produced artifact opens with the matching reader.
 """

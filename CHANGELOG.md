@@ -15,8 +15,8 @@ All notable changes to Opal are recorded here. The format follows
   file with the matching reader — so a "successful" conversion that produced a
   file nothing can open counts as a failure.
 - **Contracts for the two surfaces that matter most.**
-  `tests/test_menu_contract.py` runs all 95 wheel actions against the file
-  types they apply to (300 cases), and `tests/test_catalog_contract.py`
+  `tests/test_menu_contract.py` runs every wheel entry against the file
+  types it applies to (298 cases), and `tests/test_catalog_contract.py`
   covers all 38 catalog actions plus the guards around them.
 - **The watch folder is tested end to end.** `tests/test_watch_folder.py`
   drops a file into a watched folder and waits for the conversion, the
@@ -87,7 +87,7 @@ All notable changes to Opal are recorded here. The format follows
   just the signature hash, never the document. `tests/test_parity.py`.
 
 ### Fixed
-- **The Home grid did nothing.** The 36 tiles were wired to a signal whose
+- **The Home grid did nothing.** The 38 tiles were wired to a signal whose
   arguments were in the wrong order, so every click fell through to a dead
   handler.
 - **The radial wheel offered actions with no handler.** Several entries
@@ -143,7 +143,8 @@ All notable changes to Opal are recorded here. The format follows
   reported. Covered by `tests/test_action_queue.py`.
 
 ### Changed
-- The website and the README now quote the real numbers: 95 actions, 98 MB
+- The website and the README now quote the real numbers: 103 wheel actions,
+  38 catalogue actions, 391 passing tests, 98 MB
   and 222 MB for the two zipped builds.
 - A separate security suite (`tests/test_security.py`, 24 checks) proves the
   guarantees the app makes: a hostile archive cannot write outside the folder
