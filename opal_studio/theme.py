@@ -45,7 +45,7 @@ PAPER = "#FFFFFF"              # a sheet of paper, for documents and photos
 
 TEXT = "#EDF1FA"
 TEXT_DIM = "#A8B2C8"
-TEXT_FAINT = "#727E96"
+TEXT_FAINT = "#8B96AD"
 TEXT_INVERSE = "#0B0E18"
 
 INK = "#05070D"
@@ -141,7 +141,7 @@ def build_stylesheet() -> str:
         border: 1px solid {LINE_STRONG};
         border-radius: {RADIUS}px;
         padding: 7px 14px;
-        font-size: 11.5px;
+        font-size: 11px;
         font-weight: 600;
     }}
     QPushButton:hover {{
@@ -276,8 +276,8 @@ def build_stylesheet() -> str:
         color: {TEXT_DIM};
         padding: 8px 16px;
         margin-right: 2px;
-        border-top-left-radius: 10px;
-        border-top-right-radius: 10px;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
         font-size: 12px;
     }}
     QTabBar::tab:hover {{ color: {TEXT}; }}

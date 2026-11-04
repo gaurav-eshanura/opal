@@ -60,7 +60,7 @@ class HomeTab(QWidget):
         self.setAcceptDrops(True)
         lay = QVBoxLayout(self)
         lay.setContentsMargins(12, 12, 12, 12)
-        lay.setSpacing(14)
+        lay.setSpacing(12)
 
         title = QLabel("Opal Floating Studio")
         title.setFont(QFont("Segoe UI", 20, QFont.Bold))
@@ -183,7 +183,7 @@ class FloatStudio(QWidget):
 
     def _build_ui(self):
         root = QVBoxLayout(self)
-        root.setContentsMargins(12, 12, 12, 12)
+        root.setContentsMargins(24, 24, 24, 24)
         root.setSpacing(8)
 
         # Title bar
@@ -201,7 +201,7 @@ class FloatStudio(QWidget):
         bar.addWidget(self.title_label)
         self.info_label = QLabel("")
         self.info_label.setFont(QFont("Segoe UI", 8))
-        self.info_label.setStyleSheet("color: #727E96;")
+        self.info_label.setStyleSheet("color: #8B96AD;")
         bar.addWidget(self.info_label)
         bar.addStretch()
 

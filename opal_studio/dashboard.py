@@ -161,9 +161,9 @@ class OpalDashboard(QWidget):
                 border: 1px solid rgba(255,255,255,0.16);
                 border-radius: {RADIUS}px;
                 padding: 8px 16px;
-                min-height: 34px;
+                min-height: 32px;
                 font-weight: 600;
-                font-size: 11.5px;
+                font-size: 11px;
             }}
             QPushButton:hover {{
                 background-color: rgba(255,255,255,0.08);
@@ -174,9 +174,9 @@ class OpalDashboard(QWidget):
                 background-color: #6C63FF;
                 border: 1px solid #6C63FF;
                 color: #FFFFFF;
-                font-size: 11.5px;
+                font-size: 11px;
                 padding: 8px 18px;
-                min-height: 34px;
+                min-height: 32px;
             }}
             QPushButton#primaryBtn:hover {{
                 background-color: #8A83FF;
@@ -202,19 +202,19 @@ class OpalDashboard(QWidget):
 
     def _setup_ui(self):
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(28, 24, 28, 24)
-        main_layout.setSpacing(18)
+        main_layout.setContentsMargins(24, 24, 24, 24)
+        main_layout.setSpacing(16)
 
         # 1. Header Bar
         header = QHBoxLayout()
-        header.setSpacing(14)
+        header.setSpacing(12)
 
         # App Title & Subtitle
         title_box = QVBoxLayout()
-        title_box.setSpacing(3)
+        title_box.setSpacing(4)
 
         title_row = QHBoxLayout()
-        title_row.setSpacing(10)
+        title_row.setSpacing(8)
         from opal_studio.icons import mark_icon
         brand_mark = QLabel()
         brand_mark.setPixmap(mark_icon(30).pixmap(30, 30))
@@ -287,8 +287,8 @@ class OpalDashboard(QWidget):
                                                     stop: 0 #8A5CF6, stop: 0.55 #EE4E8A, stop: 1 #FF9A3C);
                           color: #FFFFFF; border: none;
                           border-radius: {RADIUS}px; padding: 8px 18px;
-                          min-height: 34px;
-                          font-size: 11.5px; font-weight: 700; }}
+                          min-height: 32px;
+                          font-size: 11px; font-weight: 700; }}
             QPushButton:hover {{ background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
                                                           stop: 0 #9B7BFF, stop: 0.55 #FF6BA0, stop: 1 #FFB35C); }}
         """)
@@ -379,8 +379,8 @@ class OpalDashboard(QWidget):
             card.setToolTip(f"Open {title}")
             card.mouseReleaseEvent = self._make_feature_click(card, feature_key)
         layout = QVBoxLayout(card)
-        layout.setSpacing(3)
-        layout.setContentsMargins(16, 14, 16, 14)
+        layout.setSpacing(4)
+        layout.setContentsMargins(12, 12, 12, 12)
 
         t_lbl = QLabel(title)
         t_lbl.setFont(QFont("Segoe UI", 10, QFont.Bold))

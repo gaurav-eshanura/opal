@@ -60,7 +60,7 @@ class HistoryDialog(QDialog):
             QPushButton {
                 background-color: rgba(255,255,255,0.05);
                 border: 1px solid rgba(255,255,255,0.16);
-                border-radius: 10px;
+                border-radius: 12px;
                 padding: 6px 14px;
                 color: #EDF1FA;
                 font-size: 12px;
@@ -74,7 +74,7 @@ class HistoryDialog(QDialog):
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 18, 20, 18)
+        layout.setContentsMargins(24, 24, 24, 24)
         layout.setSpacing(12)
 
         # Header

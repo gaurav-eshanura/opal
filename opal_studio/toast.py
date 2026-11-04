@@ -33,8 +33,8 @@ class OpalToast(QWidget):
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(18, 14, 18, 14)
-        layout.setSpacing(6)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(4)
 
         self.title_label = QLabel("Conversion Complete")
         self.title_label.setFont(QFont("Segoe UI", 10, QFont.Bold))
@@ -48,7 +48,7 @@ class OpalToast(QWidget):
         layout.addWidget(self.detail_label)
 
         btn_layout = QHBoxLayout()
-        btn_layout.setSpacing(10)
+        btn_layout.setSpacing(8)
         btn_layout.addStretch()
 
         self.btn_open = QPushButton("Open File")
@@ -57,7 +57,7 @@ class OpalToast(QWidget):
             QPushButton {
                 background-color: #6C63FF;
                 color: #FFFFFF;
-                border-radius: 10px;
+                border-radius: 12px;
                 padding: 5px 12px;
                 border: none;
             }
@@ -74,7 +74,7 @@ class OpalToast(QWidget):
             QPushButton {
                 background-color: rgba(255,255,255,0.05);
                 color: #EDF1FA;
-                border-radius: 10px;
+                border-radius: 12px;
                 padding: 5px 12px;
                 border: 1px solid rgba(255,255,255,0.16);
             }

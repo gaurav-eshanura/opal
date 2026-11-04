@@ -233,7 +233,7 @@ class GlassButton(QPushButton):
         if tooltip:
             self.setToolTip(tooltip)
         self.setCursor(Qt.PointingHandCursor)
-        self.setMinimumHeight(30)
+        self.setMinimumHeight(32)
         self._apply()
 
     def _apply(self) -> None:
@@ -243,7 +243,7 @@ class GlassButton(QPushButton):
                     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
                                     stop: 0 #8A5CF6, stop: 0.55 #EE4E8A, stop: 1 #FF9A3C);
                     color: #FFFFFF; border: none; border-radius: 12px;
-                    padding: 7px 16px; font-weight: 700; font-size: 11.5px;
+                    padding: 7px 16px; font-weight: 700; font-size: 11px;
                 }
                 QPushButton:hover {
                     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
@@ -259,7 +259,7 @@ class GlassButton(QPushButton):
                     color: #EDF1FA;
                     border: 1px solid rgba(255,255,255,0.16);
                     border-radius: 12px; padding: 7px 14px;
-                    font-weight: 600; font-size: 11.5px;
+                    font-weight: 600; font-size: 11px;
                 }
                 QPushButton:hover {
                     background: rgba(255,255,255,0.13);

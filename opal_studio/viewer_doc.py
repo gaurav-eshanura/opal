@@ -79,14 +79,14 @@ class DocStudio(QWidget):
 
     def _build_ui(self):
         root = QVBoxLayout(self)
-        root.setContentsMargins(12, 12, 12, 12)
+        root.setContentsMargins(24, 24, 24, 24)
         root.setSpacing(8)
 
         header = QHBoxLayout()
         self.title_label = QLabel(Path(self.file_path).name)
         self.title_label.setStyleSheet("color: #EDF1FA; font-size: 12px; font-weight: 700;")
         self.meta_label = QLabel("")
-        self.meta_label.setStyleSheet("color: #727E96; font-size: 10px;")
+        self.meta_label.setStyleSheet("color: #8B96AD; font-size: 10px;")
         header.addWidget(self.title_label)
         header.addWidget(self.meta_label)
         header.addStretch()
@@ -140,7 +140,7 @@ class DocStudio(QWidget):
         bar.addWidget(self.font_combo)
         bar.addStretch()
         self.text_stats = QLabel("")
-        self.text_stats.setStyleSheet("color: #727E96; font-size: 10px;")
+        self.text_stats.setStyleSheet("color: #8B96AD; font-size: 10px;")
         bar.addWidget(self.text_stats)
         lay.addLayout(bar)
         self.text_view = QPlainTextEdit()
@@ -241,7 +241,7 @@ class DocStudio(QWidget):
         lay.setContentsMargins(0, 0, 0, 0)
         bar = QHBoxLayout()
         self.archive_info = QLabel("")
-        self.archive_info.setStyleSheet("color: #727E96; font-size: 10px;")
+        self.archive_info.setStyleSheet("color: #8B96AD; font-size: 10px;")
         bar.addWidget(self.archive_info)
         bar.addStretch()
         extract_btn = _btn("Extract All", "Extract the archive next to the original file", icon="archive")
@@ -572,8 +572,10 @@ class DocStudio(QWidget):
             return
         if self.kind == "text":
             self.text_view.setFocus()
-            cursor = self.text_view.find(needle)
-            if cursor is not None:
+            # QPlainTextEdit.find() only returns a bool; the cursor comes from
+            # the document so we can select and reveal the match.
+            cursor = self.text_view.document().find(needle)
+            if not cursor.isNull():
                 self.text_view.setTextCursor(cursor)
                 self.text_view.ensureCursorVisible()
         elif self.kind == "html":

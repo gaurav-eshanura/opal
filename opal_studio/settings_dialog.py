@@ -67,7 +67,7 @@ class SettingsDialog(QDialog):
             QLineEdit {
                 background-color: rgba(255,255,255,0.05);
                 border: 1px solid rgba(255,255,255,0.16);
-                border-radius: 10px;
+                border-radius: 12px;
                 padding: 6px 10px;
                 color: #EDF1FA;
                 font-size: 12px;
@@ -78,7 +78,7 @@ class SettingsDialog(QDialog):
             QPushButton {
                 background-color: rgba(255,255,255,0.05);
                 border: 1px solid rgba(255,255,255,0.16);
-                border-radius: 10px;
+                border-radius: 12px;
                 padding: 7px 16px;
                 color: #EDF1FA;
                 font-size: 13px;
@@ -102,8 +102,8 @@ class SettingsDialog(QDialog):
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 20, 24, 20)
-        layout.setSpacing(14)
+        layout.setContentsMargins(24, 24, 24, 24)
+        layout.setSpacing(12)
 
         # Header
         title_label = QLabel("Opal Preferences")
@@ -114,7 +114,7 @@ class SettingsDialog(QDialog):
         # 1. Behavior Group
         grp_behavior = QGroupBox("Behavior & Detection")
         vbox_behavior = QVBoxLayout(grp_behavior)
-        vbox_behavior.setSpacing(10)
+        vbox_behavior.setSpacing(8)
 
         self.chk_startup = QCheckBox("Start Opal automatically with Windows")
         vbox_behavior.addWidget(self.chk_startup)
@@ -156,7 +156,7 @@ class SettingsDialog(QDialog):
         ai_layout.addRow("Upscaling model", self.cmb_upscale_model)
 
         ai_hint = QLabel("Models download once, then work offline. The first use may take a minute.")
-        ai_hint.setStyleSheet("color: #727E96; font-size: 10px;")
+        ai_hint.setStyleSheet("color: #8B96AD; font-size: 10px;")
         ai_layout.addRow("", ai_hint)
         layout.addWidget(grp_ai)
 

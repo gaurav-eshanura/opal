@@ -143,7 +143,7 @@ class SignatureDialog(QDialog):
 
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet("QTabWidget::pane { border: 1px solid rgba(255,255,255,0.16); } "
-                                "QTabBar::tab { background:rgba(255,255,255,0.05); color:#727E96; padding:6px 14px; } "
+                                "QTabBar::tab { background:rgba(255,255,255,0.05); color:#8B96AD; padding:6px 14px; } "
                                 "QTabBar::tab:selected { background:#6C63FF; color:#fff; }")
 
         draw_tab = QWidget()
@@ -152,7 +152,7 @@ class SignatureDialog(QDialog):
         self.canvas_img.fill(Qt.transparent)
         self.canvas_lbl = QLabel()
         self.canvas_lbl.setFixedSize(440, 180)
-        self.canvas_lbl.setStyleSheet("background: #FFFFFF; border-radius: 10px;")
+        self.canvas_lbl.setStyleSheet("background: #FFFFFF; border-radius: 12px;")
         self.canvas_lbl.setMouseTracking(True)
         self._drawing = False
         self._last_pt = None
@@ -192,7 +192,7 @@ class SignatureDialog(QDialog):
         self.image_preview = QLabel("No signature image loaded")
         self.image_preview.setAlignment(Qt.AlignCenter)
         self.image_preview.setMinimumHeight(150)
-        self.image_preview.setStyleSheet("background:#FFFFFF; border-radius:6px; color:#888;")
+        self.image_preview.setStyleSheet("background:#FFFFFF; border-radius:12px; color:#888;")
         i_lay.addWidget(self.image_preview)
         row_img = QHBoxLayout()
         pick_btn = QPushButton("Choose signature image…")
@@ -766,7 +766,7 @@ class PdfStudio(QWidget):
 
     def _build_ui(self):
         root = QVBoxLayout(self)
-        root.setContentsMargins(12, 12, 12, 12)
+        root.setContentsMargins(24, 24, 24, 24)
         root.setSpacing(8)
 
         root.addLayout(self._file_toolbar())
@@ -780,11 +780,11 @@ class PdfStudio(QWidget):
         self.thumb_list = QListWidget()
         self.thumb_list.setViewMode(QListWidget.IconMode)
         self.thumb_list.setIconSize(QSize(86, 122))
-        self.thumb_list.setSpacing(6)
+        self.thumb_list.setSpacing(4)
         self.thumb_list.setFixedWidth(128)
         self.thumb_list.setStyleSheet(f"""
             QListWidget {{ background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10); border-radius: {RADIUS}px; }}
-            QListWidget::item {{ border-radius: 6px; padding: 6px; }}
+            QListWidget::item {{ border-radius: 8px; padding: 6px; }}
             QListWidget::item:selected {{ background: {ACCENT_SOFT}; }}
         """)
         self.thumb_list.itemClicked.connect(self._thumb_clicked)
@@ -802,7 +802,7 @@ class PdfStudio(QWidget):
             f"QScrollArea {{ background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10); border-radius: {RADIUS}px; }}")
         self.page_container = QWidget()
         self.page_layout = QVBoxLayout(self.page_container)
-        self.page_layout.setSpacing(10)
+        self.page_layout.setSpacing(8)
         self.page_layout.setContentsMargins(12, 12, 12, 12)
         self.page_layout.setAlignment(Qt.AlignHCenter)
         self.page_scroll.setWidget(self.page_container)
@@ -2172,7 +2172,7 @@ class PdfStudio(QWidget):
             f"QScrollArea {{ background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10); border-radius: {RADIUS}px; }}")
         self.compare_container = QWidget()
         c_layout = QVBoxLayout(self.compare_container)
-        c_layout.setSpacing(10)
+        c_layout.setSpacing(8)
         c_layout.setContentsMargins(12, 12, 12, 12)
         c_layout.setAlignment(Qt.AlignHCenter)
         for i in range(min(len(self.compare_doc), 400)):

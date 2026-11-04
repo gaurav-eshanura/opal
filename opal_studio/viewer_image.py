@@ -77,7 +77,7 @@ def _chip_btn(text: str, tooltip: str = "") -> QPushButton:
     btn.setMinimumHeight(32)
     btn.setStyleSheet(f"""
         QPushButton {{ background: rgba(255,255,255,0.05); color: #EDF1FA; border: 1px solid rgba(255,255,255,0.13);
-                      border-radius: {RADIUS}px; padding: 5px 12px; font-size: 11.5px; font-weight: 600; }}
+                      border-radius: {RADIUS}px; padding: 5px 12px; font-size: 11px; font-weight: 600; }}
         QPushButton:hover {{ background: rgba(255,255,255,0.08); color: #C9C4FF; border-color: rgba(138,131,255,0.50); }}
         QPushButton:pressed {{ background: rgba(255,255,255,0.10); }}
     """)
@@ -333,7 +333,7 @@ class ImageLab(QWidget):
 
     def _build_ui(self):
         root = QHBoxLayout(self)
-        root.setContentsMargins(12, 12, 12, 12)
+        root.setContentsMargins(24, 24, 24, 24)
         root.setSpacing(12)
 
         rail = QWidget()
@@ -353,7 +353,7 @@ class ImageLab(QWidget):
         rail_inner = QWidget()
         rail_inner.setStyleSheet("background: transparent;")
         rail_lay = QVBoxLayout(rail_inner)
-        rail_lay.setSpacing(3)
+        rail_lay.setSpacing(4)
         rail_lay.setContentsMargins(12, 12, 12, 12)
         rail_scroll.setWidget(rail_inner)
         rail_outer.addWidget(rail_scroll)
@@ -375,7 +375,7 @@ class ImageLab(QWidget):
             QPushButton {{ background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
                                                     stop: 0 #8A5CF6, stop: 0.55 #EE4E8A, stop: 1 #FF9A3C);
                           color: #FFFFFF; border: none;
-                          border-radius: {RADIUS_LARGE}px; font-size: 12.5px; font-weight: 800;
+                          border-radius: {RADIUS_LARGE}px; font-size: 12px; font-weight: 800;
                           line-height: 118%; padding: 8px 6px; }}
             QPushButton:hover {{ background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
                                                           stop: 0 #9B7BFF, stop: 0.55 #FF6BA0, stop: 1 #FFB35C); }}
@@ -424,7 +424,7 @@ class ImageLab(QWidget):
         self.name_label = QLabel(Path(self.file_path).name)
         self.name_label.setStyleSheet("color: #EDF1FA; font-size: 13px; font-weight: 700;")
         self.info_label = QLabel("")
-        self.info_label.setStyleSheet("color: #727E96; font-size: 11px;")
+        self.info_label.setStyleSheet("color: #8B96AD; font-size: 11px;")
         info_row.addWidget(self.name_label)
         info_row.addWidget(self.info_label)
         info_row.addStretch()
@@ -450,7 +450,7 @@ class ImageLab(QWidget):
         center_lay.addWidget(self.progress)
 
         self.tip_label = QLabel("")
-        self.tip_label.setStyleSheet("color: #727E96; font-size: 10px;")
+        self.tip_label.setStyleSheet("color: #8B96AD; font-size: 10px;")
         center_lay.addWidget(self.tip_label)
         root.addWidget(center, 1)
 
@@ -462,8 +462,8 @@ class ImageLab(QWidget):
                                          "border-radius: 18px; }")
         self.options_lay = QVBoxLayout(self.options_panel)
         self.options_lay.setAlignment(Qt.AlignTop)
-        self.options_lay.setContentsMargins(14, 14, 14, 14)
-        self.options_lay.setSpacing(10)
+        self.options_lay.setContentsMargins(12, 12, 12, 12)
+        self.options_lay.setSpacing(8)
         root.addWidget(self.options_panel)
 
         self.set_tool("background")
@@ -491,7 +491,7 @@ class ImageLab(QWidget):
         self.options_lay.addWidget(heading)
         sub = QLabel(self._tool_hint())
         sub.setWordWrap(True)
-        sub.setStyleSheet("color: #727E96; font-size: 11px; background: transparent;")
+        sub.setStyleSheet("color: #8B96AD; font-size: 11px; background: transparent;")
         self.options_lay.addWidget(sub)
         self.options_lay.addSpacing(4)
         getattr(self, f"_opts_{self.tool}", lambda: None)()
@@ -611,7 +611,7 @@ class ImageLab(QWidget):
         self._add_run_button("Upscale Now", self._run_upscale)
         hint = QLabel("Model downloads once, then works offline.")
         hint.setWordWrap(True)
-        hint.setStyleSheet("color: #727E96; font-size: 10px;")
+        hint.setStyleSheet("color: #8B96AD; font-size: 10px;")
         self.options_lay.addWidget(hint)
 
     def _opts_enhance(self):
@@ -652,7 +652,7 @@ class ImageLab(QWidget):
         self.options_lay.addWidget(clear_btn)
         hint = QLabel("Drag on the image to select the crop area.")
         hint.setWordWrap(True)
-        hint.setStyleSheet("color: #727E96; font-size: 10px;")
+        hint.setStyleSheet("color: #8B96AD; font-size: 10px;")
         self.options_lay.addWidget(hint)
 
     def _update_crop_ratio(self):
@@ -709,7 +709,7 @@ class ImageLab(QWidget):
         hint = QLabel("Customers often need their signature stamped on a photo "
                       "or a certificate. The result saves automatically.")
         hint.setWordWrap(True)
-        hint.setStyleSheet("color: #727E96; font-size: 10px;")
+        hint.setStyleSheet("color: #8B96AD; font-size: 10px;")
         self.options_lay.addWidget(hint)
 
     def _add_signature_to_photo(self):
@@ -1195,7 +1195,7 @@ class ImageLab(QWidget):
             row = QPushButton(f"  #{r:02X}{g:02X}{b:02X}")
             row.setStyleSheet(f"QPushButton {{ background: rgb({r},{g},{b}); color: "
                               f"{'#000' if (r + g + b) > 380 else '#fff'}; text-align: left; "
-                              "border-radius: 6px; padding: 8px; }}")
+                              "border-radius: 8px; padding: 8px; }}")
             row.clicked.connect(lambda checked=False, hexc=f"#{r:02X}{g:02X}{b:02X}":
                                 (QApplication.clipboard().setText(hexc),
                                  self.tip_label.setText(f"Copied {hexc}")))

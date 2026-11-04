@@ -39,7 +39,7 @@ def _btn(text: str, tip: str = "", icon: str = "") -> QPushButton:
         b.setIconSize(QSize(15, 15))
     b.setStyleSheet("""
         QPushButton { background: rgba(255,255,255,0.05); color: #EDF1FA; border: 1px solid rgba(255,255,255,0.16);
-                      border-radius: 10px; padding: 5px 11px; font-size: 11px; font-weight: 600; }
+                      border-radius: 12px; padding: 5px 11px; font-size: 11px; font-weight: 600; }
         QPushButton:hover { background: #6C63FF; color: #FFFFFF; border-color: #8A83FF; }
         QPushButton:disabled { background: #101625; color: rgba(237,241,250,0.28); border-color: rgba(255,255,255,0.09); }
     """)
@@ -59,7 +59,7 @@ class WaveformView(QWidget):
         self.drag_start: Optional[float] = None
         self.setMinimumHeight(70)
         self.setMaximumHeight(130)
-        self.setStyleSheet("background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.10); border-radius:14px;")
+        self.setStyleSheet("background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.10); border-radius:18px;")
 
     def set_peaks(self, peaks: List[float]):
         self.peaks = peaks
@@ -155,14 +155,14 @@ class MediaStudio(QWidget):
 
     def _build_ui(self):
         root = QVBoxLayout(self)
-        root.setContentsMargins(12, 12, 12, 12)
+        root.setContentsMargins(24, 24, 24, 24)
         root.setSpacing(8)
 
         header = QHBoxLayout()
         self.title_label = QLabel(Path(self.file_path).name)
         self.title_label.setStyleSheet("color:#fff; font-size:12px; font-weight:700;")
         self.meta_label = QLabel("")
-        self.meta_label.setStyleSheet("color:#727E96; font-size:10px;")
+        self.meta_label.setStyleSheet("color:#8B96AD; font-size:10px;")
         header.addWidget(self.title_label)
         header.addWidget(self.meta_label)
         header.addStretch()
