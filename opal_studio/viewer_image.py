@@ -341,9 +341,22 @@ class ImageLab(QWidget):
         rail.setFixedWidth(186)
         rail.setStyleSheet(f"QWidget#toolRail {{ background: rgba(255,255,255,0.05); "
                            f"border: 1px solid rgba(255,255,255,0.10); border-radius: {RADIUS_LARGE}px; }}")
-        rail_lay = QVBoxLayout(rail)
+        rail_outer = QVBoxLayout(rail)
+        rail_outer.setContentsMargins(0, 0, 0, 0)
+        # The rail can hold more tools than a short window has room for — it
+        # scrolls instead of letting the layout overlap widgets.
+        rail_scroll = QScrollArea()
+        rail_scroll.setWidgetResizable(True)
+        rail_scroll.setFrameShape(QScrollArea.NoFrame)
+        rail_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        rail_scroll.setStyleSheet("QScrollArea { background: transparent; border: none; }")
+        rail_inner = QWidget()
+        rail_inner.setStyleSheet("background: transparent;")
+        rail_lay = QVBoxLayout(rail_inner)
         rail_lay.setSpacing(3)
         rail_lay.setContentsMargins(12, 12, 12, 12)
+        rail_scroll.setWidget(rail_inner)
+        rail_outer.addWidget(rail_scroll)
 
         brand = QLabel("OPAL  ·  IMAGE LAB")
         brand.setStyleSheet(f"color: {ACCENT_HI}; font-size: 10px; font-weight: 700; "
