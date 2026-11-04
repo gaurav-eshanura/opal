@@ -8,7 +8,7 @@ import os
 import subprocess
 from pathlib import Path
 from PySide6.QtCore import Qt, QTimer, QRectF
-from PySide6.QtGui import QPainter, QColor, QFont, QPen, QBrush
+from PySide6.QtGui import QPainter, QColor, QFont, QPen, QBrush, QLinearGradient
 from PySide6.QtWidgets import QWidget, QApplication, QPushButton, QHBoxLayout, QVBoxLayout, QLabel
 
 
@@ -22,7 +22,7 @@ class OpalToast(QWidget):
             | Qt.Tool
         )
         self.setAttribute(Qt.WA_TranslucentBackground, True)
-        self.resize(340, 95)
+        self.resize(360, 100)
 
         self.target_path = None
         self.auto_close_timer = QTimer(self)
@@ -33,16 +33,16 @@ class OpalToast(QWidget):
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setContentsMargins(16, 12, 12, 12)
         layout.setSpacing(4)
 
         self.title_label = QLabel("Conversion Complete")
-        self.title_label.setFont(QFont("Segoe UI", 10, QFont.Bold))
+        self.title_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
         self.title_label.setStyleSheet("color: #EDF1FA; background: transparent;")
         layout.addWidget(self.title_label)
 
         self.detail_label = QLabel("Saved new file.")
-        self.detail_label.setFont(QFont("Segoe UI", 8))
+        self.detail_label.setFont(QFont("Segoe UI", 10))
         self.detail_label.setStyleSheet("color: #A8B2C8; background: transparent;")
         self.detail_label.setWordWrap(True)
         layout.addWidget(self.detail_label)
@@ -52,30 +52,29 @@ class OpalToast(QWidget):
         btn_layout.addStretch()
 
         self.btn_open = QPushButton("Open File")
-        self.btn_open.setFont(QFont("Segoe UI", 8, QFont.DemiBold))
+        self.btn_open.setFont(QFont("Segoe UI", 10, QFont.DemiBold))
         self.btn_open.setStyleSheet("""
             QPushButton {
                 background-color: #6C63FF;
                 color: #FFFFFF;
-                border-radius: 12px;
-                padding: 5px 12px;
+                border-radius: 8px;
+                padding: 4px 12px;
                 border: none;
+                font-weight: 700;
             }
-            QPushButton:hover {
-                background-color: #8A83FF;
-            }
+            QPushButton:hover { background-color: #8A83FF; }
         """)
         self.btn_open.clicked.connect(self._on_open_clicked)
         btn_layout.addWidget(self.btn_open)
 
         self.btn_folder = QPushButton("Show in Folder")
-        self.btn_folder.setFont(QFont("Segoe UI", 8))
+        self.btn_folder.setFont(QFont("Segoe UI", 10))
         self.btn_folder.setStyleSheet("""
             QPushButton {
-                background-color: rgba(255,255,255,0.05);
+                background-color: rgba(255,255,255,0.07);
                 color: #EDF1FA;
-                border-radius: 12px;
-                padding: 5px 12px;
+                border-radius: 8px;
+                padding: 4px 12px;
                 border: 1px solid rgba(255,255,255,0.16);
             }
             QPushButton:hover {
@@ -126,10 +125,19 @@ class OpalToast(QWidget):
             self.close()
 
     def paintEvent(self, event):
+        """A dark pane of glass with a lit accent edge down the left side."""
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing, True)
 
-        rect = QRectF(0, 0, self.width(), self.height())
-        painter.setBrush(QBrush(QColor(255, 255, 255, 250)))
-        painter.setPen(QPen(QColor(255, 82, 0, 170), 1.4))
-        painter.drawRoundedRect(rect, 16, 16)
+        rect = QRectF(0.5, 0.5, self.width() - 1, self.height() - 1)
+        painter.setBrush(QBrush(QColor(23, 29, 46, 244)))
+        painter.setPen(QPen(QColor(255, 255, 255, 22), 1.0))
+        painter.drawRoundedRect(rect, 18, 18)
+
+        bar = QRectF(0.5, 10, 3, self.height() - 20)
+        grad = QLinearGradient(0, 0, 0, self.height())
+        grad.setColorAt(0, QColor("#8A5CF6"))
+        grad.setColorAt(1, QColor("#FF9A3C"))
+        painter.setBrush(QBrush(grad))
+        painter.setPen(Qt.NoPen)
+        painter.drawRoundedRect(bar, 1.5, 1.5)

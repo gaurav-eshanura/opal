@@ -33,7 +33,8 @@ class HistoryDialog(QDialog):
     def _apply_theme(self):
         self.setStyleSheet("""
             QDialog {
-                background-color: #101625;
+                background: qradialgradient(cx: 0.5, cy: -0.1, radius: 1.6, fx: 0.5, fy: -0.1,
+                                            stop: 0 #161C30, stop: 0.55 #0E1220, stop: 1 #0B0E18);
                 color: #EDF1FA;
                 font-family: 'Segoe UI';
             }
@@ -78,11 +79,14 @@ class HistoryDialog(QDialog):
         layout.setSpacing(12)
 
         # Header
+        from opal_studio.theme import head_label, hint_label
         top_row = QHBoxLayout()
-        title_label = QLabel("Conversion History")
-        title_label.setFont(QFont("Segoe UI", 15, QFont.Bold))
-        title_label.setStyleSheet("color: #A79FFF;")
-        top_row.addWidget(title_label)
+        top_row.setSpacing(12)
+        title_box = QVBoxLayout()
+        title_box.setSpacing(2)
+        title_box.addWidget(head_label("Conversion History"))
+        title_box.addWidget(hint_label("Every file Opal has converted, newest first."))
+        top_row.addLayout(title_box)
         top_row.addStretch()
 
         self.btn_clear = QPushButton("Clear History")

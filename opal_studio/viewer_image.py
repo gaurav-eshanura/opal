@@ -338,7 +338,7 @@ class ImageLab(QWidget):
 
         rail = QWidget()
         rail.setObjectName("toolRail")
-        rail.setFixedWidth(186)
+        rail.setFixedWidth(204)
         rail.setStyleSheet(f"QWidget#toolRail {{ background: rgba(255,255,255,0.05); "
                            f"border: 1px solid rgba(255,255,255,0.10); border-radius: {RADIUS_LARGE}px; }}")
         rail_outer = QVBoxLayout(rail)
@@ -386,31 +386,31 @@ class ImageLab(QWidget):
         rail_lay.addSpacing(12)
 
         self.tool_buttons = {}
-        for key, label in [
-            ("replace_bg", "Replace Background"),
-            ("upscale", "AI Upscale"),
-            ("enhance", "Auto-Enhance"),
-            ("adjust", "Adjust"),
-            ("crop", "Crop"),
-            ("rotate", "Rotate & Flip"),
-            ("filters", "Filters"),
-            ("watermark", "Watermark"),
-            ("signature", "Signature"),
-            ("privacy", "Blur Faces"),
-            ("meme", "Meme Caption"),
-            ("palette", "Colour Palette"),
-            ("exif", "EXIF & Privacy"),
-            ("wallpaper", "Wallpaper"),
+        for key, label, icon in [
+            ("replace_bg", "Replace Background", "image"),
+            ("upscale", "AI Upscale", "arrow"),
+            ("enhance", "Auto-Enhance", "star"),
+            ("adjust", "Adjust", "contrast"),
+            ("crop", "Crop", "scissors"),
+            ("rotate", "Rotate & Flip", "rotate_right"),
+            ("filters", "Filters", "palette"),
+            ("watermark", "Watermark", "text_t"),
+            ("signature", "Signature", "pen"),
+            ("privacy", "Blur Faces", "lock"),
+            ("meme", "Meme Caption", "note"),
+            ("palette", "Colour Palette", "drop"),
+            ("exif", "EXIF & Privacy", "search"),
+            ("wallpaper", "Wallpaper", "layers"),
         ]:
-            btn = _tool_btn(label, checkable=True)
+            btn = _tool_btn(label, checkable=True, icon=icon)
             btn.clicked.connect(lambda checked=False, t=key: self.set_tool(t))
             self.tool_buttons[key] = btn
             rail_lay.addWidget(btn)
         rail_lay.addStretch()
-        undo = _tool_btn("Undo")
+        undo = _tool_btn("Undo", icon="reverse")
         undo.clicked.connect(self.undo)
         rail_lay.addWidget(undo)
-        redo = _tool_btn("Redo")
+        redo = _tool_btn("Redo", icon="arrow")
         redo.clicked.connect(self.redo)
         rail_lay.addWidget(redo)
         root.addWidget(rail)

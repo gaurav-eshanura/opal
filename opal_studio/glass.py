@@ -12,13 +12,14 @@ it behaves identically on Windows, macOS and Linux, and in a test.
 import math
 from typing import List, Optional, Sequence
 
-from PySide6.QtCore import QPointF, QRectF, Qt
+from PySide6.QtCore import QPointF, QRectF, Qt, Signal
 from PySide6.QtGui import (QBrush, QColor, QLinearGradient, QPainter, QPainterPath,
                            QPen, QPixmap, QRadialGradient)
-from PySide6.QtWidgets import QFrame, QPushButton, QWidget
+from PySide6.QtWidgets import QFrame, QHBoxLayout, QPushButton, QToolButton, QWidget
 
-from opal_studio.theme import (FIRE, FIRE_AMBER, FIRE_BLUE, FIRE_ROSE,
-                               FIRE_TEAL, FIRE_VIOLET, RADIUS, RADIUS_LARGE)
+from opal_studio.theme import (ACCENT, ACCENT_HI, FIRE, FIRE_AMBER, FIRE_BLUE,
+                               FIRE_ROSE, FIRE_TEAL, FIRE_VIOLET, LINE, LINE_STRONG,
+                               RADIUS, RADIUS_LARGE, RADIUS_SMALL, SURFACE, TEXT, TEXT_DIM)
 
 # How a pane of glass is put together. These are the proportions that make a
 # surface read as glass rather than as a coloured rectangle.
@@ -277,3 +278,72 @@ class GlassButton(QPushButton):
     def set_lit(self, lit: bool) -> None:
         self._lit = lit
         self._apply()
+
+
+class SegmentedControl(QWidget):
+    """A macOS-style segmented switcher: one glass pill, several segments.
+
+    Used wherever the app has modes (File / Organize / Annotate / Convert).
+    Emits currentChanged(id) when the user picks a segment.
+    """
+
+    currentChanged = Signal(str)
+
+    def __init__(self, items: List[Tuple[str, str]], parent: Optional[QWidget] = None):
+        super().__init__(parent)
+        self._buttons: Dict[str, QToolButton] = {}
+        self._current = ""
+
+        outer = QHBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        pill = QWidget()
+        pill.setObjectName("segPill")
+        lay = QHBoxLayout(pill)
+        lay.setContentsMargins(4, 4, 4, 4)
+        lay.setSpacing(4)
+        for sid, label in items:
+            btn = QToolButton(pill)
+            btn.setText(label)
+            btn.setCheckable(True)
+            btn.setCursor(Qt.PointingHandCursor)
+            btn.clicked.connect(lambda _checked=False, s=sid: self.set_current(s))
+            lay.addWidget(btn)
+            self._buttons[sid] = btn
+        outer.addWidget(pill)
+
+        self.setStyleSheet(f"""
+            QWidget#segPill {{
+                background: {SURFACE};
+                border: 1px solid {LINE};
+                border-radius: {RADIUS}px;
+            }}
+            QWidget#segPill QToolButton {{
+                background: transparent;
+                border: none;
+                border-radius: {RADIUS_SMALL}px;
+                color: {TEXT_DIM};
+                padding: 6px 16px;
+                font-size: 11px;
+                font-weight: 600;
+            }}
+            QWidget#segPill QToolButton:hover {{ background: rgba(255,255,255,0.07); color: {TEXT}; }}
+            QWidget#segPill QToolButton:checked {{
+                background: {ACCENT};
+                color: #FFFFFF;
+            }}
+        """)
+        if items:
+            self._buttons[items[0][0]].setChecked(True)
+            self._current = items[0][0]
+
+    def set_current(self, sid: str) -> None:
+        if sid not in self._buttons:
+            return
+        for other, btn in self._buttons.items():
+            btn.setChecked(other == sid)
+        if sid != self._current:
+            self._current = sid
+            self.currentChanged.emit(sid)
+
+    def current(self) -> str:
+        return self._current

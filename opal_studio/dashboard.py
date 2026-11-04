@@ -21,8 +21,11 @@ from PySide6.QtWidgets import (
 )
 
 from opal_studio.config import ConfigManager
-from opal_studio.theme import (BG, BG_SUNK, SURFACE, TEXT_DIM, ACCENT_HI,
-                              ACCENT_WASH, LEAF, LEAF_SOFT, RADIUS, RADIUS_LARGE)
+from opal_studio.icons import ICONS, mark_icon
+from opal_studio.theme import (BG, BG_SUNK, FIELD, SURFACE, TEXT, TEXT_DIM, TEXT_FAINT,
+                              ACCENT_HI, ACCENT_WASH, LEAF, LEAF_SOFT, LINE,
+                              RADIUS, RADIUS_LARGE, PANEL_CSS,
+                              title_label, head_label, section_label, body_label, hint_label)
 from opal_studio.tray import create_opal_icon
 
 
@@ -33,7 +36,7 @@ class DashboardDropZone(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setAcceptDrops(True)
-        self.setMinimumHeight(190)
+        self.setMinimumHeight(216)
         self.is_drag_over = False
         self.is_hovered = False
         self.setCursor(Qt.PointingHandCursor)
@@ -110,26 +113,26 @@ class DashboardDropZone(QFrame):
 
         # The Opal mark, floating in the middle of the drop area.
         cx = w / 2.0
-        cy = h / 2.0 - 24
+        cy = h / 2.0 - 28
         from opal_studio.icons import mark_icon
-        emblem = mark_icon(72).pixmap(72, 72)
+        emblem = mark_icon(84).pixmap(84, 84)
         if self.is_hovered or self.is_drag_over:
             painter.setOpacity(1.0)
         else:
             painter.setOpacity(0.88)
-        painter.drawPixmap(QPoint(int(cx - 36), int(cy - 36)), emblem)
+        painter.drawPixmap(QPoint(int(cx - 42), int(cy - 42)), emblem)
         painter.setOpacity(1.0)
 
         # Labels
-        painter.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        painter.setFont(QFont("Segoe UI", 15, QFont.Bold))
         painter.setPen(QPen(QColor("#EDF1FA")))
         label_text = "Drop a file to convert it" if not self.is_drag_over else "Release to open the wheel"
-        painter.drawText(QRectF(0, cy + 34, w, 24), Qt.AlignCenter, label_text)
+        painter.drawText(QRectF(0, cy + 42, w, 26), Qt.AlignCenter, label_text)
 
-        painter.setFont(QFont("Segoe UI", 9))
+        painter.setFont(QFont("Segoe UI", 11))
         painter.setPen(QPen(QColor(TEXT_DIM)))
         sub_text = ("Hold Shift to convert  •  Alt for tools  •  Ctrl for actions")
-        painter.drawText(QRectF(0, cy + 60, w, 20), Qt.AlignCenter, sub_text)
+        painter.drawText(QRectF(0, cy + 72, w, 22), Qt.AlignCenter, sub_text)
 
 
 class OpalDashboard(QWidget):
@@ -151,8 +154,8 @@ class OpalDashboard(QWidget):
 
         self.setStyleSheet(f"""
             QWidget {{
-                background-color: {BG};
-                color: #EDF1FA;
+                background: {FIELD};
+                color: {TEXT};
                 font-family: 'Segoe UI Variable Text', 'Segoe UI', sans-serif;
             }}
             QPushButton {{
@@ -215,18 +218,15 @@ class OpalDashboard(QWidget):
 
         title_row = QHBoxLayout()
         title_row.setSpacing(8)
-        from opal_studio.icons import mark_icon
         brand_mark = QLabel()
-        brand_mark.setPixmap(mark_icon(30).pixmap(30, 30))
+        brand_mark.setPixmap(mark_icon(32).pixmap(32, 32))
         title_row.addWidget(brand_mark)
 
-        title_label = QLabel("Opal")
-        title_label.setFont(QFont("Segoe UI", 17, QFont.Bold))
-        title_label.setStyleSheet("color: #EDF1FA;")
-        title_row.addWidget(title_label)
+        title_lbl = head_label("Opal")
+        title_row.addWidget(title_lbl)
 
         self.status_pill = QLabel("Active & Running")
-        self.status_pill.setFont(QFont("Segoe UI", 8, QFont.Bold))
+        self.status_pill.setFont(QFont("Segoe UI", 9, QFont.Bold))
         self.status_pill.setStyleSheet(f"""
             background-color: {LEAF_SOFT};
             color: {LEAF};
@@ -238,10 +238,8 @@ class OpalDashboard(QWidget):
         title_row.addStretch()
         title_box.addLayout(title_row)
 
-        sub_label = QLabel("Convert, edit and sign files on your own computer — nothing is ever uploaded.")
-        sub_label.setFont(QFont("Segoe UI", 9))
-        sub_label.setStyleSheet(f"color: {TEXT_DIM};")
-        title_box.addWidget(sub_label)
+        title_box.addWidget(body_label(
+            "Convert, edit and sign files on your own computer — nothing is ever uploaded.", dim=True))
 
         header.addLayout(title_box)
 
@@ -263,80 +261,63 @@ class OpalDashboard(QWidget):
 
         # 3. Action Buttons Row (File Picker + Clipboard Screenshot + Test Wheel)
         btn_row = QHBoxLayout()
-        btn_row.setSpacing(12)
+        btn_row.setSpacing(8)
 
-        choose_file_btn = QPushButton("Select files…")
-        choose_file_btn.clicked.connect(self._on_choose_files)
-        btn_row.addWidget(choose_file_btn)
+        def _icon_btn(text, icon_key, tip, slot, accent=False):
+            btn = QPushButton(text)
+            btn.setIcon(ICONS[icon_key](15))
+            btn.setIconSize(QSize(15, 15))
+            btn.setToolTip(tip)
+            btn.clicked.connect(slot)
+            if accent:
+                btn.setProperty("accent", "true")
+            return btn
 
-        clipboard_btn = QPushButton("Convert clipboard screenshot")
-        clipboard_btn.setToolTip("Windows + Shift + S")
-        clipboard_btn.clicked.connect(self._on_clipboard_clicked)
-        btn_row.addWidget(clipboard_btn)
+        btn_row.addWidget(_icon_btn("Select files…", "folder",
+                                    "Pick files from disk", self._on_choose_files))
+        btn_row.addWidget(_icon_btn("Clipboard screenshot", "clip",
+                                    "Convert a Win+Shift+S screenshot", self._on_clipboard_clicked))
+        btn_row.addWidget(_icon_btn("See the wheel", "cursor",
+                                    "Shows the key-press wheel with a sample file",
+                                    self.radial_test_requested.emit))
+        btn_row.addStretch()
 
-        test_wheel_btn = QPushButton("See how it works")
-        test_wheel_btn.setToolTip("Shows the key-press wheel with a sample file")
-        test_wheel_btn.clicked.connect(self.radial_test_requested.emit)
-        btn_row.addWidget(test_wheel_btn)
-
-        studio_btn = QPushButton("Open Floating Studio")
-        studio_btn.setToolTip("PDF editor, AI image lab, media player and document viewer")
-        studio_btn.setProperty("accent", "true")
-        studio_btn.setStyleSheet(f"""
-            QPushButton {{ background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
-                                                    stop: 0 #8A5CF6, stop: 0.55 #EE4E8A, stop: 1 #FF9A3C);
-                          color: #FFFFFF; border: none;
-                          border-radius: {RADIUS}px; padding: 8px 18px;
-                          min-height: 32px;
-                          font-size: 11px; font-weight: 700; }}
-            QPushButton:hover {{ background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
-                                                          stop: 0 #9B7BFF, stop: 0.55 #FF6BA0, stop: 1 #FFB35C); }}
-        """)
-        studio_btn.clicked.connect(self.studio_requested.emit)
+        studio_btn = _icon_btn("Open Floating Studio", "layers",
+                               "PDF editor, AI image lab, media player and document viewer",
+                               self.studio_requested.emit, accent=True)
         btn_row.addWidget(studio_btn)
 
         main_layout.addLayout(btn_row)
 
-        # 4. Feature Cards Banner
-        cards_frame = QFrame()
-        cards_frame.setObjectName("cardsFrame")
-        cards_frame.setStyleSheet(f"""
-            QFrame#cardsFrame {{
-                background-color: {SURFACE};
-                border: 1px solid rgba(255,255,255,0.10);
-                border-radius: {RADIUS_LARGE}px;
-            }}
-            QFrame#cardsFrame QFrame#featureCard {{
-                background-color: {BG_SUNK};
-                border: 1px solid rgba(255,255,255,0.08);
-                border-radius: {RADIUS}px;
-            }}
-            QFrame#cardsFrame QLabel {{ background: transparent; border: none; }}
-        """)
-        cards_layout = QHBoxLayout(cards_frame)
+        # 4. Feature Cards
+        main_layout.addWidget(section_label("Popular right now"))
+        cards_layout = QHBoxLayout()
         cards_layout.setSpacing(12)
-        cards_layout.setContentsMargins(12, 12, 12, 12)
 
         card1 = self._create_feature_card("Remove Background", "Local AI cutout, transparent PNG",
-                                         "Saved next to your photo", feature_key="remove_bg")
+                                         "Saved next to your photo", "layers", feature_key="remove_bg")
         card2 = self._create_feature_card("PDF Studio", "Sign, search, redact, export",
-                                         "A full PDF editor, not a viewer", feature_key="pdf_studio")
+                                         "A full PDF editor, not a viewer", "doc", feature_key="pdf_studio")
         card3 = self._create_feature_card("WhatsApp Ready", "Shrink photos and PDFs to share",
-                                          "Hold Alt while dragging", feature_key="whatsapp")
+                                          "Hold Alt while dragging", "compress", feature_key="whatsapp")
         card4 = self._create_feature_card("Auto Watch Folder", "Dropped files convert themselves",
-                                          "Downloads / Opal_Auto", feature_key="watch_folder")
+                                          "Downloads / Opal_Auto", "folder", feature_key="watch_folder")
 
         for card in (card1, card2, card3, card4):
             cards_layout.addWidget(card, 1)
 
-        main_layout.addWidget(cards_frame)
+        main_layout.addLayout(cards_layout)
 
         # 5. Bottom Status / Options Bar
         bottom_row = QHBoxLayout()
-        hotkey_lbl = QLabel(f"Global Hotkey: <b style='color:{ACCENT_HI};'>Ctrl + Alt + T</b>")
-        hotkey_lbl.setFont(QFont("Segoe UI", 9))
-        hotkey_lbl.setStyleSheet(f"color: {TEXT_DIM};")
-        bottom_row.addWidget(hotkey_lbl)
+        bottom_row.addWidget(hint_label("Global hotkey"))
+        kbd = QLabel("Ctrl + Alt + T")
+        kbd.setStyleSheet(f"""
+            background: {SURFACE}; border: 1px solid rgba(255,255,255,0.16);
+            border-bottom-width: 2px; border-radius: 6px; padding: 2px 8px;
+            color: {ACCENT_HI}; font-size: 10px; font-weight: 700;
+        """)
+        bottom_row.addWidget(kbd)
 
         bottom_row.addStretch()
 
@@ -356,9 +337,9 @@ class OpalDashboard(QWidget):
             QFrame.mouseReleaseEvent(card, event)
         return handler
 
-    def _create_feature_card(self, title: str, desc: str, hint: str,
+    def _create_feature_card(self, title: str, desc: str, hint: str, icon_key: str,
                              feature_key: str = "") -> QFrame:
-        """One bordered card: title, one line of detail, and a quiet hint.
+        """One glass card: an icon tile, a white title, detail, and a hint.
 
         A card with a feature key is clickable and asks the app to run that
         feature; a card without one is a plain caption.
@@ -367,37 +348,46 @@ class OpalDashboard(QWidget):
         card.setObjectName("featureCard")
         card.setStyleSheet(f"""
             QFrame#featureCard {{
-                background-color: {BG_SUNK};
-                border: 1px solid rgba(255,255,255,0.08);
+                background: rgba(255,255,255,0.04);
+                border: 1px solid {LINE};
                 border-radius: {RADIUS}px;
             }}
-            QFrame#featureCard:hover {{ border-color: rgba(138,131,255,0.50); }}
+            QFrame#featureCard:hover {{ border-color: {ACCENT_HI}; background: rgba(255,255,255,0.06); }}
             QFrame#featureCard QLabel {{ background: transparent; border: none; }}
+            QFrame#featureCard QFrame#iconTile {{
+                background: {ACCENT_WASH};
+                border: 1px solid rgba(138,131,255,0.35);
+                border-radius: 10px;
+            }}
         """)
         if feature_key:
             card.setCursor(Qt.PointingHandCursor)
             card.setToolTip(f"Open {title}")
             card.mouseReleaseEvent = self._make_feature_click(card, feature_key)
         layout = QVBoxLayout(card)
-        layout.setSpacing(4)
+        layout.setSpacing(8)
         layout.setContentsMargins(12, 12, 12, 12)
 
-        t_lbl = QLabel(title)
-        t_lbl.setFont(QFont("Segoe UI", 10, QFont.Bold))
-        t_lbl.setStyleSheet(f"color: {ACCENT_HI}; background: transparent;")
-        layout.addWidget(t_lbl)
+        tile = QFrame()
+        tile.setObjectName("iconTile")
+        tile.setFixedSize(34, 34)
+        tile_lay = QHBoxLayout(tile)
+        tile_lay.setContentsMargins(0, 0, 0, 0)
+        tile_icon = QLabel()
+        tile_icon.setPixmap(ICONS[icon_key](18).pixmap(18, 18))
+        tile_lay.addWidget(tile_icon, 0, Qt.AlignCenter)
+        layout.addWidget(tile)
 
-        d_lbl = QLabel(desc)
-        d_lbl.setFont(QFont("Segoe UI", 9))
-        d_lbl.setStyleSheet(f"color: {TEXT_DIM}; background: transparent;")
+        layout.addWidget(body_label(title))
+
+        d_lbl = body_label(desc, dim=True)
         d_lbl.setWordWrap(True)
         layout.addWidget(d_lbl)
 
-        h_lbl = QLabel(hint)
-        h_lbl.setFont(QFont("Segoe UI", 8))
-        h_lbl.setStyleSheet("color: #8B96AD; background: transparent;")
+        h_lbl = hint_label(hint)
         h_lbl.setWordWrap(True)
         layout.addWidget(h_lbl)
+        layout.addStretch()
 
         return card
 

@@ -31,11 +31,11 @@ class RadialMenuWidget(QWidget):
         self.setAttribute(Qt.WA_DeleteOnClose, False)
         self.setMouseTracking(True)
 
-        self.size_px = 440
+        self.size_px = 500
         self.resize(self.size_px, self.size_px)
 
-        self.center_radius = 62
-        self.outer_radius = 175
+        self.center_radius = 66
+        self.outer_radius = 206
         self.center_pt = QPoint(self.size_px // 2, self.size_px // 2)
 
         self.file_paths: List[str] = []
@@ -64,6 +64,7 @@ class RadialMenuWidget(QWidget):
             screen_pos = QCursor.pos()
 
         # Center radial menu directly on mouse
+        self.center_pt = QPoint(self.width() // 2, self.height() // 2)
         x = screen_pos.x() - self.size_px // 2
         y = screen_pos.y() - self.size_px // 2
         self.move(x, y)
@@ -205,8 +206,9 @@ class RadialMenuWidget(QWidget):
 
                 painter.drawPath(wedge_path)
 
-                # Label placement - with many slices only the hovered one is
-                # labelled, otherwise the wheel turns into unreadable soup.
+                # Label placement: every wedge is labelled, but the text is
+                # elided to the arc width of its own wedge so it never spills
+                # onto a neighbour.
                 show_label = (n <= 10) or (i == self.hovered_index)
                 if show_label:
                     mid_angle_deg = start_angle + (span_angle / 2.0)
@@ -219,16 +221,16 @@ class RadialMenuWidget(QWidget):
                     painter.save()
                     painter.translate(lx, ly)
 
-                    label_font = QFont("Segoe UI", 11, QFont.Bold if is_active else QFont.DemiBold)
+                    label_font = QFont("Segoe UI", 10, QFont.Bold if is_active else QFont.DemiBold)
                     painter.setFont(label_font)
-                    if n > 10:
-                        painter.setPen(QPen(QColor(255, 255, 255)))
-                        label_rect = QRectF(-70, -13, 140, 26)
-                        painter.drawText(label_rect, Qt.AlignCenter, opt["label"])
-                    else:
-                        painter.setPen(QPen(Qt.white if is_active else self.color_text))
-                        label_rect = QRectF(-65, -12, 130, 24)
-                        painter.drawText(label_rect, Qt.AlignCenter, opt["label"])
+                    avail = label_radius * math.radians(slice_deg) * 0.92
+                    text = opt["label"]
+                    fm = painter.fontMetrics()
+                    while len(text) > 3 and fm.horizontalAdvance(text) > avail:
+                        text = text[:-2] + "…"
+                    painter.setPen(QPen(Qt.white if is_active else self.color_text))
+                    painter.drawText(QRectF(-avail / 2 - 4, -11, avail + 8, 22),
+                                     Qt.AlignCenter, text)
 
                     painter.restore()
 

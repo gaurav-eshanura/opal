@@ -10,8 +10,10 @@ cool, inky field, and every surface on it is a pane of glass: translucent,
 lit from above, with a bright edge where the light bends.
 """
 
+from typing import Optional
+
 from PySide6.QtGui import QColor, QFont, QPalette
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QLabel, QWidget
 
 # ---------------------------------------------------------------- palette ---
 # The fire inside the stone. These are the brand's colours, in the order the
@@ -63,6 +65,22 @@ RADIUS = 12
 RADIUS_LARGE = 18
 RADIUS_SMALL = 8      # tab corners, tiny sub-elements
 
+# The field behind the glass: a cool pool of light falling from the top of
+# the window, so no surface ever sits on a flat black rectangle.
+FIELD = ("qradialgradient(cx: 0.5, cy: -0.1, radius: 1.6, fx: 0.5, fy: -0.1, "
+         "stop: 0 #161C30, stop: 0.55 #0E1220, stop: 1 #0B0E18)")
+
+# One type ladder for the whole app, as (px, weight) pairs.
+TYPE_TITLE = (22, 700)    # window headlines
+TYPE_HEAD = (15, 600)     # dialog and panel titles
+TYPE_BODY = (12, 400)     # reading text
+TYPE_CAP = (11, 600)      # buttons, tab labels, card titles
+TYPE_HINT = (10, 400)     # secondary and helper text
+
+# One glass panel recipe, reused by every card, rail and side pane.
+PANEL_CSS = (f"background: {SURFACE}; border: 1px solid {LINE}; "
+             f"border-radius: {RADIUS_LARGE}px;")
+
 # ------------------------------------------------------------------ fonts ---
 UI_FAMILIES = ["Segoe UI Variable Text", "Segoe UI", "Inter",
                 "Helvetica Neue", "system-ui", "sans-serif"]
@@ -98,20 +116,57 @@ def mono_font(size: int = 10, weight: int = 400) -> QFont:
     return font
 
 
-def apply_field(widget: QWidget, base: str = BG) -> None:
+def apply_field(widget: QWidget, base: Optional[str] = None) -> None:
     """Puts a widget on the deep field.
 
-    Every pane of glass needs something behind it. The window paints the
-    colour; this gives the plain widgets the same job, so nothing is left
-    sitting on the light default. The rule is scoped to this one widget, so
-    it never leaks onto the children.
+    Every pane of glass needs something behind it. By default the window gets
+    the radial pool of light (FIELD); pass a flat colour to override it. The
+    rule is scoped to this one widget, so it never leaks onto the children.
     """
     from PySide6.QtCore import Qt
 
     name = widget.objectName() or f"opalField{id(widget)}"
     widget.setObjectName(name)
     widget.setAttribute(Qt.WA_StyledBackground, True)
-    widget.setStyleSheet(f"#{name} {{ background: {base}; }}")
+    widget.setStyleSheet(f"#{name} {{ background: {base or FIELD}; }}")
+
+
+# ------------------------------------------------------------ label helpers ---
+# Every headline in the app is made with these, so the type ladder never
+# drifts: one call, one look.
+
+def _label(text: str, size: int, weight: int, color: str,
+           letter_spacing: float = 0.0, display: bool = False) -> QLabel:
+    lbl = QLabel(text)
+    font = display_font(size, weight) if display else text_font(size, weight)
+    if letter_spacing:
+        font.setLetterSpacing(QFont.AbsoluteSpacing, letter_spacing)
+    lbl.setFont(font)
+    lbl.setStyleSheet(f"color: {color}; background: transparent;")
+    return lbl
+
+
+def title_label(text: str) -> QLabel:
+    """A window headline: 22px semibold display type."""
+    return _label(text, *TYPE_TITLE, TEXT, display=True)
+
+
+def head_label(text: str) -> QLabel:
+    """A dialog or panel title: 15px semibold."""
+    return _label(text, *TYPE_HEAD, TEXT)
+
+
+def section_label(text: str) -> QLabel:
+    """A small uppercase section header, letterspaced in accent."""
+    return _label(text.upper(), TYPE_CAP[0], 700, ACCENT_HI, letter_spacing=1.2)
+
+
+def body_label(text: str, dim: bool = False) -> QLabel:
+    return _label(text, *TYPE_BODY, TEXT_DIM if dim else TEXT)
+
+
+def hint_label(text: str) -> QLabel:
+    return _label(text, *TYPE_HINT, TEXT_FAINT)
 
 
 # -------------------------------------------------------------- stylesheet ---
@@ -126,7 +181,7 @@ def build_stylesheet() -> str:
         background: transparent;
     }}
     QMainWindow, QDialog {{
-        background: {BG};
+        background: {FIELD};
     }}
     QScrollArea {{ background: transparent; border: none; }}
     QScrollArea > QWidget > QWidget {{ background: {BG}; }}
@@ -180,6 +235,29 @@ def build_stylesheet() -> str:
         color: {TEXT};
         border-color: {LINE};
     }}
+
+    /* ---------- tool buttons & segmented rows ---------- */
+    QToolButton {{
+        background: {SURFACE};
+        color: {TEXT_DIM};
+        border: 1px solid {LINE};
+        border-radius: {RADIUS}px;
+        padding: 6px 10px;
+        font-size: 11px;
+        font-weight: 600;
+    }}
+    QToolButton:hover {{
+        background: {SURFACE_ALT};
+        color: #FFFFFF;
+        border-color: {LINE_STRONG};
+    }}
+    QToolButton:checked {{
+        background: {ACCENT_SOFT};
+        color: #FFFFFF;
+        border-color: {ACCENT_HI};
+    }}
+    QToolButton:disabled {{ color: rgba(237,241,250,0.28); }}
+    QStackedWidget {{ background: transparent; border: none; padding: 0; }}
 
     /* ---------- inputs ---------- */
     QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QDoubleSpinBox, QComboBox {{

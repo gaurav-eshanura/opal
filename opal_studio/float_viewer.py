@@ -20,7 +20,10 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushB
                                QWidget, QFileDialog, QMessageBox, QListWidget, QListWidgetItem,
                                QGridLayout, QScrollArea, QFrame, QApplication, QSizePolicy)
 
-from opal_studio.theme import BG_RAISED, RADIUS, RADIUS_SMALL, ACCENT, ACCENT_HI, TEXT_DIM
+from opal_studio.icons import ICONS
+from opal_studio.theme import (BG_RAISED, RADIUS, RADIUS_SMALL, ACCENT, ACCENT_HI, ACCENT_WASH,
+                              TEXT, TEXT_DIM, TEXT_FAINT, LINE,
+                              title_label, section_label, body_label, hint_label)
 from opal_studio.viewer_pdf import PdfStudio
 from opal_studio.viewer_image import ImageLab
 from opal_studio.viewer_doc import DocStudio
@@ -50,6 +53,24 @@ def _chrome_btn(text: str, tip: str = "", size: int = 26) -> QPushButton:
     return b
 
 
+# Catalog action -> icon, so every tile on the home screen has a face.
+CATALOG_ICONS = {
+    "remove_bg": "layers", "replace_bg": "image", "upscale_2x": "arrow", "enhance": "star",
+    "adjust": "contrast", "crop": "scissors", "rotate": "rotate_right", "filters": "palette",
+    "watermark": "text_t", "signature": "pen", "blur_faces": "lock", "meme": "note",
+    "exif": "search", "wallpaper": "image", "id_photo": "camera", "print_photo": "printer",
+    "whatsapp_photo": "compress", "whatsapp_pdf": "compress", "border": "box", "bg_blur": "drop",
+    "pdf_to_word": "doc", "pdf_to_ppt": "presentation", "pdf_to_epub": "book",
+    "pdf_to_images": "image", "merge_pdf": "merge", "split_pdf": "split", "reorder_pdf": "layers",
+    "compress_pdf": "compress", "pdf_ocr": "scan", "protect_pdf": "lock", "unlock_pdf": "unlock",
+    "repair_pdf": "wrench", "pdf_watermark": "marker", "page_numbers": "hash", "flatten_pdf": "layers",
+    "pdf_summary": "text", "extract_attachments": "clip", "sign_pdf": "pen", "verify_signature": "search",
+    "qr_code": "hash", "social_presets": "palette", "to_pdf": "doc", "hash_file": "hash",
+    "trim_video": "scissors", "video_to_gif": "film", "extract_audio": "music", "to_720p": "film",
+    "burn_subtitles": "text", "normalize_audio": "speaker",
+}
+
+
 class HomeTab(QWidget):
     """The welcome screen: drop zone, everything Opal can do, recent files."""
 
@@ -62,19 +83,12 @@ class HomeTab(QWidget):
         lay.setContentsMargins(12, 12, 12, 12)
         lay.setSpacing(12)
 
-        title = QLabel("Opal Floating Studio")
-        title.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        title.setStyleSheet("color: #EDF1FA;")
-        lay.addWidget(title)
-
-        sub = QLabel("Drop any file here, or pick a tool below. Everything runs locally on your PC.")
-        sub.setStyleSheet("color: #A8B2C8; font-size: 11px;")
-        lay.addWidget(sub)
+        lay.addWidget(title_label("Opal Studio"))
+        lay.addWidget(body_label("Drop any file here, or pick a tool below. Everything runs locally on your PC.",
+                                 dim=True))
 
         # Tool grid
-        grid_label = QLabel("Everything Opal can do")
-        grid_label.setStyleSheet("color: #A79FFF; font-size: 12px; font-weight: 700;")
-        lay.addWidget(grid_label)
+        lay.addWidget(section_label("Everything Opal can do"))
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -82,28 +96,15 @@ class HomeTab(QWidget):
         container = QWidget()
         grid = QGridLayout(container)
         grid.setSpacing(8)
+        grid.setContentsMargins(0, 0, 0, 0)
         from opal_studio.engine import OpalEngine
         for i, item in enumerate(OpalEngine.get_catalog()):
-            card = QPushButton(f"{item['label']}\n{item['desc']}")
-            card.setToolTip(item["desc"])
-            card.setCursor(Qt.PointingHandCursor)
-            card.setMinimumHeight(58)
-            card.setStyleSheet("""
-                QPushButton { background: rgba(255,255,255,0.05); color: #EDF1FA;
-                              border: 1px solid rgba(255,255,255,0.12);
-                              border-radius: 12px; padding: 8px; text-align: left; font-size: 11px; }
-                QPushButton:hover { background: rgba(108,99,255,0.18);
-                                   border-color: rgba(140,131,255,0.5); color: #FFFFFF; }
-            """)
-            card.clicked.connect(lambda checked=False, aid=item["id"]: self._pick_and_run(aid))
-            grid.addWidget(card, i // 4, i % 4)
+            grid.addWidget(self._catalog_card(item), i // 4, i % 4)
         scroll.setWidget(container)
         lay.addWidget(scroll, 1)
 
         # Recent files
-        recent_label = QLabel("Recent")
-        recent_label.setStyleSheet("color: #A79FFF; font-size: 12px; font-weight: 700;")
-        lay.addWidget(recent_label)
+        lay.addWidget(section_label("Recent"))
         self.recent = QListWidget()
         self.recent.setMaximumHeight(130)
         self.recent.setStyleSheet("QListWidget { background:rgba(255,255,255,0.05); color:#EDF1FA; "
@@ -119,6 +120,61 @@ class HomeTab(QWidget):
                                                 "All Files (*.*)")
         if paths:
             self.run_action.emit(action_id, paths)
+
+    def _catalog_card(self, item: dict) -> QFrame:
+        """One tile of the home grid: icon tile, label, one-line description."""
+        card = QFrame()
+        card.setObjectName("toolCard")
+        card.setMinimumHeight(64)
+        card.setCursor(Qt.PointingHandCursor)
+        card.setToolTip(item["desc"])
+        card.setStyleSheet(f"""
+            QFrame#toolCard {{
+                background: rgba(255,255,255,0.04);
+                border: 1px solid {LINE};
+                border-radius: {RADIUS}px;
+            }}
+            QFrame#toolCard:hover {{
+                background: rgba(255,255,255,0.07);
+                border-color: {ACCENT_HI};
+            }}
+            QFrame#toolCard QLabel {{ background: transparent; border: none; }}
+            QFrame#toolCard QFrame#iconTile {{
+                background: {ACCENT_WASH};
+                border: 1px solid rgba(138,131,255,0.30);
+                border-radius: 8px;
+            }}
+        """)
+
+        def handler(event):
+            if event.button() == Qt.LeftButton:
+                self._pick_and_run(item["id"])
+            QFrame.mouseReleaseEvent(card, event)
+        card.mouseReleaseEvent = handler
+
+        lay = QHBoxLayout(card)
+        lay.setContentsMargins(10, 10, 10, 10)
+        lay.setSpacing(10)
+
+        tile = QFrame()
+        tile.setObjectName("iconTile")
+        tile.setFixedSize(30, 30)
+        tile_lay = QHBoxLayout(tile)
+        tile_lay.setContentsMargins(0, 0, 0, 0)
+        icon = QLabel()
+        icon.setPixmap(ICONS[CATALOG_ICONS.get(item["id"], "star")](16).pixmap(16, 16))
+        tile_lay.addWidget(icon, 0, Qt.AlignCenter)
+        lay.addWidget(tile)
+
+        text_box = QVBoxLayout()
+        text_box.setSpacing(2)
+        t = body_label(item["label"])
+        text_box.addWidget(t)
+        d = hint_label(item["desc"])
+        d.setWordWrap(True)
+        text_box.addWidget(d)
+        lay.addLayout(text_box, 1)
+        return card
 
     def _open_recent(self, item: QListWidgetItem):
         path = item.data(Qt.UserRole)
@@ -245,7 +301,7 @@ class FloatStudio(QWidget):
             QTabWidget::pane {{ border: 1px solid rgba(255,255,255,0.10); border-radius: {RADIUS}px; background: {BG_RAISED}; }}
             QTabBar::tab {{ background: rgba(255,255,255,0.05); color: {TEXT_DIM}; padding: 7px 14px; margin-right: 2px;
                            border-top-left-radius: {RADIUS_SMALL}px; border-top-right-radius: {RADIUS_SMALL}px; font-size: 11px; }}
-            QTabBar::tab:selected {{ background: {ACCENT}; color: #FFFFFF; }}
+            QTabBar::tab:selected {{ background: rgba(255,255,255,0.16); color: #FFFFFF; font-weight: 600; }}
             QTabBar::tab:hover {{ color: #EDF1FA; }}
             QTabBar::close-button {{ subcontrol-position: right; }}
         """)

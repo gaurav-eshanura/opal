@@ -33,7 +33,8 @@ class SettingsDialog(QDialog):
     def _apply_light_theme(self):
         self.setStyleSheet("""
             QDialog {
-                background-color: #101625;
+                background: qradialgradient(cx: 0.5, cy: -0.1, radius: 1.6, fx: 0.5, fy: -0.1,
+                                            stop: 0 #161C30, stop: 0.55 #0E1220, stop: 1 #0B0E18);
                 color: #EDF1FA;
                 font-family: 'Segoe UI';
             }
@@ -106,10 +107,9 @@ class SettingsDialog(QDialog):
         layout.setSpacing(12)
 
         # Header
-        title_label = QLabel("Opal Preferences")
-        title_label.setFont(QFont("Segoe UI", 16, QFont.Bold))
-        title_label.setStyleSheet("color: #8A83FF;")
-        layout.addWidget(title_label)
+        from opal_studio.theme import head_label, hint_label
+        layout.addWidget(head_label("Opal Preferences"))
+        layout.addWidget(hint_label("Everything Opal does stays on this computer."))
 
         # 1. Behavior Group
         grp_behavior = QGroupBox("Behavior & Detection")

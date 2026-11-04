@@ -23,10 +23,10 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushB
                                QDialog, QComboBox, QListWidget, QListWidgetItem,
                                QTreeWidget, QTreeWidgetItem, QTabWidget, QToolButton, QColorDialog,
                                QInputDialog, QApplication, QSizePolicy, QProgressBar, QCheckBox,
-                               QFormLayout)
+                               QFormLayout, QStackedWidget)
 from PySide6.QtPrintSupport import QPrintDialog, QPrinter
 
-from opal_studio.theme import (BG_RAISED, RADIUS, RADIUS_SMALL, ACCENT_SOFT,
+from opal_studio.theme import (BG_RAISED, FIELD, RADIUS, RADIUS_SMALL, ACCENT_SOFT,
                               ACCENT_HI, TEXT_DIM)
 from opal_studio.icons import ICONS
 
@@ -43,7 +43,7 @@ except ImportError:
 CITRUS = QColor(255, 122, 24)
 
 INK_STYLE = f"""
-    QDialog {{ background-color: {BG_RAISED}; color: #EDF1FA; }}
+    QDialog {{ background: {FIELD}; color: #EDF1FA; }}
     QPushButton {{ background-color: rgba(255,255,255,0.06); color: #EDF1FA; border: 1px solid rgba(255,255,255,0.16);
                   border-radius: {RADIUS}px; padding: 6px 14px; font-weight: 600; }}
     QPushButton:hover {{ background-color: rgba(255,255,255,0.13); color: #FFFFFF; border-color: rgba(255,255,255,0.30); }}
@@ -140,6 +140,12 @@ class SignatureDialog(QDialog):
         self.setStyleSheet(INK_STYLE)
         self.signature_png: Optional[bytes] = None
         lay = QVBoxLayout(self)
+        lay.setContentsMargins(24, 24, 24, 24)
+        lay.setSpacing(12)
+
+        from opal_studio.theme import head_label, hint_label
+        lay.addWidget(head_label("Sign Document"))
+        lay.addWidget(hint_label("Draw, type or use a signature image — it is stamped onto the page."))
 
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet("QTabWidget::pane { border: 1px solid rgba(255,255,255,0.16); } "
@@ -208,14 +214,16 @@ class SignatureDialog(QDialog):
         lay.addWidget(self.tabs)
 
         row2 = QHBoxLayout()
+        row2.setSpacing(8)
         row2.addStretch()
-        apply_btn = QPushButton("Apply Signature")
-        apply_btn.setStyleSheet("background-color: #6C63FF;")
-        apply_btn.clicked.connect(self._apply)
         cancel_btn = QPushButton("Cancel")
         cancel_btn.clicked.connect(self.reject)
-        row2.addWidget(apply_btn)
         row2.addWidget(cancel_btn)
+        apply_btn = QPushButton("Apply Signature")
+        apply_btn.setStyleSheet(f"background-color: {ACCENT_HI}; color: #FFFFFF; font-weight: 700; "
+                                f"border: none; border-radius: {RADIUS}px; padding: 7px 16px;")
+        apply_btn.clicked.connect(self._apply)
+        row2.addWidget(apply_btn)
         lay.addLayout(row2)
 
     def mousePressEvent(self, event):
@@ -769,10 +777,26 @@ class PdfStudio(QWidget):
         root.setContentsMargins(24, 24, 24, 24)
         root.setSpacing(8)
 
-        root.addLayout(self._file_toolbar())
-        root.addLayout(self._organize_toolbar())
-        root.addLayout(self._annotate_toolbar())
-        root.addLayout(self._convert_toolbar())
+        # One segmented switcher picks the mode; each mode is a single row of
+        # tools in a stack, so the window never stacks four toolbars at once.
+        from opal_studio.glass import SegmentedControl
+        self.mode = "file"
+        self.mode_bar = SegmentedControl(
+            [("file", "File"), ("organize", "Organize"),
+             ("annotate", "Annotate"), ("convert", "Convert")], self)
+        self.mode_bar.currentChanged.connect(self.set_mode)
+        root.addWidget(self.mode_bar)
+
+        self.toolbar_stack = QStackedWidget()
+        for mode, row in [("file", self._file_toolbar()),
+                          ("organize", self._organize_toolbar()),
+                          ("annotate", self._annotate_toolbar()),
+                          ("convert", self._convert_toolbar())]:
+            page = QWidget()
+            page.setLayout(row)
+            self.toolbar_stack.addWidget(page)
+        self.toolbar_stack.setCurrentIndex(0)
+        root.addWidget(self.toolbar_stack)
         root.addWidget(self._search_bar())
 
         splitter = QSplitter(Qt.Horizontal)
@@ -1278,8 +1302,18 @@ class PdfStudio(QWidget):
     # Tools
     # ------------------------------------------------------------------
 
+    def set_mode(self, mode: str):
+        """Switches the segmented control and the visible toolbar row."""
+        self.mode = mode
+        index = {"file": 0, "organize": 1, "annotate": 2, "convert": 3}.get(mode, 0)
+        self.toolbar_stack.setCurrentIndex(index)
+        self.mode_bar.set_current(mode)
+
     def set_tool(self, tool: str):
         self.active_tool = tool
+        if tool in self.tool_buttons:
+            # An annotation tool was picked - show the Annotate row.
+            self.set_mode("annotate")
         for name, btn in self.tool_buttons.items():
             btn.setChecked(name == tool)
         cursors = {
@@ -1315,7 +1349,11 @@ class PdfStudio(QWidget):
         choice.setWindowTitle("Sign with a DSC")
         choice.setStyleSheet(INK_STYLE)
         cl = QVBoxLayout(choice)
-        cl.addWidget(QLabel("Sign this document with:"))
+        cl.setContentsMargins(24, 24, 24, 24)
+        cl.setSpacing(12)
+        from opal_studio.theme import head_label, hint_label
+        cl.addWidget(head_label("Sign with a DSC"))
+        cl.addWidget(hint_label("Choose how the certificate is provided:"))
         row = QHBoxLayout()
         token_btn = QPushButton("  USB token\n(plugged-in DSC)")
         token_btn.setIcon(ICONS["plug"](26))
@@ -1435,6 +1473,8 @@ class PdfStudio(QWidget):
         detail.setWindowTitle("Certificate Details")
         detail.setStyleSheet(INK_STYLE)
         lay = QVBoxLayout(detail)
+        lay.setContentsMargins(24, 24, 24, 24)
+        lay.setSpacing(12)
         summary = QLabel("Please confirm this is the right certificate:")
         summary.setWordWrap(True)
         lay.addWidget(summary)
@@ -2074,6 +2114,10 @@ class PdfStudio(QWidget):
         dlg.setWindowTitle("Add Watermark")
         dlg.setStyleSheet(INK_STYLE)
         lay = QFormLayout(dlg)
+        lay.setContentsMargins(24, 24, 24, 24)
+        lay.setSpacing(12)
+        from opal_studio.theme import head_label
+        lay.addRow(head_label("Add Watermark"))
         text = QLineEdit("CONFIDENTIAL")
         opacity = QComboBox()
         opacity.addItems(["10%", "20%", "30%", "40%", "50%"])
@@ -2081,12 +2125,15 @@ class PdfStudio(QWidget):
         lay.addRow("Text", text)
         lay.addRow("Opacity", opacity)
         row = QHBoxLayout()
-        ok = QPushButton("Apply")
+        row.setSpacing(8)
         cancel = QPushButton("Cancel")
-        ok.clicked.connect(dlg.accept)
         cancel.clicked.connect(dlg.reject)
-        row.addWidget(ok)
         row.addWidget(cancel)
+        ok = QPushButton("Apply")
+        ok.setStyleSheet(f"background-color: {ACCENT_HI}; color: #FFFFFF; font-weight: 700; "
+                         f"border: none; border-radius: {RADIUS}px; padding: 6px 16px;")
+        ok.clicked.connect(dlg.accept)
+        row.addWidget(ok)
         lay.addRow(row)
         if dlg.exec() != QDialog.Accepted:
             return
