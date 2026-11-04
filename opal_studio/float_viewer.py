@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushB
                                QWidget, QFileDialog, QMessageBox, QListWidget, QListWidgetItem,
                                QGridLayout, QScrollArea, QFrame, QApplication, QSizePolicy)
 
-from opal_studio.theme import BG_RAISED, RADIUS, ACCENT, ACCENT_HI, TEXT_DIM
+from opal_studio.theme import BG_RAISED, RADIUS, RADIUS_SMALL, ACCENT, ACCENT_HI, TEXT_DIM
 from opal_studio.viewer_pdf import PdfStudio
 from opal_studio.viewer_image import ImageLab
 from opal_studio.viewer_doc import DocStudio
@@ -244,7 +244,7 @@ class FloatStudio(QWidget):
         self.tabs.setStyleSheet(f"""
             QTabWidget::pane {{ border: 1px solid rgba(255,255,255,0.10); border-radius: {RADIUS}px; background: {BG_RAISED}; }}
             QTabBar::tab {{ background: rgba(255,255,255,0.05); color: {TEXT_DIM}; padding: 7px 14px; margin-right: 2px;
-                           border-top-left-radius: 8px; border-top-right-radius: 8px; font-size: 11px; }}
+                           border-top-left-radius: {RADIUS_SMALL}px; border-top-right-radius: {RADIUS_SMALL}px; font-size: 11px; }}
             QTabBar::tab:selected {{ background: {ACCENT}; color: #FFFFFF; }}
             QTabBar::tab:hover {{ color: #EDF1FA; }}
             QTabBar::close-button {{ subcontrol-position: right; }}

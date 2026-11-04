@@ -61,6 +61,7 @@ GLASS_SHADE = "rgba(0, 0, 0, 0.32)"              # the shadowed bottom edge
 
 RADIUS = 12
 RADIUS_LARGE = 18
+RADIUS_SMALL = 8      # tab corners, tiny sub-elements
 
 # ------------------------------------------------------------------ fonts ---
 UI_FAMILIES = ["Segoe UI Variable Text", "Segoe UI", "Inter",

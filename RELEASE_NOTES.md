@@ -4,6 +4,21 @@
 
 ---
 
+## Security audit — 2026-11-04
+
+Deep static scan (Mimosa 0.1.0, `depth: deep`): **0 findings** (0 high / 0
+medium / 0 low / 0 info), sealed artifacts under
+`~/.mimosa/security-scans/project-c5d58624bebc2392dd718f46/`.
+
+- Scan ID: `scan-2026-11-04T02-14-53.646Z-d7996a4f9c02`
+- Seal: `sha256:1bc2645747d21dea50916053eacaa11371c21e5ced61ddaa3fa5401788ccbed3`
+- Dependency check: 150 packages scanned; 3 matched 42 entries in the offline
+  advisory DB (114 unknown); itemised names are not in the sealed artifacts.
+- Caveat: static-only, partial call-graph coverage — run status
+  **inconclusive**, not a claim of "fully secure".
+
+---
+
 ## Unreleased
 
 The work in this batch closed the gap between what Opal *says* it does and

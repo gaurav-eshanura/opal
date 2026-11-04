@@ -26,8 +26,8 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushB
                                QFormLayout)
 from PySide6.QtPrintSupport import QPrintDialog, QPrinter
 
-from opal_studio.theme import (BG_RAISED, RADIUS, ACCENT_SOFT, ACCENT_HI,
-                              TEXT_DIM)
+from opal_studio.theme import (BG_RAISED, RADIUS, RADIUS_SMALL, ACCENT_SOFT,
+                              ACCENT_HI, TEXT_DIM)
 from opal_studio.icons import ICONS
 
 try:
@@ -814,7 +814,7 @@ class PdfStudio(QWidget):
         right = QTabWidget()
         right.setStyleSheet(f"QTabWidget::pane {{ border: 1px solid rgba(255,255,255,0.10); border-radius: {RADIUS}px; }} "
                             f"QTabBar::tab {{ background:rgba(255,255,255,0.05); color:{TEXT_DIM}; padding:5px 10px; "
-                            f"border-top-left-radius: 8px; border-top-right-radius: 8px; }} "
+                            f"border-top-left-radius: {RADIUS_SMALL}px; border-top-right-radius: {RADIUS_SMALL}px; }} "
                             f"QTabBar::tab:selected {{ color:{ACCENT_HI}; }}")
         right.addTab(self._outline_tab(), "Outline")
         right.addTab(self._comments_tab(), "Comments")
