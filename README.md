@@ -111,7 +111,10 @@ macOS and Linux.
   <img src="website/assets/screenshots/04-wheel-tools.png" alt="The Opal action wheel" width="360" />
 </p>
 
-### 🪪 Digital signatures that are real
+### 🪪 Digital signatures that are real — no paid Acrobat needed
+
+Adobe Acrobat Pro puts digitally signing a PDF behind a paid subscription.
+Opal does the same job **free and fully offline**.
 
 Sign a PDF with the PKCS#12 certificate (`.pfx` / `.p12`) your authority
 issued — the same file an Indian DSC provider hands you — **or directly with
@@ -120,8 +123,14 @@ the token's PKCS#11 driver by itself, shows the certificate subject, issuer,
 serial and validity **before** you sign, and computes the signature inside
 the token: the private key never leaves the device. The token PIN is asked
 for in a dialog and held in memory only — never saved, logged, or put on a
-command line. The result is a standard `adbe.pkcs7.detached` signature that
-any reader can verify.
+command line. Opal signs into the form's own empty signature field when one is
+prepared (exactly like Acrobat) and always writes a **signed copy** — your
+original is never modified. The result is a standard `adbe.pkcs7.detached`
+signature that any reader can verify — and Opal verifies it too, offline:
+intact or tampered, who signed, certificate chain, revoked or not
+(`--verify-signature`). Add `--tsa` for an optional RFC 3161 trusted
+timestamp from an allow-listed server, which receives only the hash of the
+signature, never the document.
 
 ---
 
