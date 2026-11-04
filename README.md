@@ -6,6 +6,8 @@
 
 ### Every file, in every light
 
+**From Indian with Love ❤️**
+
 **The offline file studio for Windows, macOS and Linux.**
 Convert, edit, sign and finish any file — entirely on your own computer.
 
