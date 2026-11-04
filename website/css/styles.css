@@ -838,3 +838,55 @@ h3 { font-size: 1.4rem; line-height: 1.15; }
   .use-feature-head { flex-direction: column; gap: 14px; }
   .dsc-cta { align-items: flex-start; flex-direction: column; gap: 14px; }
 }
+
+/* ------------------------------------------------------------- compare -- */
+.cmp-wrap {
+  border: 1px solid var(--glass-edge);
+  border-radius: 20px;
+  background: rgba(10, 13, 22, 0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  overflow: hidden;
+}
+.cmp-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; min-width: 880px; }
+.cmp-table th {
+  text-align: left;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding: 16px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+}
+.cmp-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--text-dim);
+  vertical-align: top;
+}
+.cmp-table tbody tr:last-child td { border-bottom: none; }
+.cmp-table td b { color: var(--text); font-weight: 600; }
+.cmp-table .yes { color: var(--fire-green); font-weight: 600; }
+.cmp-table .no { color: #e0798f; }
+.cmp-table tr.cmp-opal td {
+  background: linear-gradient(120deg, rgba(138, 92, 246, 0.16), rgba(238, 78, 138, 0.10) 60%, rgba(255, 154, 60, 0.10));
+  color: var(--text);
+}
+.cmp-table tr.cmp-opal td.yes { color: #7fe6b2; }
+.cmp-note { padding: 14px 18px; font-size: 0.78rem; color: var(--text-faint); border-top: 1px solid rgba(255, 255, 255, 0.08); margin: 0; }
+
+.win-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.win-card {
+  border: 1px solid rgba(55, 201, 138, 0.35);
+  background: rgba(55, 201, 138, 0.05);
+  border-radius: 20px;
+  padding: 28px 26px;
+}
+.win-card--gap { border-color: rgba(255, 154, 60, 0.35); background: rgba(255, 154, 60, 0.05); }
+.win-card h3 { margin: 0 0 6px; font-size: 1.3rem; }
+.win-card .checklist { margin-top: 18px; }
+
+@media (max-width: 900px) {
+  .win-grid { grid-template-columns: 1fr; }
+}

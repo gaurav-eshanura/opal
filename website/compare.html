@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Opal vs Acrobat &amp; the free PDF tools — an honest scoreboard</title>
+<meta name="description" content="How Opal compares to Adobe Acrobat, iLovePDF, Smallpdf, PDF24, PDFgear and other free PDF tools — what each does with your file, what it costs, and where Opal is genuinely better. Checked against each tool's public documentation, November 2026." />
+<meta name="theme-color" content="#05070d" />
+<link rel="icon" href="assets/brand/favicon.svg?v=3" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/styles.css?v=3" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header" id="top">
+  <div class="shell header-inner">
+    <a class="brand" href="index.html#top" aria-label="Opal home">
+      <img src="assets/brand/mark.svg?v=3" alt="" class="brand-mark" width="28" height="28" />
+      <span class="brand-word">OPAL</span>
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a href="index.html#uses">Uses</a>
+      <a href="index.html#dsc">DSC signing</a>
+      <a href="compare.html" aria-current="page">Compare</a>
+    </nav>
+    <div class="header-actions">
+      <div class="lang-switch" role="group" aria-label="Language">
+        <button type="button" class="lang-btn is-active" data-set-lang="en">EN</button>
+        <button type="button" class="lang-btn" data-set-lang="hinglish">Hinglish</button>
+      </div>
+      <a class="btn btn-primary" href="index.html#download" data-en="Get Opal" data-hing="Opal lo">Get Opal</a>
+      <button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+<section class="section" style="padding-top: 150px;">
+  <div class="shell">
+    <span class="eyebrow reveal" data-en="The honest scoreboard" data-hing="Imaandaar scoreboard">The honest scoreboard</span>
+    <h2 class="reveal" data-en="Opal vs the tools that already rival Acrobat." data-hing="Opal vs woh tools jo pehle se Acrobat ko takkar dete hain.">Opal vs the tools that already rival Acrobat.</h2>
+    <p class="lede reveal" data-reveal-delay="1"
+       data-en="Plenty of free tools claim to replace Acrobat. We checked each one against its own public documentation (November 2026) and asked the same questions: What happens to your file? What does it cost? Can it really sign with a DSC USB token? The table below is the result — including the rows where Opal does not win yet."
+       data-hing="Bahut saare free tools Acrobat ko badalne ka daawa karte hain. Humne har ek ko uske apne public docs ke against check kiya (November 2026) aur wahi sawaal pooche: Aapki file ka kya hota hai? Kitna kharcha? Kya sach mein DSC USB token se sign kar sakta hai? Neeche ki table wahi result hai — jisme woh rows bhi hain jahan Opal abhi nahi jeet ta.">
+      Plenty of free tools claim to replace Acrobat. We checked each one against its own public documentation (November 2026) and asked the same questions: What happens to your file? What does it cost? Can it really sign with a DSC USB token? The table below is the result — including the rows where Opal does not win yet.
+    </p>
+
+    <div class="cmp-wrap reveal" data-reveal-delay="2" style="margin-top: 56px; overflow-x: auto;">
+      <table class="cmp-table">
+        <thead>
+          <tr>
+            <th data-en="Tool" data-hing="Tool">Tool</th>
+            <th data-en="Type" data-hing="Type">Type</th>
+            <th data-en="Price" data-hing="Keemat">Price</th>
+            <th data-en="File leaves your PC?" data-hing="File PC se bahar jaati hai?">File leaves your PC?</th>
+            <th data-en="USB DSC token signing" data-hing="USB DSC token sign">USB DSC token signing</th>
+            <th data-en="Works fully offline" data-hing="Poori tarah offline">Works fully offline</th>
+            <th data-en="Verify signatures offline" data-hing="Offline signature verify">Verify signatures offline</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="cmp-paid">
+            <td><b>Adobe Acrobat Pro</b></td><td>Desktop + cloud</td><td data-en="Paid subscription (~US$20/mo)" data-hing="Paid subscription (~US$20/mo)">Paid subscription (~US$20/mo)</td>
+            <td data-en="Optional (can be local)" data-hing="Optional (local ho sakta hai)">Optional (can be local)</td>
+            <td class="yes">Yes — the benchmark</td><td class="yes">Yes</td><td class="yes">Yes</td>
+          </tr>
+          <tr>
+            <td><b>Acrobat Reader</b></td><td>Desktop</td><td>Free</td><td>No</td><td class="no">No — view only</td><td class="yes">Yes</td><td>View only</td>
+          </tr>
+          <tr>
+            <td><b>iLovePDF</b></td><td>Web</td><td data-en="Free tier + paid" data-hing="Free tier + paid">Free tier + paid</td>
+            <td class="no">Yes — processed on their servers</td><td class="no">No — draw/type image only</td><td class="no">No — needs internet</td><td class="no">No</td>
+          </tr>
+          <tr>
+            <td><b>Smallpdf</b></td><td>Web</td><td data-en="Free tier (daily limits) + paid" data-hing="Free tier (daily limits) + paid">Free tier (daily limits) + paid</td>
+            <td class="no">Yes — account + their servers</td><td class="no">No — e-sign, not a DSC token</td><td class="no">No</td><td class="no">No</td>
+          </tr>
+          <tr>
+            <td><b>Xodo</b></td><td>Web + mobile apps</td><td data-en="Free with account" data-hing="Account ke saath free">Free with account</td>
+            <td class="no">Yes — cloud processing</td><td class="no">No</td><td class="no">No</td><td class="no">No</td>
+          </tr>
+          <tr>
+            <td><b>PDF24</b></td><td>Desktop (Win) + web</td><td>Free</td><td>No (desktop mode)</td><td class="no">No — image/text signature only</td><td class="yes">Desktop: yes</td><td class="no">No</td>
+          </tr>
+          <tr>
+            <td><b>PDFgear</b></td><td>Desktop + mobile</td><td>Free</td><td>No</td><td class="no">No — draw/image signature</td><td class="yes">Mostly</td><td class="no">No</td>
+          </tr>
+          <tr>
+            <td><b>PDF-XChange Editor</b></td><td>Desktop (Win)</td><td data-en="Free edition limits some tools; Pro paid" data-hing="Free edition mein kuch tools limit; Pro paid">Free edition limits some tools; Pro paid</td><td>No</td><td class="no">No USB token support</td><td class="yes">Yes</td><td class="no">No</td>
+          </tr>
+          <tr>
+            <td><b>Okular / LibreOffice Draw</b></td><td>Desktop</td><td>Free, open source</td><td>No</td><td class="no">No PKCS#11 USB tokens</td><td class="yes">Yes</td><td>Partial</td>
+          </tr>
+          <tr class="cmp-opal">
+            <td><b>Opal</b></td><td>Desktop (Win; macOS/Linux from source)</td><td>Free, MIT</td>
+            <td class="yes">No — 0 bytes, ever, open source to prove it</td>
+            <td class="yes">Yes — live-proven with e-Mudhra HYP2003 token + .pfx/.p12</td>
+            <td class="yes">Yes — incl. bundled AI in the Full build</td>
+            <td class="yes">Yes — intact / trusted / revoked</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="cmp-note" data-en="Competitor facts as stated in each product's own public documentation, November 2026; re-check before re-quoting. 'DSC token' means a plugged-in PKCS#11 USB certificate (the Indian CA kind), not drawing a signature image."
+         data-hing="Competitor ki baatein har product ke apne public docs ki hain, November 2026; dobara quote karne se pehle re-check karo. 'DSC token' matlab plugged-in PKCS#11 USB certificate (Indian CA wala), signature image banana nahi.">
+        Competitor facts as stated in each product's own public documentation, November 2026; re-check before re-quoting. "DSC token" means a plugged-in PKCS#11 USB certificate (the Indian CA kind), not drawing a signature image.
+      </p>
+    </div>
+
+    <div class="win-grid" style="margin-top: 72px;">
+      <div class="win-card reveal">
+        <h3 data-en="Where Opal is better — exactly" data-hing="Opal kahan sach mein behtar hai — bilkul">Where Opal is better — exactly</h3>
+        <ul class="checklist">
+          <li data-en="The only free tool here that signs with a plugged-in DSC USB token (PKCS#11) — the private key never leaves the token — and verifies signatures fully offline. Live-proven on an e-Mudhra HYP2003."
+              data-hing="Yahaan ka ekmatra free tool jo plugged-in DSC USB token (PKCS#11) se sign karta hai — private key kabhi token se bahar nahi — aur offline verify karta hai. e-Mudhra HYP2003 par live test kiya.">
+            The only free tool here that signs with a plugged-in DSC USB token (PKCS#11) — the private key never leaves the token — and verifies signatures fully offline. Live-proven on an e-Mudhra HYP2003.
+          </li>
+          <li data-en="Zero-upload is architecture, not a promise: single local app, MIT-licensed source — read it and see that nothing phones home. Web tools process your document on their servers."
+              data-hing="Zero-upload ek architecture hai, vaada nahi: ek local app, MIT-licensed source — padh ke dekho, kuch bhi bahar nahi jaata. Web tools aapka document apne servers par process karte hain.">
+            Zero-upload is architecture, not a promise: single local app, MIT-licensed source — read it and see that nothing phones home. Web tools process your document on their servers.
+          </li>
+          <li data-en="Built for the Indian counter: Aadhaar/passport ID photo 413×599, stamp photo, 4R/5R/6R print at 300 DPI, WhatsApp PDF under 1 MB, WhatsApp-ready photos — one click each, ~1 s per job."
+              data-hing="Indian counter ke liye bana: Aadhaar/passport ID photo 413×599, stamp photo, 4R/5R/6R print 300 DPI par, WhatsApp PDF 1 MB se kam, WhatsApp-ready photos — har ek click, ~1s har job.">
+            Built for the Indian counter: Aadhaar/passport ID photo 413×599, stamp photo, 4R/5R/6R print at 300 DPI, WhatsApp PDF under 1 MB, WhatsApp-ready photos — one click each, ~1 s per job.
+          </li>
+          <li data-en="The wheel: hold Shift/Alt/Ctrl while dragging a file — 103 actions appear around your cursor. Plus watch-folder auto-convert, right-click menu, conversion history, and a CLI (--sign/--verify-signature included)."
+              data-hing="Wheel: file drag karte waqt Shift/Alt/Ctrl dabao — 103 actions cursor ke ghoomne mein aa jaate hain. Plus watch-folder auto-convert, right-click menu, history, aur CLI (--sign/--verify-signature ke saath).">
+            The wheel: hold Shift/Alt/Ctrl while dragging a file — 103 actions appear around your cursor. Plus watch-folder auto-convert, right-click menu, conversion history, and a CLI (--sign/--verify-signature included).
+          </li>
+          <li data-en="Offline AI in the Full build: background removal and 2x/4x upscale run with the network unplugged."
+              data-hing="Full build mein offline AI: background removal aur 2x/4x upscale network nikaalne par bhi chalte hain.">
+            Offline AI in the Full build: background removal and 2x/4x upscale run with the network unplugged.
+          </li>
+        </ul>
+      </div>
+
+      <div class="win-card win-card--gap reveal" data-reveal-delay="1">
+        <h3 data-en="Where Opal is not better yet — honestly" data-hing="Opal kahan abhi behtar nahi — imaandari se">Where Opal is not better yet — honestly</h3>
+        <ul class="checklist">
+          <li data-en="Brand and polish: Acrobat, Foxit and PDFgear have years of UI polish, mobile apps and support desks. Opal is a small open-source project."
+              data-hing="Brand aur polish: Acrobat, Foxit aur PDFgear ke paas saalon ka UI polish, mobile apps aur support desk hai. Opal ek chhota open-source project hai.">
+            Brand and polish: Acrobat, Foxit and PDFgear have years of UI polish, mobile apps and support desks. Opal is a small open-source project.
+          </li>
+          <li data-en="PDF standards Acrobat Pro still owns: MDP certification, full LTV/DSS revocation embedding, preflight/PDF-X, JavaScript actions, portfolios, text reflow. On our roadmap, not in v2.0.1."
+              data-hing="PDF standards jo Acrobat Pro abhi bhi rakhta hai: MDP certification, full LTV/DSS, preflight/PDF-X, JavaScript actions, portfolios, text reflow. Hamare roadmap par hain, v2.0.1 mein nahi.">
+            PDF standards Acrobat Pro still owns: MDP certification, full LTV/DSS revocation embedding, preflight/PDF-X, JavaScript actions, portfolios, text reflow. On our roadmap, not in v2.0.1.
+          </li>
+          <li data-en="Distribution: published zips are Windows-only right now (macOS/Linux build from source, CI green on all three) and the exe is not code-signed yet — Windows SmartScreen will warn until we sign it."
+              data-hing="Distribution: abhi sirf Windows zips publish hain (macOS/Linux source se build, teeno par CI green) aur exe abhi code-signed nahi hai — sign hone tak Windows SmartScreen warning dega.">
+            Distribution: published zips are Windows-only right now (macOS/Linux build from source, CI green on all three) and the exe is not code-signed yet — Windows SmartScreen will warn until we sign it.
+          </li>
+          <li data-en="No Android/iOS app (Xodo, PDFgear have them). A Flutter port is possible for conversions and .pfx signing, but USB DSC tokens do not exist on Android — the headline feature is desktop-only."
+              data-hing="Koi Android/iOS app nahi (Xodo, PDFgear ke paas hain). Flutter port conversions aur .pfx signing ke liye ho sakta hai, lekin USB DSC tokens Android par nahi hote — headline feature sirf desktop par hai.">
+            No Android/iOS app (Xodo, PDFgear have them). A Flutter port is possible for conversions and .pfx signing, but USB DSC tokens do not exist on Android — the headline feature is desktop-only.
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="lede reveal" style="margin-top: 56px; max-width: 62ch;"
+       data-en="Verdict: if your job is signing PDFs with a real DSC at a counter, offline, for free — no free rival above does it. If your job is certifying PDFs to PDF/X or running JavaScript in a form, paid Acrobat Pro is still the tool. We'd rather tell you that than pretend."
+       data-hing="Nateeja: agar aapka kaam hai counter par asli DSC se PDF sign karna, offline, free — upar koi free rival ye nahi karta. Agar aapka kaam hai PDF/X certify karna ya form mein JavaScript chalana, toh paid Acrobat Pro abhi bhi sahi tool hai. Hum ye kehna zyada pasand karenge bajaye dikhawa karne ke.">
+      Verdict: if your job is signing PDFs with a real DSC at a counter, offline, for free — no free rival above does it. If your job is certifying PDFs to PDF/X or running JavaScript in a form, paid Acrobat Pro is still the tool. We'd rather tell you that than pretend.
+    </p>
+
+    <div class="hero-cta reveal" style="margin-top: 36px;">
+      <a class="btn btn-primary btn-lg" href="index.html#download" data-en="Get Opal free" data-hing="Opal free lo">Get Opal free</a>
+      <a class="btn btn-quiet btn-lg" href="index.html#dsc" data-en="See DSC signing" data-hing="DSC signing dekho">See DSC signing</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="shell footer-inner">
+    <a class="brand" href="index.html#top">
+      <img src="assets/brand/mark.svg?v=3" alt="" class="brand-mark" width="24" height="24" />
+      <span class="brand-word">OPAL</span>
+    </a>
+    <p class="footer-note">
+      <span data-en="© 2026 Opal. The offline file studio for Windows, macOS and Linux."
+               data-hing="© 2026 Opal. Windows, macOS aur Linux ke liye offline file studio.">
+        © 2026 Opal. The offline file studio for Windows, macOS and Linux.
+      </span>
+      <br />
+      <a href="index.html#top" data-en="Back to the main page" data-hing="Main page par wapas">Back to the main page</a>
+    </p>
+    <p class="footer-note">© <span id="year">2026</span> · Opal v2.0.1</p>
+  </div>
+</footer>
+
+<script src="js/main.js?v=3"></script>
+</body>
+</html>
