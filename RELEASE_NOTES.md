@@ -4,6 +4,32 @@
 
 ---
 
+## v2.1.0 — 2026-11-04
+
+First release with **DSC USB token signing**: plug in an Indian CA's token
+(live-proven with e-Mudhra HYP2003) or drop in the `.pfx`/`.p12` — the
+signature is computed inside the token, the key never leaves it, the form's
+own prepared signature field is used, a signed copy is written (original
+untouched), and any signed PDF verifies fully offline (intact / trusted /
+revoked; optional allow-listed `--tsa` timestamp, hash only).
+
+Also in this release: the world-class UI redesign (liquid-glass field, type
+ladder, segmented PDF studio, icon tiles, 500 px paged wheel with SVG icons,
+scrollable rails, glass toasts — verified by a 36-screen capture rig and
+pixel audit), wheel paging at 10 wedges (all 103 actions still reachable),
+a viewer-search crash fix, and the rebuilt website (uses menu, DSC section,
+honest vs-rivals scoreboard, EN+Hinglish, SEO, press kit, `MARKETING.md`).
+
+- Tests: **390 passed / 15 skipped / 0 failed** (pytest, offscreen Qt, exit 0)
+- Downloads: `Opal-v2.1.0-Windows-x64.zip` (103,554,634 B ≈ 99 MiB zipped) and
+  `Opal-Full-v2.1.0-Windows-x64.zip` (233,087,187 B ≈ 222 MiB zipped, AI engines bundled)
+- Known gaps (roadmap, stated honestly on the site): MDP certification,
+  LTV/DSS, preflight/PDF-X, JS actions; published zips are Windows-only
+  (macOS/Linux build from source, CI green on all three); the exe is not
+  code-signed yet.
+
+---
+
 ## Security audit — 2026-11-04
 
 Deep static scan (Mimosa 0.1.0, `depth: deep`): **0 findings** (0 high / 0

@@ -55,8 +55,8 @@ Those archives are **built, not committed** — `website/downloads/` is in
 `.gitignore`. The build produces them:
 
 ```powershell
-python build_release.py            # full build  -> Opal-Full-v2.0.1-<platform>.zip
-python build_release.py --core     # core build  -> Opal-v2.0.1-<platform>.zip
+python build_release.py            # full build  -> Opal-Full-v2.1.0-<platform>.zip
+python build_release.py --core     # core build  -> Opal-v2.1.0-<platform>.zip
 ```
 
 `build_release.py` writes each zip into `dist/` and copies it into

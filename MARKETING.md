@@ -6,8 +6,8 @@ prove from source or measurement. Never say "every tool Acrobat has", never say
 number without re-measuring it (see `opal-measured-numbers` memory / README testing section).
 
 Current state (2026-11-04): public repo `github.com/gaurav-eshanura/opal` (0 stars),
-release **v2.0.1** with Windows zips (103 MB / 232 MB decimal), website live on Firebase
-Hosting from `website/`, suite 391 passed / 14 skipped / 0 failed, CI green on
+release **v2.1.0** with Windows zips (DSC token signing + redesign), website live on Firebase
+Hosting from `website/`, suite 390 passed / 15 skipped / 0 failed, CI green on
 ubuntu/windows/macos.
 
 ---
@@ -51,7 +51,7 @@ Tagline options: *"Every file, in every light."* / *"The offline file studio."* 
 - Submit to awesome lists: `awesome-pdf`, `awesome-offline-first`, `awesome-privacy`,
   `awesome-windows-apps`, `awesome-selfhosted` (PRs, follow each list's rules).
 - Pin a "Start here" issue with the quickstart (download → unzip → run → drop a file).
-- Keep the CI badge in README (already there). Tag releases properly (v2.0.1 done).
+- Keep the CI badge in README (already there). Tag releases properly (v2.1.0 done).
 
 ### B. Product Hunt launch (week 2)
 - Maker account needed (free). Prepare assets **now**:

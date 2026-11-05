@@ -178,9 +178,14 @@ def test_cli_sign_requires_pfx_or_token(samples, monkeypatch, capsys):
     assert "--pfx" in capsys.readouterr().out
 
 
-def test_cli_sign_with_token_but_no_pin_fails_fast_not_hangs(samples, monkeypatch, capsys):
+def test_cli_sign_with_token_but_no_pin_fails_fast_not_hangs(samples, monkeypatch, capsys, tmp_path):
     from opal_studio import cli
     monkeypatch.delenv("OPAL_DSC_PIN", raising=False)
+    # Point the driver override at a path that does not exist so the suite
+    # never loads a real vendor PKCS#11 DLL: some drivers raise an
+    # uncatchable Windows structured exception from C_Initialize, which
+    # would kill the whole pytest process on a machine with a token plugged in.
+    monkeypatch.setenv("OPAL_PKCS11_LIB", str(tmp_path / "absent_driver.dll"))
     # Under pytest stdin is not a terminal, so the PIN prompt must not block.
     code = cli.main(["--sign", str(samples.path("contract.pdf")), "--token"])
     assert code == 2
@@ -206,8 +211,14 @@ def test_viewer_sign_with_dsc_token_context(app, samples, tmp_path, fake_token):
 
 
 def test_real_token_enumeration_when_one_is_plugged_in():
-    """Live probe: runs only when python-pkcs11 is installed AND a physical
-    DSC token is present; skips everywhere else."""
+    """Live probe: opt-in only (OPAL_LIVE_TOKEN_TEST=1) and only when
+    python-pkcs11 is installed AND a physical DSC token is present.
+
+    A vendor PKCS#11 DLL can raise an uncatchable Windows structured
+    exception during C_Initialize (seen: fatal 0x8010000a), which would
+    kill the whole pytest process — so this never runs by default."""
+    if os.environ.get("OPAL_LIVE_TOKEN_TEST") != "1":
+        pytest.skip("live token probe is opt-in: set OPAL_LIVE_TOKEN_TEST=1")
     if not dsc_token.HAVE_PKCS11:
         pytest.skip("python-pkcs11 is not installed")
     devices, _errors = dsc_token.list_devices()

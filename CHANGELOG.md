@@ -4,6 +4,35 @@ All notable changes to Opal are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] — 2026-11-04
+
+### Added
+- **Sign PDFs with a plugged-in DSC USB token** (PKCS#11): Opal finds the
+  token's driver itself, shows certificate subject/issuer/serial/validity
+  before signing, computes the signature inside the token (the private key
+  never leaves the device), signs into the form's own prepared signature
+  field, writes a signed copy only, and verifies any signed PDF offline —
+  intact / trusted / revoked. `.pfx`/`.p12` files work too, plus an optional
+  allow-listed RFC 3161 timestamp (`--tsa`, hash only). Live-proven with a
+  real e-Mudhra HYP2003 token.
+- **World-class redesign**: radial liquid-glass field, type ladder, segmented
+  PDF studio (File/Organize/Annotate/Convert), icon-tile cards, a 500 px
+  radial wheel with paging and arc-fitted labels, SVG icons everywhere,
+  scrollable image-lab rail, glass toasts, 24 px dialog rhythm. Verified with
+  a 36-screen capture rig and a pixel/margin audit.
+- **Website**: full uses menu, DSC-signing section marketed against paid
+  Acrobat, honest vs-rivals scoreboard (`compare.html`), EN + Hinglish,
+  JSON-LD/sitemap/robots SEO, printable bilingual CSC rate card, press kit,
+  `MARKETING.md` launch plan.
+
+### Changed
+- The wheel pages at 10 wedges with a More/First wedge — all 103 action ids
+  stay reachable; labels elide to their wedge's arc width.
+
+### Fixed
+- Document viewer search crashed on a no-match (`QTextDocument.find` cursor
+  misuse); regression-tested.
+
 ## [Unreleased]
 
 ### Added
