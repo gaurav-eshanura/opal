@@ -65,6 +65,18 @@ RADIUS = 12
 RADIUS_LARGE = 18
 RADIUS_SMALL = 8      # tab corners, tiny sub-elements
 
+# --- Stitch Liquid Glass canonical tokens (captured 2026-11-06 from the
+# "Opal Liquid Glass" design system, assets/3539134380188353237; see
+# design/stitch/DESIGN.md). Exact values the Stitch screens were built with.
+GROUND = "#0B0E18"
+GROUND_RAISED = "#141A2B"
+GROUND_SUNK = "#080B13"
+GLASS_TOP = "rgba(255,255,255,0.18)"    # specular-edge inner top line
+GLASS_EDGE = "rgba(255,255,255,0.10)"   # subtle top line
+WHEEL_ACTIVE_GRAD = ("#EE4E8A", "#8A5CF6", "#6C63FF")   # rose->violet->violet
+SCROLLBAR_THUMB = "rgba(255,255,255,0.12)"
+SCROLLBAR_THUMB_HOVER = "rgba(255,255,255,0.22)"
+
 # The field behind the glass: a cool pool of light falling from the top of
 # the window, so no surface ever sits on a flat black rectangle.
 FIELD = ("qradialgradient(cx: 0.5, cy: -0.1, radius: 1.6, fx: 0.5, fy: -0.1, "
@@ -187,7 +199,10 @@ def build_stylesheet() -> str:
     QScrollArea > QWidget > QWidget {{ background: {BG}; }}
     QTabWidget::pane {{ background: {SURFACE}; }}
     QStatusBar {{ background: transparent; }}
-    QLabel, QCheckBox, QRadioButton {{ background: transparent; }}
+    QLabel, QCheckBox, QRadioButton {{
+        background: transparent;
+        border: none;
+    }}
 
     /* ---------- glass buttons ---------- */
     QPushButton {{
@@ -394,16 +409,16 @@ def build_stylesheet() -> str:
         background: transparent; width: 10px; margin: 2px;
     }}
     QScrollBar::handle:vertical {{
-        background: rgba(255, 255, 255, 0.16); border-radius: 4px; min-height: 30px;
+        background: {SCROLLBAR_THUMB}; border-radius: 9999px; min-height: 30px;
     }}
-    QScrollBar::handle:vertical:hover {{ background: rgba(255, 255, 255, 0.30); }}
+    QScrollBar::handle:vertical:hover {{ background: {SCROLLBAR_THUMB_HOVER}; }}
     QScrollBar:horizontal {{
-        background: transparent; height: 10px; margin: 2px;
+        background: transparent; height: 6px; margin: 2px;
     }}
     QScrollBar::handle:horizontal {{
-        background: rgba(255, 255, 255, 0.16); border-radius: 4px; min-width: 30px;
+        background: {SCROLLBAR_THUMB}; border-radius: 9999px; min-width: 30px;
     }}
-    QScrollBar::handle:horizontal:hover {{ background: rgba(255, 255, 255, 0.30); }}
+    QScrollBar::handle:horizontal:hover {{ background: {SCROLLBAR_THUMB_HOVER}; }}
     QScrollBar::add-line, QScrollBar::sub-line {{ height: 0; width: 0; }}
     QScrollBar::add-page, QScrollBar::sub-page {{ background: transparent; }}
 

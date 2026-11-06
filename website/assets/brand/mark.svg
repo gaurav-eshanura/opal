@@ -1,5 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="Opal">
   <title>Opal</title>
+  <!-- The mark speaks the Stitch "Opal Liquid Glass" system: the liquid-glass
+       field is #0B0E18, the light inside the stone runs teal -> blue ->
+       violet -> rose -> amber on the deep ground. -->
   <defs>
     <radialGradient id="opal-body" cx="34%" cy="26%" r="88%">
       <stop offset="0" stop-color="#FFFFFF"/>
@@ -14,7 +17,8 @@
     </linearGradient>
 
     <linearGradient id="opal-fire-warm" x1="0" y1="0.6" x2="1" y2="0.4">
-      <stop offset="0" stop-color="#EE4E8A"/>
+      <stop offset="0" stop-color="#6C63FF"/>
+      <stop offset="0.55" stop-color="#EE4E8A"/>
       <stop offset="1" stop-color="#FF9A3C"/>
     </linearGradient>
 

@@ -17,6 +17,14 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QIcon, QImage,
                            QLinearGradient, QPainter, QPainterPath, QPen,
                            QPixmap, QRadialGradient)
 
+# Stitch "Opal Liquid Glass" canonical tokens (captured 2026-11-06 from the
+# Stitch design system assets/3539134380188353237; full capture in
+# design/stitch/DESIGN.md). The mark quotes these so the icon, the wheel and
+# the website all draw from one palette: deep ground, violet, fire spectrum.
+GROUND = "#0B0E18"
+ACCENT = "#6C63FF"
+ACCENT_HI = "#8A83FF"
+
 # The play of colour inside an opal. Kept in one place so the mark, the icon
 # and the website always agree.
 FIRE = ["#21C7D0", "#3C7BF2", "#8A5CF6", "#EE4E8A", "#FF9A3C", "#37C98A"]

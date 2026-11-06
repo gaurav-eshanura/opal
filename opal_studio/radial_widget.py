@@ -31,11 +31,15 @@ class RadialMenuWidget(QWidget):
         self.setAttribute(Qt.WA_DeleteOnClose, False)
         self.setMouseTracking(True)
 
+        # Stitch "Radial Wheel Overlay" geometry (SVG viewBox -250..250):
+        # R_out 246 · R_in 96 at 500px disc, hub 184px diameter. The widget
+        # is taller than the disc so the desc banner pill fits beneath it.
         self.size_px = 500
-        self.resize(self.size_px, self.size_px)
+        self.height_px = 580
+        self.resize(self.size_px, self.height_px)
 
-        self.center_radius = 66
-        self.outer_radius = 206
+        self.center_radius = 92
+        self.outer_radius = 246
         self.center_pt = QPoint(self.size_px // 2, self.size_px // 2)
 
         self.file_paths: List[str] = []
@@ -45,12 +49,15 @@ class RadialMenuWidget(QWidget):
         self.option_offset = 0
         self.hovered_index = -1
 
-        # Brand colours: warm off-white wheel, one fire accent
-        self.color_fire = QColor("#8A5CF6")
+        # Stitch disc: inactive wedges radial glass (transparent -> white 6%),
+        # separators white 12%, active wedge rose->violet->violet bloom,
+        # hub #080B13 90% with hub-glass-depth shadow.
+        self.color_fire = QColor("#6C63FF")
+        self.color_fire_mid = QColor("#8A5CF6")
         self.color_fire_glow = QColor("#EE4E8A")
-        self.color_dark_bg = QColor(22, 27, 42, 238)
-        self.color_inner = QColor(30, 36, 54, 248)
-        self.color_border = QColor(255, 255, 255, 40)
+        self.color_dark_bg = QColor(20, 26, 43, 238)
+        self.color_inner = QColor(8, 11, 19, 230)
+        self.color_border = QColor(255, 255, 255, 31)
         self.color_text = QColor("#EDF1FA")
         self.color_text_dim = QColor("#A8B2C8")
 
@@ -66,7 +73,7 @@ class RadialMenuWidget(QWidget):
         # Center radial menu directly on mouse
         self.center_pt = QPoint(self.width() // 2, self.height() // 2)
         x = screen_pos.x() - self.size_px // 2
-        y = screen_pos.y() - self.size_px // 2
+        y = screen_pos.y() - self.height_px // 2
         self.move(x, y)
         self.hovered_index = -1
         self.show()
@@ -195,14 +202,19 @@ class RadialMenuWidget(QWidget):
                 wedge_path = self._build_wedge_path(cx, cy, self.center_radius, self.outer_radius, start_angle, span_angle)
 
                 if is_active:
+                    # Rose -> violet -> violet, blooming at 85%/75%/95% alpha
                     gradient = QLinearGradient(cx, cy - self.outer_radius, cx, cy + self.outer_radius)
-                    gradient.setColorAt(0, self.color_fire_glow)
-                    gradient.setColorAt(1, self.color_fire)
+                    rose = QColor(self.color_fire_glow); rose.setAlpha(218)
+                    mid = QColor(self.color_fire_mid); mid.setAlpha(192)
+                    base = QColor(self.color_fire); base.setAlpha(243)
+                    gradient.setColorAt(0, rose)
+                    gradient.setColorAt(0.5, mid)
+                    gradient.setColorAt(1, base)
                     painter.setBrush(QBrush(gradient))
-                    painter.setPen(QPen(QColor(255, 255, 255, 235), 2))
+                    painter.setPen(QPen(Qt.white, 2))
                 else:
                     painter.setBrush(QBrush(self.color_dark_bg))
-                    painter.setPen(QPen(self.color_border, 1.2))
+                    painter.setPen(QPen(self.color_border, 1))
 
                 painter.drawPath(wedge_path)
 
@@ -234,11 +246,11 @@ class RadialMenuWidget(QWidget):
 
                     painter.restore()
 
-        # 2. Center Hub
+        # 2. Center Hub — #080B13/90, white 20% border, hub-glass-depth
         center_path = QPainterPath()
         center_path.addEllipse(QPoint(cx, cy), self.center_radius, self.center_radius)
         painter.setBrush(QBrush(self.color_inner))
-        painter.setPen(QPen(QColor(138, 131, 255, 220), 2.5))
+        painter.setPen(QPen(QColor(255, 255, 255, 51), 1))
         painter.drawPath(center_path)
 
         # Center Content
@@ -272,22 +284,29 @@ class RadialMenuWidget(QWidget):
             painter.setPen(QPen(QColor(201, 196, 255)))
             painter.drawText(pill_rect, Qt.AlignCenter, mode_text)
 
-            # Shortcut Tip
+            # Shortcut hint (Stitch: "Release key to select" under hairline)
+            painter.setPen(QPen(QColor(255, 255, 255, 26), 1))
+            painter.drawLine(cx - 44, cy + 22, cx + 44, cy + 22)
             painter.setFont(QFont("Segoe UI", 9))
             painter.setPen(QPen(self.color_text_dim))
-            painter.drawText(QRectF(cx - 55, cy + 16, 110, 16), Qt.AlignCenter, "Shift / Alt / Ctrl")
+            painter.drawText(QRectF(cx - 70, cy + 27, 140, 16), Qt.AlignCenter, "Release key to select")
 
-        # 3. Active Description Banner — sits fully below the ring, never on it
+        # 3. Active Description Banner — sits fully below the ring, never on it.
+        # Stitch: white/7 glass pill, hairline border, desc + meta + Options.
         if 0 <= self.hovered_index < len(self.options):
             active_opt = self.options[self.hovered_index]
-            banner_rect = QRectF(cx - 120, cy + self.outer_radius + 10, 240, 26)
-            painter.setBrush(QBrush(QColor(20, 26, 43, 244)))
-            painter.setPen(QPen(QColor(138, 131, 255, 150), 1.2))
-            painter.drawRoundedRect(banner_rect, RADIUS, RADIUS)
+            banner_rect = QRectF(cx - 150, cy + self.outer_radius + 10, 300, 28)
+            painter.setBrush(QBrush(QColor(255, 255, 255, 18)))
+            painter.setPen(QPen(QColor(255, 255, 255, 38), 1))
+            painter.drawRoundedRect(banner_rect, 14, 14)
 
             painter.setFont(QFont("Segoe UI", 9, QFont.DemiBold))
             painter.setPen(QPen(self.color_text))
-            painter.drawText(banner_rect, Qt.AlignCenter, active_opt.get("desc", active_opt["label"]))
+            text = active_opt.get("desc", active_opt["label"])
+            fm = painter.fontMetrics()
+            while len(text) > 3 and fm.horizontalAdvance(text) > 284:
+                text = text[:-2] + "…"
+            painter.drawText(banner_rect, Qt.AlignCenter, text)
 
     def _build_wedge_path(self, cx: float, cy: float, r_in: float, r_out: float, start_deg: float, span_deg: float) -> QPainterPath:
         path = QPainterPath()

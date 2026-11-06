@@ -92,8 +92,11 @@ class HomeTab(QWidget):
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setStyleSheet("QScrollArea { background: transparent; border: none; }")
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)   # 4-col grid never needs it
+        scroll.setStyleSheet("QScrollArea { background: transparent; border: none; }"
+                             "QScrollArea > QWidget > QWidget { background: transparent; }")
         container = QWidget()
+        container.setStyleSheet("background: transparent;")
         grid = QGridLayout(container)
         grid.setSpacing(8)
         grid.setContentsMargins(0, 0, 0, 0)

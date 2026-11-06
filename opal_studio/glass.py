@@ -142,7 +142,11 @@ def paint_glass_sheet(painter: QPainter, rect: QRectF, radius: float = RADIUS,
 
 def paint_frosted_backdrop(painter: QPainter, rect: QRectF, radius: float,
                             strength: float = 0.5) -> None:
-    """A soft, deep field of colour for a window to float on."""
+    """A soft, deep field of colour for a window to float on.
+
+    Stitch radial-aurora recipe (design/stitch/DESIGN.md): one violet glow
+    top-left (18%), one rose glow bottom-right (8%), on the #0B0E18 ground.
+    """
     painter.save()
     painter.setRenderHint(QPainter.Antialiasing, True)
     path = rounded_path(rect, radius)
@@ -156,18 +160,31 @@ def paint_frosted_backdrop(painter: QPainter, rect: QRectF, radius: float,
     painter.setBrush(QBrush(base))
     painter.drawRect(rect)
 
-    painter.setCompositionMode(QPainter.CompositionMode_Plus)
-    for i, colour in enumerate((FIRE_VIOLET, FIRE_TEAL, FIRE_ROSE, FIRE_AMBER)):
-        cx = rect.left() + rect.width() * (0.18 + 0.24 * i)
-        cy = rect.top() + rect.height() * (0.80 - 0.18 * i)
-        glow = QRadialGradient(QPointF(cx, cy), rect.width() * 0.55)
+    # (x-frac, y-frac, radius-frac, alpha, colour) — the two Stitch aurora
+    # glows: violet 18% top-left, rose 8% bottom-right. Painted SourceOver so
+    # the glow tints the field instead of stacking with the caustic glow.
+    for x_frac, y_frac, r_frac, alpha, colour in (
+            (0.15, 0.10, 0.65, 0.18, FIRE_VIOLET),
+            (0.85, 0.85, 0.55, 0.08, FIRE_ROSE)):
+        cx = rect.left() + rect.width() * x_frac
+        cy = rect.top() + rect.height() * y_frac
+        glow = QRadialGradient(QPointF(cx, cy), rect.width() * r_frac)
         c = QColor(colour)
-        c.setAlpha(int(40 * strength))
+        c.setAlpha(int(alpha * 255 * strength * 0.85))
         glow.setColorAt(0.0, c)
         glow.setColorAt(1.0, QColor(c.red(), c.green(), c.blue(), 0))
         painter.setBrush(QBrush(glow))
         painter.drawRect(rect)
     painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
+
+    # The field dim: without it the glows pool into a flat gray-blue and the
+    # frosted tiles lose their separation. A gentle navy veil over the lights
+    # keeps the depth (Stitch: deep ground #0B0E18 under glass).
+    veil = QLinearGradient(rect.topLeft(), rect.bottomRight())
+    veil.setColorAt(0.0, QColor(11, 14, 24, 90))
+    veil.setColorAt(1.0, QColor(11, 14, 24, 68))
+    painter.setBrush(QBrush(veil))
+    painter.drawRect(rect)
     painter.restore()
 
 

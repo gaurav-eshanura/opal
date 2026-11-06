@@ -126,12 +126,12 @@ class DashboardDropZone(QFrame):
         # Labels
         painter.setFont(QFont("Segoe UI", 15, QFont.Bold))
         painter.setPen(QPen(QColor("#EDF1FA")))
-        label_text = "Drop a file to convert it" if not self.is_drag_over else "Release to open the wheel"
+        label_text = "Drop a file to begin" if not self.is_drag_over else "Release to open the wheel"
         painter.drawText(QRectF(0, cy + 42, w, 26), Qt.AlignCenter, label_text)
 
         painter.setFont(QFont("Segoe UI", 11))
         painter.setPen(QPen(QColor(TEXT_DIM)))
-        sub_text = ("Hold Shift to convert  •  Alt for tools  •  Ctrl for actions")
+        sub_text = ("⇧ Shift Convert   •   ⌥ Alt Tools   •   ⌃ Ctrl Actions")
         painter.drawText(QRectF(0, cy + 72, w, 22), Qt.AlignCenter, sub_text)
 
 
@@ -289,19 +289,20 @@ class OpalDashboard(QWidget):
 
         main_layout.addLayout(btn_row)
 
-        # 4. Feature Cards
-        main_layout.addWidget(section_label("Popular right now"))
+        # 4. Feature Cards — Stitch "Core Instant Pipelines" (fire-spectrum
+        # top tick, 36px icon chip, 11px dim body, mono meta footer)
+        main_layout.addWidget(section_label("Core Instant Pipelines"))
         cards_layout = QHBoxLayout()
         cards_layout.setSpacing(12)
 
-        card1 = self._create_feature_card("Remove Background", "Local AI cutout, transparent PNG",
-                                         "Saved next to your photo", "layers", feature_key="remove_bg")
-        card2 = self._create_feature_card("PDF Studio", "Sign, search, redact, export",
-                                         "A full PDF editor, not a viewer", "doc", feature_key="pdf_studio")
-        card3 = self._create_feature_card("WhatsApp Ready", "Shrink photos and PDFs to share",
-                                          "Hold Alt while dragging", "compress", feature_key="whatsapp")
-        card4 = self._create_feature_card("Auto Watch Folder", "Dropped files convert themselves",
-                                          "Downloads / Opal_Auto", "folder", feature_key="watch_folder")
+        card1 = self._create_feature_card("Remove Background", "AI edge cutout powered by a local ONNX model. Zero bytes uploaded.",
+                                         "100% On-Device · PNG/WebP", "layers", feature_key="remove_bg", fire="#FF9A3C")
+        card2 = self._create_feature_card("PDF Studio", "Flatten, reorder, annotate, and sanitize metadata instantly in place.",
+                                         "Lossless Vector · PDF 2.0", "doc", feature_key="pdf_studio", fire="#FF9A3C")
+        card3 = self._create_feature_card("WhatsApp Ready", "Smart photo & PDF compression targeted for instant <16MB sending.",
+                                          "Preset: Fast H.265 · MP4/WebP", "compress", feature_key="whatsapp", fire="#EE4E8A")
+        card4 = self._create_feature_card("Auto Watch Folder", "Background directory converter: drop files in the OS folder, auto-export.",
+                                          "Active: ~/Downloads · Daemon", "folder", feature_key="watch_folder", fire="#6C63FF")
 
         for card in (card1, card2, card3, card4):
             cards_layout.addWidget(card, 1)
@@ -338,8 +339,9 @@ class OpalDashboard(QWidget):
         return handler
 
     def _create_feature_card(self, title: str, desc: str, hint: str, icon_key: str,
-                             feature_key: str = "") -> QFrame:
-        """One glass card: an icon tile, a white title, detail, and a hint.
+                             feature_key: str = "", fire: str = "#EE4E8A") -> QFrame:
+        """One glass card: a fire-spectrum tick, an icon tile, a white title,
+        detail, and a mono meta footer (Stitch feature cards).
 
         A card with a feature key is clickable and asks the app to run that
         feature; a card without one is a plain caption.
@@ -364,13 +366,31 @@ class OpalDashboard(QWidget):
             card.setCursor(Qt.PointingHandCursor)
             card.setToolTip(f"Open {title}")
             card.mouseReleaseEvent = self._make_feature_click(card, feature_key)
-        layout = QVBoxLayout(card)
+        # Fire-spectrum tick: 32px x 2px gradient line across the top.
+        from opal_studio.theme import FIRE_TEAL, FIRE_VIOLET
+        tick = QLabel()
+        tick.setFixedHeight(2)
+        tick.setMinimumWidth(32)
+        tick.setMaximumWidth(32)
+        tick.setStyleSheet(f"background: qlineargradient(x1:0, x2:1, stop:0 {fire}, stop:1 {FIRE_TEAL}); border-radius: 1px;")
+        card_lay = QVBoxLayout(card)
+        card_lay.setSpacing(0)
+        card_lay.setContentsMargins(0, 0, 0, 0)
+        # tick sits flush at top-right area, like the Stitch cards
+        tick_row = QHBoxLayout()
+        tick_row.addStretch()
+        tick_row.addWidget(tick)
+        tick_row.setContentsMargins(0, 0, 12, 0)
+        card_lay.addLayout(tick_row)
+
+        layout = QVBoxLayout()
         layout.setSpacing(8)
-        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setContentsMargins(12, 6, 12, 12)
+        card_lay.addLayout(layout)
 
         tile = QFrame()
         tile.setObjectName("iconTile")
-        tile.setFixedSize(34, 34)
+        tile.setFixedSize(36, 36)
         tile_lay = QHBoxLayout(tile)
         tile_lay.setContentsMargins(0, 0, 0, 0)
         tile_icon = QLabel()
@@ -384,10 +404,17 @@ class OpalDashboard(QWidget):
         d_lbl.setWordWrap(True)
         layout.addWidget(d_lbl)
 
-        h_lbl = hint_label(hint)
+        # Mono meta footer over a hairline — the card's provenance line.
+        footer = QFrame()
+        footer.setFrameShape(QFrame.HLine)
+        footer.setStyleSheet(f"background: {LINE};")
+        footer.setFixedHeight(1)
+        layout.addWidget(footer)
+        h_lbl = QLabel(hint)
+        h_lbl.setFont(QFont("Cascadia Mono", 8))
+        h_lbl.setStyleSheet("color: rgba(168,178,200,0.9); background: transparent;")
         h_lbl.setWordWrap(True)
         layout.addWidget(h_lbl)
-        layout.addStretch()
 
         return card
 
