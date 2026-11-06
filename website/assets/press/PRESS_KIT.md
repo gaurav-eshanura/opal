@@ -1,4 +1,4 @@
-# Opal — Press Kit (v2.1.0, November 2026)
+# Opal — Press Kit (v2.2.0, November 2026)
 
 Contact: [press email — fill in] · Site: (deployed Firebase Hosting for `website/`) · Repo: https://github.com/gaurav-eshanura/opal (MIT)
 
@@ -11,7 +11,7 @@ Opal ("every file, in every light") is an open-source (MIT) desktop app that tak
 ## Facts sheet (re-measure before re-quoting — commands in README "Testing")
 - 103 wheel actions (union over all modes incl. batch), 38 catalogue actions
 - Test suite: 390 passed / 15 skipped / 0 failed (pytest, offscreen Qt)
-- Release v2.1.0: `Opal-v2.1.0-Windows-x64.zip` (103,554,634 B ≈ 99 MiB zipped), `Opal-Full-v2.1.0-Windows-x64.zip` (233,087,187 B ≈ 222 MiB zipped)
+- Release v2.2.0: `Opal-v2.2.0-Windows-x64.zip` (103,559,900 B ≈ 99 MiB zipped), `Opal-Full-v2.2.0-Windows-x64.zip` (233,091,034 B ≈ 222 MiB zipped)
 - DSC signing live-proven with a real e-Mudhra HYP2003 token; `adbe.pkcs7.detached` output, verifies intact + trusted
 - Works with the network unplugged (Full build bundles the AI cut-out model); only optional extras touch the network (one-time model download, opt-in `--tsa` — hash only)
 - CI green on ubuntu / windows / macos (GitHub Actions)

@@ -5,8 +5,8 @@ prove from source or measurement. Never say "every tool Acrobat has", never say
 "fully audited/secure" (the last deep audit is recorded as static-only), never quote a
 number without re-measuring it (see `opal-measured-numbers` memory / README testing section).
 
-Current state (2026-11-04): public repo `github.com/gaurav-eshanura/opal` (0 stars),
-release **v2.1.0** with Windows zips (DSC token signing + redesign), website live on Firebase
+Current state (2026-11-06): public repo `github.com/gaurav-eshanura/opal` (0 stars),
+release **v2.2.0** with Windows zips (Stitch Liquid Glass rebuild), website live on Firebase
 Hosting from `website/`, suite 390 passed / 15 skipped / 0 failed, CI green on
 ubuntu/windows/macos.
 

@@ -4,6 +4,32 @@ All notable changes to Opal are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] — 2026-11-06
+
+### Added
+- **The Stitch Liquid Glass rebuild**: every screen, asset and the wheel
+  rebuilt on the Stitch "Opal Liquid Glass" design system (project
+  `3961317633702086904`, captured in `design/stitch/DESIGN.md`). Tokens,
+  glass recipes and geometry are now canonical: the radial wheel matches the
+  Stitch overlay exactly (R_out 246 · R_in 92, 184 px hub, rose→violet active
+  wedge with 2 px white stroke, "Release key to select" hub hint), the
+  dashboard's features became Stitch cards ("Core Instant Pipelines" with
+  fire-spectrum ticks and mono meta footers), and the floating studio's field
+  is the Stitch radial aurora (violet 18 % top-left, rose 8 % bottom-right)
+  under a navy veil. Wheel demo GIF regenerated from the real widget.
+
+### Fixed
+- **Every label drew its own box.** Qt's default `QLabel` carries a border
+  once the app stylesheet is applied, so helper labels rendered inside a
+  border — including a giant white band across the Floating Studio home
+  grid. The global rule is now `background: transparent; border: none` on
+  `QLabel`, and the home scroll viewport is transparent with its horizontal
+  scrollbar removed.
+
+### Verified
+- 390 passed / 15 skipped offscreen; 36-screen capture rig green;
+  wheel, dashboard and FloatStudio home re-rendered and checked.
+
 ## [2.1.0] — 2026-11-04
 
 ### Added

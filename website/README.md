@@ -47,16 +47,16 @@ Any static host works — there is no build step.
 The two buttons in `index.html` point at files inside this folder:
 
 ```
-downloads/Opal-v2.0.1-Windows-x64.zip        core    (~98 MB)
-downloads/Opal-Full-v2.0.1-Windows-x64.zip   full    (~222 MB)
+downloads/Opal-v2.2.0-Windows-x64.zip        core    (~99 MB)
+downloads/Opal-Full-v2.2.0-Windows-x64.zip   full    (~222 MB)
 ```
 
 Those archives are **built, not committed** — `website/downloads/` is in
 `.gitignore`. The build produces them:
 
 ```powershell
-python build_release.py            # full build  -> Opal-Full-v2.1.0-<platform>.zip
-python build_release.py --core     # core build  -> Opal-v2.1.0-<platform>.zip
+python build_release.py            # full build  -> Opal-Full-v2.2.0-<platform>.zip
+python build_release.py --core     # core build  -> Opal-v2.2.0-<platform>.zip
 ```
 
 `build_release.py` writes each zip into `dist/` and copies it into

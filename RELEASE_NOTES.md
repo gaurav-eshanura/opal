@@ -4,6 +4,30 @@
 
 ---
 
+## v2.2.0 — 2026-11-06
+
+Every screen, asset and the wheel rebuilt on the Stitch "Opal Liquid Glass"
+design system — the radial wheel now matches the Stitch overlay exactly
+(R_out 246 · R_in 92, 184 px hub, rose→violet active wedge with 2 px white
+stroke, "Release key to select" hub hint), the dashboard's features are
+Stitch cards ("Core Instant Pipelines" with fire-spectrum ticks and mono
+meta footers), the floating studio's field is the Stitch radial aurora
+(violet 18 % top-left, rose 8 % bottom-right) under a navy veil, and the
+canonical capture lives in `design/stitch/DESIGN.md`. Also fixed: every
+label used to draw its own box (including a white band across the Floating
+Studio home grid) — labels are borderless now. Wheel demo GIF regenerated
+from the real widget.
+
+- Tests: **390 passed / 15 skipped / 0 failed** (pytest, offscreen Qt, exit 0)
+- Downloads: `Opal-v2.2.0-Windows-x64.zip` and
+  `Opal-Full-v2.2.0-Windows-x64.zip` (AI engines bundled), sizes in the release
+- Known gaps (roadmap, stated honestly on the site): MDP certification,
+  LTV/DSS, preflight/PDF-X, JS actions; published zips are Windows-only
+  (macOS/Linux build from source, CI green on all three); the exe is not
+  code-signed yet.
+
+---
+
 ## v2.1.0 — 2026-11-04
 
 First release with **DSC USB token signing**: plug in an Indian CA's token

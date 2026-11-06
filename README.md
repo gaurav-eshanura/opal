@@ -41,8 +41,8 @@ things Acrobat is used for, and a few it never did.
 
 | Build | Size | What it is | Get it |
 |---|---|---|---|
-| **Opal** | 211 MB (99 MB zipped) | Everything except the heavy AI engines, which install on first use | [`Opal-v2.1.0-Windows-x64.zip`](https://github.com/gaurav-eshanura/opal/releases/latest) |
-| **Opal Full** | 553 MB (222 MB zipped) | Everything bundled, including the cut-out model — works offline from the first click | [`Opal-Full-v2.1.0-Windows-x64.zip`](https://github.com/gaurav-eshanura/opal/releases/latest) |
+| **Opal** | 211 MB (99 MB zipped) | Everything except the heavy AI engines, which install on first use | [`Opal-v2.2.0-Windows-x64.zip`](https://github.com/gaurav-eshanura/opal/releases/latest) |
+| **Opal Full** | 553 MB (222 MB zipped) | Everything bundled, including the cut-out model — works offline from the first click | [`Opal-Full-v2.2.0-Windows-x64.zip`](https://github.com/gaurav-eshanura/opal/releases/latest) |
 
 macOS and Linux builds are produced by the scripts in [`build_macos.sh`](build_macos.sh)
 and [`build_linux.sh`](build_linux.sh) — see [Building from source](#-building-from-source).
