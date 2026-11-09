@@ -287,7 +287,9 @@ def sign_pdf_with_token(src: str, dst: str, lib_path: str, pin: Optional[str],
                         location: str = "India", contact: str = "",
                         field_name: str = "OpalDSC",
                         use_existing_field: bool = True,
-                        tsa_url: str = "") -> str:
+                        tsa_url: str = "",
+                        certify: bool = False,
+                        mdp_permission: int = 2) -> str:
     """Signs src with the certificate on the connected token and writes the
     signed copy to dst. The private key never leaves the token. When the form
     has an empty signature field it is signed into; tsa_url optionally embeds
@@ -307,9 +309,20 @@ def sign_pdf_with_token(src: str, dst: str, lib_path: str, pin: Optional[str],
         timestamper = _ds.make_timestamper(tsa_url)
         with open(source, "rb") as fh:
             writer = IncrementalPdfFileWriter(fh)
+            docmdp_perm = None
+            if certify:
+                from pyhanko.sign.fields import MDPPerm
+                perm_map = {
+                    1: MDPPerm.NO_CHANGES,
+                    2: MDPPerm.FILL_FORMS,
+                    3: MDPPerm.ANNOTATE,
+                }
+                docmdp_perm = perm_map.get(mdp_permission, MDPPerm.FILL_FORMS)
+
             meta = signers.PdfSignatureMetadata(
                 field_name=effective_name, reason=reason, location=location,
-                contact_info=contact, embed_validation_info=False)
+                contact_info=contact, embed_validation_info=False,
+                certify=certify, docmdp_permissions=docmdp_perm)
             signed = signers.sign_pdf(writer, meta, signer=signer,
                                       timestamper=timestamper, new_field_spec=spec)
         if hasattr(signed, "getvalue"):

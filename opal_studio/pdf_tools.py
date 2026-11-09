@@ -830,3 +830,33 @@ def convert_to_pdfx(src: str, dst: Optional[str] = None, profile: str = "PDF/X-1
         rasterize_unembedded_fonts=rasterize_unembedded_fonts,
     )
     return str(target_dst), report
+
+
+# ---------------------------------------------------------------------------
+# MDP Document Certification (Acrobat Pro Parity)
+# ---------------------------------------------------------------------------
+
+def certify_pdf(src: str, dst: Optional[str] = None, pfx_path: str = "", password: str = "",
+                permission: int = 2, reason: str = "Certified by the document author",
+                location: str = "India", contact: str = "", tsa_url: str = ""):
+    """
+    Plain English: Certifies a document with an Author DocMDP signature, locking it
+    against unauthorized modification according to the permission level:
+    1 = No changes permitted (document locked)
+    2 = Form filling and signatures permitted
+    3 = Annotations, form filling and signatures permitted
+    """
+    from opal_studio import dsc_sign
+    target_dst = dst or _sibling(src, "_certified.pdf")
+    dsc_sign.certify_pdf(
+        src=src,
+        dst=target_dst,
+        pfx_path=pfx_path,
+        password=password,
+        permission=permission,
+        reason=reason,
+        location=location,
+        contact=contact,
+        tsa_url=tsa_url,
+    )
+    return target_dst

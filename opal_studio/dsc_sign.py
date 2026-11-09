@@ -19,6 +19,18 @@ except Exception:
     HAVE_PYHANKO = False
 
 
+
+class DocMDPPermission:
+    NO_CHANGES = 1
+    FILL_FORMS = 2
+    ANNOTATE = 3
+
+    LABELS = {
+        1: "No Changes Allowed (Document Locked)",
+        2: "Form Filling & Signatures Allowed",
+        3: "Annotations, Form Filling & Signatures Allowed",
+    }
+
 class DscError(Exception):
     """Raised when a certificate cannot be read or a document cannot be signed."""
 
@@ -133,7 +145,9 @@ def sign_pdf(src: str, dst: str, pfx_path: str, password: str,
               contact: str = "",
               field_name: str = "OpalDSC",
               use_existing_field: bool = True,
-              tsa_url: str = "") -> str:
+              tsa_url: str = "",
+              certify: bool = False,
+              mdp_permission: int = 2) -> str:
     """
     Signs the PDF with the given certificate and writes the signed copy to dst.
     rect is in PDF points with the origin at the BOTTOM-LEFT of the page.
@@ -154,12 +168,24 @@ def sign_pdf(src: str, dst: str, pfx_path: str, password: str,
                                                   use_existing_field)
         with open(source, "rb") as fh:
             writer = IncrementalPdfFileWriter(fh)
+            docmdp_perm = None
+            if certify:
+                from pyhanko.sign.fields import MDPPerm
+                perm_map = {
+                    1: MDPPerm.NO_CHANGES,
+                    2: MDPPerm.FILL_FORMS,
+                    3: MDPPerm.ANNOTATE,
+                }
+                docmdp_perm = perm_map.get(mdp_permission, MDPPerm.FILL_FORMS)
+
             meta = signers.PdfSignatureMetadata(
                 field_name=effective_name,
                 reason=reason,
                 location=location,
                 contact_info=contact,
                 embed_validation_info=False,
+                certify=certify,
+                docmdp_permissions=docmdp_perm,
             )
             signed = signers.sign_pdf(
                 writer,
@@ -184,6 +210,37 @@ def sign_pdf(src: str, dst: str, pfx_path: str, password: str,
         raise DscError(f"Signing failed: {e}")
 
 
+
+def certify_pdf(src: str, dst: str, pfx_path: str, password: str,
+                permission: int = DocMDPPermission.FILL_FORMS,
+                page_no: int = 0, rect: Tuple[float, float, float, float] = (60, 60, 240, 120),
+                reason: str = "Certified original document by Author",
+                location: str = "India",
+                contact: str = "",
+                field_name: str = "OpalAuthorCert",
+                tsa_url: str = "") -> str:
+    """
+    Plain English: Certifies the PDF with an Author DocMDP signature, locking down
+    unauthorized edits according to the chosen permission level.
+    """
+    return sign_pdf(
+        src=src,
+        dst=dst,
+        pfx_path=pfx_path,
+        password=password,
+        page_no=page_no,
+        rect=rect,
+        reason=reason,
+        location=location,
+        contact=contact,
+        field_name=field_name,
+        use_existing_field=False,
+        tsa_url=tsa_url,
+        certify=True,
+        mdp_permission=permission,
+    )
+
+
 def _signature_field_spec(field_name: str, page_no: int,
                           rect: Tuple[float, float, float, float]):
     """Builds the signature-field specification (works across pyHanko versions)."""
@@ -199,25 +256,85 @@ def verify_signature_deep(pdf_path: str) -> Dict[str, object]:
     """Cryptographic validation of every embedded signature (pyHanko):
     intact = the file bytes are unmodified and covered by the signature,
     trusted = the signer certificate chains to a known root, revoked = the
-    revocation info says so. Fully offline - no AIA or CRL/OCSP fetching."""
-    result: Dict[str, object] = {"signatures": [], "signed": False,
-                                 "all_intact": False, "all_trusted": False}
+    revocation info says so. Includes DocMDP author certification checks.
+    Fully offline - no AIA or CRL/OCSP fetching."""
+    result: Dict[str, object] = {
+        "signatures": [],
+        "signed": False,
+        "certified": False,
+        "certification_permission": None,
+        "certification_permission_label": "",
+        "all_intact": False,
+        "all_trusted": False,
+    }
     try:
         from pyhanko.pdf_utils.reader import PdfFileReader
-        from pyhanko.sign.validation import validate_pdf_signature
+        from pyhanko.sign.validation import validate_pdf_signature, read_certification_data
         with open(pdf_path, "rb") as fh:
             reader = PdfFileReader(fh)
+
+            # Check for DocMDP Author Certification
+            cert_data = None
+            try:
+                cert_data = read_certification_data(reader)
+            except Exception:
+                pass
+
+            if cert_data is not None:
+                p_val = getattr(cert_data.permission, "value", cert_data.permission)
+                try:
+                    p_int = int(p_val)
+                except Exception:
+                    p_int = 2
+                result["certified"] = True
+                result["certification_permission"] = p_int
+                result["certification_permission_label"] = DocMDPPermission.LABELS.get(
+                    p_int, f"Permission Level {p_int}"
+                )
+
+            author_sig_obj = getattr(cert_data, "author_sig", None) if cert_data else None
+
+            # Diff policy: allow new visible signature fields after certification (matching Adobe Acrobat behavior)
+            diff_policy = None
+            try:
+                from pyhanko.sign.diff_analysis import (
+                    StandardDiffPolicy, FormUpdatingRule, SigFieldCreationRule,
+                    SigFieldModificationRule, GenericFieldModificationRule,
+                    CatalogModificationRule, DocInfoRule, XrefStreamRule,
+                    ObjectStreamRule, DSSCompareRule, MetadataUpdateRule, ModificationLevel
+                )
+                diff_policy = StandardDiffPolicy(
+                    global_rules=[
+                        CatalogModificationRule(),
+                        DocInfoRule().as_qualified(ModificationLevel.LTA_UPDATES),
+                        XrefStreamRule().as_qualified(ModificationLevel.LTA_UPDATES),
+                        ObjectStreamRule().as_qualified(ModificationLevel.LTA_UPDATES),
+                        DSSCompareRule().as_qualified(ModificationLevel.LTA_UPDATES),
+                        MetadataUpdateRule().as_qualified(ModificationLevel.LTA_UPDATES),
+                    ],
+                    form_rule=FormUpdatingRule(
+                        field_rules=[
+                            SigFieldCreationRule(allow_new_visible_after_certify=True),
+                            SigFieldModificationRule(),
+                            GenericFieldModificationRule(),
+                        ],
+                    ),
+                )
+            except Exception:
+                diff_policy = None
+
             for s in reader.embedded_signatures:
                 try:
-                    # allow_fetching defaults to False in pyhanko_certvalidator:
-                    # validation never leaves the machine.
-                    st = validate_pdf_signature(s)
+                    st = validate_pdf_signature(s, diff_policy=diff_policy)
                     cert = getattr(st, "signing_cert", None)
+                    is_cert = bool(author_sig_obj is not None and getattr(s, "sig_object", None) == author_sig_obj)
                     result["signatures"].append({
                         "field": s.field_name,
                         "intact": bool(getattr(st, "intact", False)),
                         "trusted": bool(getattr(st, "trusted", False)),
                         "revoked": bool(getattr(st, "revoked", False)),
+                        "docmdp_ok": bool(getattr(st, "docmdp_ok", True)),
+                        "is_certifying": is_cert,
                         "bottom_line": str(getattr(st, "bottom_line", "")),
                         "signer": cert.subject.human_friendly if cert is not None else "",
                         "signing_time": str(getattr(st, "signer_reported_dt", "") or ""),

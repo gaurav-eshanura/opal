@@ -1756,11 +1756,36 @@ class PdfStudio(QWidget):
             body += "\n\nWARNING: this certificate is not valid yet."
         table.setPlainText(body)
         lay.addWidget(table)
+
+        certify_box = QCheckBox("Certify Document as Author (DocMDP)")
+        certify_box.setToolTip("Locks the document and controls allowed modifications for future signers")
+        certify_box.setStyleSheet("color: #EDF1FA; font-weight: 600;")
+        lay.addWidget(certify_box)
+
+        perm_layout = QHBoxLayout()
+        perm_label = QLabel("Recipient Permissions:")
+        perm_label.setStyleSheet("color: #A8B2C8; font-size: 11px;")
+        perm_combo = QComboBox()
+        perm_combo.addItem("Form filling & subsequent signatures allowed", 2)
+        perm_combo.addItem("Strict lock (No changes allowed)", 1)
+        perm_combo.addItem("Annotations, form filling & signatures allowed", 3)
+        perm_combo.setEnabled(False)
+        certify_box.toggled.connect(perm_combo.setEnabled)
+        perm_layout.addWidget(perm_label)
+        perm_layout.addWidget(perm_combo)
+        lay.addLayout(perm_layout)
+
         row = QHBoxLayout()
         row.addStretch()
         ok_btn = QPushButton("Use this certificate")
         cancel_btn = QPushButton("Cancel")
-        ok_btn.clicked.connect(detail.accept)
+
+        def _on_accept():
+            info["certify"] = certify_box.isChecked()
+            info["mdp_permission"] = perm_combo.currentData()
+            detail.accept()
+
+        ok_btn.clicked.connect(_on_accept)
         cancel_btn.clicked.connect(detail.reject)
         row.addWidget(ok_btn)
         row.addWidget(cancel_btn)
@@ -1819,6 +1844,9 @@ class PdfStudio(QWidget):
             crypto = "Cryptographic check: PROBLEM - see Verify Signatures for details."
         else:
             crypto = "Cryptographic check: no embedded signature found."
+
+        if deep.get("certified"):
+            crypto += f"\nAuthor Certification: ACTIVE (DocMDP Level {deep.get('certification_permission')}: {deep.get('certification_permission_label')})"
         QMessageBox.information(
             self, "Document Signed",
             f"Signed successfully.\n\nSaved to:\n{out}\n\n"
