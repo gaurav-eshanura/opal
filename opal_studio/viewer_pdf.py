@@ -1239,6 +1239,7 @@ class PdfStudio(QWidget):
             ("hash", "Page #", "Add page numbers", self._pagenum_dialog),
             ("layers", "Flatten", "Flatten annotations permanently", self._flatten_document),
             ("checkbox", "Preflight / PDF-X", "Inspect and fix PDF/X, PDF/A, and print compliance", self._preflight_dialog),
+            ("shield", "Signatures & LTV", "Inspect digital signatures and manage Long-Term Validation", self._verify_signatures_dialog),
             ("scan", "OCR", "Make scans searchable (offline AI)", lambda: self._run_worker("ocr")),
             ("lock", "Protect", "Add password protection", self._protect_dialog),
             ("unlock", "Unlock", "Remove password protection", self._unlock_document),
@@ -1661,7 +1662,10 @@ class PdfStudio(QWidget):
             return
         if not self._confirm_certificate(info):
             return
-        self.dsc_context = {"pfx": path, "password": password, "info": info}
+        self.dsc_context = {"pfx": path, "password": password, "info": info,
+                             "certify": info.get("certify", False),
+                             "mdp_permission": info.get("mdp_permission", 2),
+                             "embed_ltv": info.get("embed_ltv", True)}
         self.set_tool("dsc")
         self.status.setText("Certificate loaded - click on the page to place the signature.")
 
@@ -1723,7 +1727,10 @@ class PdfStudio(QWidget):
             return
         self.dsc_context = {"token": {"lib": dev["module"], "slot": int(dev["slot"]),
                                       "cert_label": cert["label"]},
-                            "pin": pin, "info": cert}
+                            "pin": pin, "info": cert,
+                            "certify": cert.get("certify", False),
+                            "mdp_permission": cert.get("mdp_permission", 2),
+                            "embed_ltv": cert.get("embed_ltv", True)}
         self.set_tool("dsc")
         self.status.setText("Token certificate loaded - click on the page to place the "
                             "signature. The PIN is held in memory only, never saved.")
@@ -1775,6 +1782,12 @@ class PdfStudio(QWidget):
         perm_layout.addWidget(perm_combo)
         lay.addLayout(perm_layout)
 
+        ltv_box = QCheckBox("Enable Long-Term Validation (LTV / DSS)")
+        ltv_box.setChecked(True)
+        ltv_box.setToolTip("Embeds Document Security Store so signatures remain valid indefinitely without external servers")
+        ltv_box.setStyleSheet("color: #EDF1FA; font-weight: 600;")
+        lay.addWidget(ltv_box)
+
         row = QHBoxLayout()
         row.addStretch()
         ok_btn = QPushButton("Use this certificate")
@@ -1783,6 +1796,7 @@ class PdfStudio(QWidget):
         def _on_accept():
             info["certify"] = certify_box.isChecked()
             info["mdp_permission"] = perm_combo.currentData()
+            info["embed_ltv"] = ltv_box.isChecked()
             detail.accept()
 
         ok_btn.clicked.connect(_on_accept)
@@ -1810,18 +1824,27 @@ class PdfStudio(QWidget):
         y1 = max(0.0, min(point.y, page.rect.height - 10))
         rect = (x0, max(0.0, y1 - height), x0 + width, y1)
         out = self._sibling_output("_signed.pdf")
+        certify = ctx.get("certify", False)
+        mdp_perm = ctx.get("mdp_permission", 2)
+        embed_ltv = ctx.get("embed_ltv", True)
         if "token" in ctx:
             t = ctx["token"]
             dsc_sign.sign_pdf_token(self.file_path, out, t["lib"], ctx["pin"],
                                     slot_no=t["slot"], cert_label=t["cert_label"],
                                     page_no=page_index, rect=rect,
                                     reason="Approved by the signer",
-                                    location="India")
+                                    location="India",
+                                    certify=certify,
+                                    mdp_permission=mdp_perm,
+                                    embed_ltv=embed_ltv)
         else:
             dsc_sign.sign_pdf(self.file_path, out, ctx["pfx"], ctx["password"],
                               page_no=page_index, rect=rect,
                               reason="Approved by the signer",
-                              location="India")
+                              location="India",
+                              certify=certify,
+                              mdp_permission=mdp_perm,
+                              embed_ltv=embed_ltv)
         return out
 
     def place_dsc_signature(self, page_index: int, point: "fitz.Point"):
@@ -1847,6 +1870,8 @@ class PdfStudio(QWidget):
 
         if deep.get("certified"):
             crypto += f"\nAuthor Certification: ACTIVE (DocMDP Level {deep.get('certification_permission')}: {deep.get('certification_permission_label')})"
+        if deep.get("ltv_enabled"):
+            crypto += "\nLong-Term Validation (LTV): ENABLED (Document Security Store embedded)"
         QMessageBox.information(
             self, "Document Signed",
             f"Signed successfully.\n\nSaved to:\n{out}\n\n"
@@ -2449,6 +2474,103 @@ class PdfStudio(QWidget):
             return
         self._save_doc()
         dlg = PreflightDialog(self.file_path, parent=self)
+        dlg.exec()
+
+    def _verify_signatures_dialog(self):
+        """Displays deep cryptographic signature verification and LTV status."""
+        if not self.file_path or not os.path.exists(self.file_path):
+            QMessageBox.information(self, "Signatures", "Please open a PDF document first.")
+            return
+        from opal_studio import dsc_sign
+        ver = dsc_sign.verify_signature_deep(self.file_path)
+        if not ver.get("signed") and not ver.get("signatures"):
+            QMessageBox.information(
+                self, "Digital Signatures",
+                "No digital signatures found in this document.\n\n"
+                "To sign this document, choose 'Place Signature' from the toolbar."
+            )
+            return
+
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Digital Signatures & Long-Term Validation (LTV)")
+        dlg.resize(650, 480)
+        dlg.setStyleSheet(INK_STYLE)
+        lay = QVBoxLayout(dlg)
+        lay.setContentsMargins(20, 20, 20, 20)
+        lay.setSpacing(12)
+
+        all_intact = ver.get("all_intact", False)
+        status_box = QFrame()
+        bg_col = "rgba(55,201,138,0.12)" if all_intact else "rgba(238,78,138,0.12)"
+        border_col = "rgba(55,201,138,0.40)" if all_intact else "rgba(238,78,138,0.40)"
+        status_box.setStyleSheet(f"background: {bg_col}; border: 1px solid {border_col}; border-radius: 12px; padding: 12px;")
+        s_lay = QVBoxLayout(status_box)
+        head_text = "✓ ALL SIGNATURES INTACT & CRYPTOGRAPHICALLY VALID" if all_intact else "✕ SIGNATURE INTEGRITY ISSUE DETECTED"
+        head_col = "#37C98A" if all_intact else "#EE4E8A"
+        lbl_head = QLabel(head_text)
+        lbl_head.setStyleSheet(f"font-size: 13px; font-weight: 700; color: {head_col};")
+        s_lay.addWidget(lbl_head)
+
+        sub_parts = []
+        if ver.get("certified"):
+            sub_parts.append(f"Author Certified (DocMDP Level {ver.get('certification_permission')}: {ver.get('certification_permission_label')})")
+        if ver.get("ltv_enabled"):
+            sub_parts.append("Long-Term Validation (LTV / DSS): Enabled")
+        else:
+            sub_parts.append("Long-Term Validation (LTV): Not Embedded")
+        lbl_sub = QLabel(" · ".join(sub_parts))
+        lbl_sub.setStyleSheet("font-size: 11px; color: #EDF1FA;")
+        s_lay.addWidget(lbl_sub)
+        lay.addWidget(status_box)
+
+        sigs_edit = QTextEdit()
+        sigs_edit.setReadOnly(True)
+        sigs_edit.setStyleSheet(f"QTextEdit {{ background:{BG_RAISED}; color:#EDF1FA; "
+                                f"border:1px solid rgba(255,255,255,0.10); border-radius:{RADIUS}px; padding:10px; "
+                                f"font-family: Consolas, monospace; font-size: 11px; }}")
+
+        text_lines = []
+        for i, s in enumerate(ver.get("signatures", []), 1):
+            text_lines.append(f"--- Signature {i}: Field [{s.get('field')}] ---")
+            text_lines.append(f"Signer      : {s.get('signer', 'Unknown')}")
+            text_lines.append(f"Date        : {s.get('signing_time', 'Not specified')}")
+            text_lines.append(f"Integrity   : {'INTACT (Unmodified)' if s.get('intact') else 'TAMPERED / ALTERED'}")
+            text_lines.append(f"Trust       : {'Trusted Root' if s.get('trusted') else 'Self-Signed / Private Authority'}")
+            text_lines.append(f"DocMDP Check: {'Compliant with author permissions' if s.get('docmdp_ok') else 'Violates certification policy'}")
+            text_lines.append(f"Type        : {'Author Certification Signature' if s.get('is_certifying') else 'Approval / Recipient Signature'}")
+            text_lines.append(f"LTV Status  : {'LTV Enabled (DSS record present)' if s.get('ltv_enabled') else 'LTV not embedded'}")
+            text_lines.append("")
+        sigs_edit.setPlainText("\n".join(text_lines))
+        lay.addWidget(sigs_edit)
+
+        dss_info = ver.get("dss_info")
+        if dss_info:
+            dss_lbl = QLabel(f"Document Security Store (DSS): {dss_info.get('certs_count', 0)} cert(s) · {dss_info.get('vri_count', 0)} VRI hash(es) · {dss_info.get('crls_count', 0)} CRL(s) · {dss_info.get('ocsps_count', 0)} OCSP(s)")
+            dss_lbl.setStyleSheet("color: #A8B2C8; font-size: 11px;")
+            lay.addWidget(dss_lbl)
+
+        btn_row = QHBoxLayout()
+        if not ver.get("ltv_enabled"):
+            ltv_btn = QPushButton("Enable LTV on Document")
+            ltv_btn.setStyleSheet(f"background: {ACCENT_HI}; color: #FFFFFF; font-weight: 700; border-radius: {RADIUS}px; padding: 6px 14px;")
+            def _apply_ltv():
+                try:
+                    out = self._sibling_output("_ltv.pdf")
+                    dsc_sign.embed_ltv_data(self.file_path, out)
+                    QMessageBox.information(dlg, "LTV Enabled", f"Document Security Store embedded successfully.\n\nSaved to:\n{out}")
+                    dlg.accept()
+                    self._open_in_new_tab(out)
+                except Exception as e:
+                    QMessageBox.warning(dlg, "LTV Error", str(e))
+            ltv_btn.clicked.connect(_apply_ltv)
+            btn_row.addWidget(ltv_btn)
+
+        btn_row.addStretch()
+        close_btn = QPushButton("Close")
+        close_btn.clicked.connect(dlg.accept)
+        btn_row.addWidget(close_btn)
+        lay.addLayout(btn_row)
+
         dlg.exec()
 
     def _flatten_document(self):

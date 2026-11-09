@@ -838,7 +838,8 @@ def convert_to_pdfx(src: str, dst: Optional[str] = None, profile: str = "PDF/X-1
 
 def certify_pdf(src: str, dst: Optional[str] = None, pfx_path: str = "", password: str = "",
                 permission: int = 2, reason: str = "Certified by the document author",
-                location: str = "India", contact: str = "", tsa_url: str = ""):
+                location: str = "India", contact: str = "", tsa_url: str = "",
+                embed_ltv: bool = False):
     """
     Plain English: Certifies a document with an Author DocMDP signature, locking it
     against unauthorized modification according to the permission level:
@@ -858,5 +859,29 @@ def certify_pdf(src: str, dst: Optional[str] = None, pfx_path: str = "", passwor
         location=location,
         contact=contact,
         tsa_url=tsa_url,
+        embed_ltv=embed_ltv,
     )
     return target_dst
+
+
+# ---------------------------------------------------------------------------
+# Long-Term Validation (LTV / DSS) (Acrobat Pro Parity)
+# ---------------------------------------------------------------------------
+
+def embed_ltv(src: str, dst: Optional[str] = None,
+              crl_paths: Optional[List[str]] = None,
+              ocsp_paths: Optional[List[str]] = None,
+              extra_cert_paths: Optional[List[str]] = None) -> dict:
+    """
+    Plain English: Embeds Long-Term Validation (LTV) records into the PDF Document Security
+    Store (DSS) so signatures stay legally valid offline indefinitely.
+    """
+    from opal_studio import dsc_sign
+    target_dst = dst or _sibling(src, "_ltv.pdf")
+    return dsc_sign.embed_ltv_data(
+        pdf_path=src,
+        dst_path=target_dst,
+        crl_paths=crl_paths,
+        ocsp_paths=ocsp_paths,
+        extra_cert_paths=extra_cert_paths,
+    )

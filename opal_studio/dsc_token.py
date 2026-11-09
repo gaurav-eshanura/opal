@@ -289,7 +289,8 @@ def sign_pdf_with_token(src: str, dst: str, lib_path: str, pin: Optional[str],
                         use_existing_field: bool = True,
                         tsa_url: str = "",
                         certify: bool = False,
-                        mdp_permission: int = 2) -> str:
+                        mdp_permission: int = 2,
+                        embed_ltv: bool = False) -> str:
     """Signs src with the certificate on the connected token and writes the
     signed copy to dst. The private key never leaves the token. When the form
     has an empty signature field it is signed into; tsa_url optionally embeds
@@ -333,6 +334,12 @@ def sign_pdf_with_token(src: str, dst: str, lib_path: str, pin: Optional[str],
         else:
             payload = bytes(signed)
         Path(dst).write_bytes(payload)
+        if embed_ltv:
+            try:
+                _ds.embed_ltv_data(dst, dst)
+            except Exception as e:
+                import logging
+                logging.getLogger("opal_studio.dsc_token").warning(f"LTV embedding skipped: {e}")
         return dst
     except TokenError:
         raise

@@ -147,7 +147,8 @@ def sign_pdf(src: str, dst: str, pfx_path: str, password: str,
               use_existing_field: bool = True,
               tsa_url: str = "",
               certify: bool = False,
-              mdp_permission: int = 2) -> str:
+              mdp_permission: int = 2,
+              embed_ltv: bool = False) -> str:
     """
     Signs the PDF with the given certificate and writes the signed copy to dst.
     rect is in PDF points with the origin at the BOTTOM-LEFT of the page.
@@ -203,6 +204,11 @@ def sign_pdf(src: str, dst: str, pfx_path: str, password: str,
         else:
             payload = bytes(signed)
         Path(dst).write_bytes(payload)
+        if embed_ltv:
+            try:
+                embed_ltv_data(dst, dst)
+            except Exception as e:
+                logger.warning(f"LTV embedding skipped: {e}")
         return dst
     except DscError:
         raise
@@ -218,7 +224,8 @@ def certify_pdf(src: str, dst: str, pfx_path: str, password: str,
                 location: str = "India",
                 contact: str = "",
                 field_name: str = "OpalAuthorCert",
-                tsa_url: str = "") -> str:
+                tsa_url: str = "",
+                embed_ltv: bool = False) -> str:
     """
     Plain English: Certifies the PDF with an Author DocMDP signature, locking down
     unauthorized edits according to the chosen permission level.
@@ -238,7 +245,114 @@ def certify_pdf(src: str, dst: str, pfx_path: str, password: str,
         tsa_url=tsa_url,
         certify=True,
         mdp_permission=permission,
+        embed_ltv=embed_ltv,
     )
+
+
+def embed_ltv_data(pdf_path: str, dst_path: Optional[str] = None,
+                   crl_paths: Optional[List[str]] = None,
+                   ocsp_paths: Optional[List[str]] = None,
+                   extra_cert_paths: Optional[List[str]] = None) -> Dict[str, object]:
+    """
+    Plain English: Embeds Long-Term Validation (LTV) records into the PDF Document Security
+    Store (DSS) and VRI dictionaries so signatures remain verifiable indefinitely offline.
+    """
+    import shutil
+    import hashlib
+    from pyhanko.pdf_utils.reader import PdfFileReader
+    from pyhanko.sign.validation import dss
+    from asn1crypto import x509 as asn1_x509, crl as asn1_crl, ocsp as asn1_ocsp
+
+    src = Path(pdf_path)
+    if not src.exists():
+        raise DscError(f"PDF document not found: {src}")
+
+    target = Path(dst_path) if dst_path else src
+    if target != src:
+        shutil.copyfile(src, target)
+
+    with open(target, "rb") as fh:
+        reader = PdfFileReader(fh)
+        if not reader.embedded_signatures:
+            raise DscError("Document contains no digital signatures to enable LTV for.")
+
+        all_certs = []
+        sig_contents_list = []
+        for sig in reader.embedded_signatures:
+            contents_obj = sig.sig_object.get('/Contents')
+            if contents_obj:
+                sig_contents_list.append(bytes(contents_obj))
+            if sig.signer_cert:
+                all_certs.append(sig.signer_cert)
+            if hasattr(sig, "other_embedded_certs") and sig.other_embedded_certs:
+                all_certs.extend(sig.other_embedded_certs)
+
+    if extra_cert_paths:
+        for cp in extra_cert_paths:
+            try:
+                cdata = Path(cp).read_bytes()
+                if b"-----BEGIN CERTIFICATE-----" in cdata:
+                    from pyhanko_certvalidator.util import pem_armor_to_asn1
+                    _, _, der = pem_armor_to_asn1(cdata)
+                    all_certs.append(asn1_x509.Certificate.load(der))
+                else:
+                    all_certs.append(asn1_x509.Certificate.load(cdata))
+            except Exception as e:
+                logger.warning(f"Failed to load extra certificate {cp}: {e}")
+
+    crl_objs = []
+    if crl_paths:
+        for rp in crl_paths:
+            try:
+                rdata = Path(rp).read_bytes()
+                crl_objs.append(asn1_crl.CertificateList.load(rdata))
+            except Exception as e:
+                logger.warning(f"Failed to load CRL {rp}: {e}")
+
+    ocsp_objs = []
+    if ocsp_paths:
+        for op in ocsp_paths:
+            try:
+                odata = Path(op).read_bytes()
+                ocsp_objs.append(asn1_ocsp.OCSPResponse.load(odata))
+            except Exception as e:
+                logger.warning(f"Failed to load OCSP {op}: {e}")
+
+    unique_certs = []
+    seen = set()
+    for c in all_certs:
+        fp = getattr(c, "sha256", None) or getattr(c, "dump", lambda: None)()
+        if fp not in seen:
+            seen.add(fp)
+            unique_certs.append(c)
+
+    with open(target, "r+b") as outfh:
+        for sc in sig_contents_list:
+            dss.DocumentSecurityStore.add_dss(
+                output_stream=outfh,
+                sig_contents=sc,
+                certs=unique_certs,
+                crls=crl_objs if crl_objs else None,
+                ocsps=ocsp_objs if ocsp_objs else None,
+                force_write=True,
+            )
+
+    with open(target, "rb") as fh:
+        r2 = PdfFileReader(fh)
+        dss_obj = dss.DocumentSecurityStore.read_dss(r2)
+        vri_count = len(dss_obj.vri_entries) if dss_obj.vri_entries else 0
+        certs_count = len(dss_obj.certs) if dss_obj.certs else 0
+        crls_count = len(dss_obj.crls) if dss_obj.crls else 0
+        ocsps_count = len(dss_obj.ocsps) if dss_obj.ocsps else 0
+
+    return {
+        "success": True,
+        "output_path": str(target),
+        "certs_embedded": certs_count,
+        "vri_entries": vri_count,
+        "crls_embedded": crls_count,
+        "ocsps_embedded": ocsps_count,
+    }
 
 
 def _signature_field_spec(field_name: str, page_no: int,
@@ -264,6 +378,8 @@ def verify_signature_deep(pdf_path: str) -> Dict[str, object]:
         "certified": False,
         "certification_permission": None,
         "certification_permission_label": "",
+        "ltv_enabled": False,
+        "dss_info": None,
         "all_intact": False,
         "all_trusted": False,
     }
@@ -323,11 +439,52 @@ def verify_signature_deep(pdf_path: str) -> Dict[str, object]:
             except Exception:
                 diff_policy = None
 
+            # Check for Document Security Store (LTV)
+            dss_present = False
+            dss_info = None
+            try:
+                from pyhanko.sign.validation import dss as pyhanko_dss
+                dss_obj = pyhanko_dss.DocumentSecurityStore.read_dss(reader)
+                dss_present = True
+                vri_map = {}
+                if dss_obj.vri_entries:
+                    for ident_obj, vri_ref in dss_obj.vri_entries.items():
+                        vri_dict = vri_ref.get_object() if hasattr(vri_ref, "get_object") else {}
+                        raw_key = str(ident_obj).lstrip('/')
+                        vri_map[raw_key] = {
+                            "certs_count": len(vri_dict.get('/Cert', [])),
+                            "crls_count": len(vri_dict.get('/CRL', [])),
+                            "ocsps_count": len(vri_dict.get('/OCSP', [])),
+                        }
+                dss_info = {
+                    "certs_count": len(dss_obj.certs) if dss_obj.certs else 0,
+                    "crls_count": len(dss_obj.crls) if dss_obj.crls else 0,
+                    "ocsps_count": len(dss_obj.ocsps) if dss_obj.ocsps else 0,
+                    "vri_count": len(dss_obj.vri_entries) if dss_obj.vri_entries else 0,
+                    "vri_entries": vri_map,
+                }
+            except Exception:
+                dss_present = False
+                dss_info = None
+
+            result["ltv_enabled"] = dss_present
+            result["dss_info"] = dss_info
+
             for s in reader.embedded_signatures:
                 try:
                     st = validate_pdf_signature(s, diff_policy=diff_policy)
                     cert = getattr(st, "signing_cert", None)
                     is_cert = bool(author_sig_obj is not None and getattr(s, "sig_object", None) == author_sig_obj)
+
+                    contents_obj = s.sig_object.get('/Contents') if s.sig_object else None
+                    sig_ltv = False
+                    if contents_obj and dss_info and dss_info.get("vri_entries"):
+                        import hashlib
+                        sha1_ident = hashlib.sha1(bytes(contents_obj)).hexdigest().upper()
+                        sig_ltv = sha1_ident in dss_info["vri_entries"]
+                    elif dss_present:
+                        sig_ltv = True
+
                     result["signatures"].append({
                         "field": s.field_name,
                         "intact": bool(getattr(st, "intact", False)),
@@ -335,6 +492,7 @@ def verify_signature_deep(pdf_path: str) -> Dict[str, object]:
                         "revoked": bool(getattr(st, "revoked", False)),
                         "docmdp_ok": bool(getattr(st, "docmdp_ok", True)),
                         "is_certifying": is_cert,
+                        "ltv_enabled": sig_ltv,
                         "bottom_line": str(getattr(st, "bottom_line", "")),
                         "signer": cert.subject.human_friendly if cert is not None else "",
                         "signing_time": str(getattr(st, "signer_reported_dt", "") or ""),
@@ -497,7 +655,10 @@ def sign_pdf_token(src: str, dst: str, lib_path: str, pin: Optional[str],
                    contact: str = "",
                    field_name: str = "OpalDSC",
                    use_existing_field: bool = True,
-                   tsa_url: str = "") -> str:
+                   tsa_url: str = "",
+                   certify: bool = False,
+                   mdp_permission: int = 2,
+                   embed_ltv: bool = False) -> str:
     """Signs src with the certificate on the connected token; writes the signed
     copy to dst. The private key is used inside the token and never exported."""
     if not HAVE_TOKEN:
@@ -506,4 +667,5 @@ def sign_pdf_token(src: str, dst: str, lib_path: str, pin: Optional[str],
         dsc_token.sign_pdf_with_token, src, dst, lib_path, pin,
         slot_no=slot_no, cert_label=cert_label, page_no=page_no, rect=rect,
         reason=reason, location=location, contact=contact, field_name=field_name,
-        use_existing_field=use_existing_field, tsa_url=tsa_url)
+        use_existing_field=use_existing_field, tsa_url=tsa_url,
+        certify=certify, mdp_permission=mdp_permission, embed_ltv=embed_ltv)
