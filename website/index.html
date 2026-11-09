@@ -49,6 +49,7 @@
     <nav class="nav" aria-label="Main">
       <a href="#wheel">The wheel</a>
       <a href="#studio">Studio</a>
+      <a href="#acrobat">Acrobat Parity</a>
       <a href="#uses">Uses</a>
       <a href="#dsc">DSC signing</a>
       <a href="compare.html">Compare</a>
@@ -247,91 +248,234 @@
     <span class="eyebrow reveal" data-en="The floating studio" data-hing="Floating studio">The floating studio</span>
     <h2 class="reveal" data-en="One window that stays above your work." data-hing="Ek window jo aapke kaam ke upar rehta hai.">One window that stays above your work.</h2>
     <p class="lede reveal" data-reveal-delay="1" data-en="Opal is a single pane of glass that floats over everything else, so you can keep it beside the work and drop anything into it at the moment you need it."
-       data-hing="Opal ek hi kaanch ki khidki hai jo sabke upar rehti hai — kaam ke saath rakhiye aur jab chahiye kuch bhi chhod dijiye.">
+       data-hing="Opal ek hi kaanch ki khidki hai jo sabke upar rehti hai, kaam ke saath rakhiye aur jab chahiye kuch bhi chhod dijiye.">
       Opal is a single pane of glass that floats over everything else, so you can keep it beside the work and drop anything into it at the moment you need it.
     </p>
 
     <div class="studio-tabs reveal" data-reveal-delay="2" role="tablist" style="margin-top: 44px;">
-      <button class="studio-tab is-active" role="tab" data-studio="image" aria-selected="true">Image Lab</button>
-      <button class="studio-tab" role="tab" data-studio="pdf" aria-selected="false">PDF Studio</button>
+      <button class="studio-tab is-active" role="tab" data-studio="pdf" aria-selected="true">PDF Studio</button>
+      <button class="studio-tab" role="tab" data-studio="preflight" aria-selected="false">Print Preflight</button>
+      <button class="studio-tab" role="tab" data-studio="portfolio" aria-selected="false">PDF Portfolios</button>
+      <button class="studio-tab" role="tab" data-studio="image" aria-selected="false">Image Lab</button>
       <button class="studio-tab" role="tab" data-studio="media" aria-selected="false">Media Studio</button>
       <button class="studio-tab" role="tab" data-studio="docs" aria-selected="false">Documents</button>
     </div>
 
-    <article class="studio-panel is-active" data-studio-panel="image">
+    <!-- PDF Studio -->
+    <article class="studio-panel is-active" data-studio-panel="pdf">
+      <div class="studio-shot">
+        <img src="assets/screenshots/03-pdf-studio.png" alt="The Opal PDF Studio" width="1534" height="800" />
+      </div>
+      <div class="studio-copy">
+        <h3 data-en="Acrobat Pro tools, without the subscription" data-hing="Acrobat Pro ke tools, bina kisi subscription ke">Acrobat Pro tools, without the subscription</h3>
+        <p class="lede" data-en="The everyday professional PDF workflow, done fully offline: annotate, search &amp; redact, sign with USB tokens, verify, form fill, OCR scanned deeds, compare versions, and protect."
+           data-hing="Roz ka professional PDF kaam, poori tarah offline: note lagao, search &amp; redact karo, USB token se sign, verify, form bharo, scan OCR, compare karo aur protect karo.">
+          The everyday professional PDF workflow, done fully offline: annotate, search &amp; redact, sign with USB tokens, verify, form fill, OCR scanned deeds, compare versions, and protect.
+        </p>
+        <ul class="checklist">
+          <li data-en="DocMDP Document Certification: lock author permissions (P=1 No Changes, P=2 Form Fill &amp; Sign, P=3 Annotations)" data-hing="DocMDP Document Certification: author permissions lock karo (P=1 No Changes, P=2 Form Fill &amp; Sign, P=3 Annotations)">DocMDP Document Certification: lock author permissions (P=1 No Changes, P=2 Form Fill &amp; Sign, P=3 Annotations)</li>
+          <li data-en="Long-Term Validation (LTV / DSS): embed revocation catalogs for perpetual legal validity under PAdES-LTV" data-hing="Long-Term Validation (LTV / DSS): perpetual legal validity ke liye revocation catalogs embed karo PAdES-LTV ke tehat">Long-Term Validation (LTV / DSS): embed revocation catalogs for perpetual legal validity under PAdES-LTV</li>
+          <li data-en="Sign directly into prepared signature fields without modifying the original document layout" data-hing="Prepared signature field mein seedha sign karo bina document layout badle">Sign directly into prepared signature fields without modifying the original document layout</li>
+          <li data-en="Permanent black-out redaction: eliminates underlying text streams and image coordinates completely" data-hing="Permanent black-out redaction: text stream aur image coordinates ko poori tarah mita deta hai">Permanent black-out redaction: eliminates underlying text streams and image coordinates completely</li>
+        </ul>
+      </div>
+    </article>
+
+    <!-- Preflight & PDF/X -->
+    <article class="studio-panel" data-studio-panel="preflight">
+      <div class="studio-shot">
+        <img src="assets/screenshots/06-pdf-preflight.png" alt="PDF Preflight and PDF/X Compliance" width="920" height="640" />
+      </div>
+      <div class="studio-copy">
+        <h3 data-en="Commercial print &amp; archival preflight" data-hing="Commercial print aur archival preflight">Commercial print &amp; archival preflight</h3>
+        <p class="lede" data-en="Deep inspection for commercial print and archival standards. Audit bleed boxes, font embedding, image resolutions, and color spaces, then fix conformance in one click."
+           data-hing="Commercial print aur archival standards ki gehraai se jaanch. Bleed boxes, font embedding, image resolution aur color spaces check karo aur ek click mein fix karo.">
+          Deep inspection for commercial print and archival standards. Audit bleed boxes, font embedding, image resolutions, and color spaces, then fix conformance in one click.
+        </p>
+        <ul class="checklist">
+          <li data-en="One-click fixup to ISO PDF/X-1a:2001 with embedded CMYK OutputIntent profiles" data-hing="Embedded CMYK OutputIntent profile ke saath ISO PDF/X-1a:2001 mein ek click fixup">One-click fixup to ISO PDF/X-1a:2001 with embedded CMYK OutputIntent profiles</li>
+          <li data-en="Automatic BleedBox and TrimBox alignment matching document boundary geometry" data-hing="Document geometry ke mutabiq automatic BleedBox aur TrimBox alignment">Automatic BleedBox and TrimBox alignment matching document boundary geometry</li>
+          <li data-en="Audit image DPI: flags low-resolution bitmaps under 300 DPI before sending to press" data-hing="Image DPI audit: press bhejne se pehle 300 DPI se kam wali images ko flag karta hai">Audit image DPI: flags low-resolution bitmaps under 300 DPI before sending to press</li>
+          <li data-en="Export preflight audit logs in plain text or JSON for automated prepress pipelines" data-hing="Automated prepress ke liye plain text ya JSON mein preflight audit logs export karo">Export preflight audit logs in plain text or JSON for automated prepress pipelines</li>
+        </ul>
+      </div>
+    </article>
+
+    <!-- PDF Portfolios -->
+    <article class="studio-panel" data-studio-panel="portfolio">
+      <div class="studio-shot">
+        <img src="assets/screenshots/07-pdf-portfolio.png" alt="PDF Portfolios and Packages" width="880" height="560" />
+      </div>
+      <div class="studio-copy">
+        <h3 data-en="Acrobat-grade PDF Portfolios &amp; Packages" data-hing="Acrobat-grade PDF Portfolios aur Packages">Acrobat-grade PDF Portfolios &amp; Packages</h3>
+        <p class="lede" data-en="Package contracts, balance sheet spreadsheets, presentation decks, and technical specs into a single ISO 32000-1 Collection master PDF with an executive cover page."
+           data-hing="Contracts, balance sheet spreadsheets, presentation decks aur technical specs ko ek hi ISO 32000-1 Collection master PDF mein cover page ke saath pack karo.">
+          Package contracts, balance sheet spreadsheets, presentation decks, and technical specs into a single ISO 32000-1 Collection master PDF with an executive cover page.
+        </p>
+        <ul class="checklist">
+          <li data-en="ISO 32000-1 Section 12.3 compliant: full compatibility with Adobe Acrobat Pro and Acrobat Reader" data-hing="ISO 32000-1 Section 12.3 compliant: Adobe Acrobat Pro aur Reader ke saath poori compatibility">ISO 32000-1 Section 12.3 compliant: full compatibility with Adobe Acrobat Pro and Acrobat Reader</li>
+          <li data-en="Executive cover page generated automatically with Opal Liquid Glass styling" data-hing="Opal Liquid Glass styling ke saath automatic executive cover page banta hai">Executive cover page generated automatically with Opal Liquid Glass styling</li>
+          <li data-en="Selective extraction: extract single documents or export the entire package to a destination folder" data-hing="Selective extraction: ek document nikaalo ya poora package kisi folder mein extract karo">Selective extraction: extract single documents or export the entire package to a destination folder</li>
+          <li data-en="Non-destructive name trees: add or remove bundled files without re-encoding existing payloads" data-hing="Non-destructive name trees: pehle se maujood files ko chhede bina nayi files jodo ya hatao">Non-destructive name trees: add or remove bundled files without re-encoding existing payloads</li>
+        </ul>
+      </div>
+    </article>
+
+    <!-- Image Lab -->
+    <article class="studio-panel" data-studio-panel="image">
       <div class="studio-shot">
         <img src="assets/screenshots/02-image-lab.png" alt="The Opal image lab" width="1180" height="780" />
       </div>
       <div class="studio-copy">
         <h3 data-en="Background removal that is actually good" data-hing="Background removal jo sach mein accha hai">Background removal that is actually good</h3>
-        <p class="lede" data-en="Eight matting models run on your own processor. Hair, glasses and the edge of a dupatta survive."
-           data-hing="Aath matting models aapke hi processor par. Baal, chashma aur dupatta ka kinara bacha rehta hai.">
-          Eight matting models run on your own processor. Hair, glasses and the edge of a dupatta survive.
+        <p class="lede" data-en="On-device AI matting models run on your CPU. Hair, fine glasses and the edge of a dupatta survive with clean alpha transparency."
+           data-hing="On-device AI matting models aapke hi processor par. Baal, chashma aur dupatta ka kinara bacha rehta hai.">
+          On-device AI matting models run on your CPU. Hair, fine glasses and the edge of a dupatta survive with clean alpha transparency.
         </p>
         <ul class="checklist">
           <li data-en="No upload, no queue, no watermark" data-hing="Na upload, na line, na watermark">No upload, no queue, no watermark</li>
-          <li data-en="Aadhaar and passport sizes in one click" data-hing="Aadhaar aur passport size ek click mein">Aadhaar and passport sizes in one click</li>
-          <li data-en="Blur a face, remove an object, restyle a photo" data-hing="Chehra blur karo, object hatao, photo badlo">Blur a face, remove an object, restyle a photo</li>
+          <li data-en="Aadhaar (413×599) and Passport photo sizes in one click" data-hing="Aadhaar (413×599) aur passport photo size ek click mein">Aadhaar (413×599) and Passport photo sizes in one click</li>
+          <li data-en="2x / 4x super-resolution AI upscale on your local machine" data-hing="Aapke machine par 2x / 4x super-resolution AI upscale">2x / 4x super-resolution AI upscale on your local machine</li>
         </ul>
       </div>
     </article>
 
-    <article class="studio-panel" data-studio-panel="pdf">
-      <div class="studio-shot">
-        <img src="assets/screenshots/03-pdf-studio.png" alt="The Opal PDF Studio" width="1534" height="800" />
-      </div>
-      <div class="studio-copy">
-        <h3 data-en="A PDF editor, not a PDF viewer" data-hing="PDF viewer nahi, PDF editor">A PDF editor, not a PDF viewer</h3>
-        <p class="lede" data-en="The everyday Acrobat job, done offline: annotate, search &amp; redact, sign, verify signatures, fill, OCR a scan, compare two versions, flatten, protect, DocMDP certify, LTV/DSS embed, and package PDF portfolios."
-           data-hing="Roz ka Acrobat ka kaam, offline: note, search &amp; redact, sign, signature verify, form bharo, scan OCR, do version compare, flatten, protect, DocMDP certify, LTV/DSS embed, aur PDF portfolio banao.">
-          The everyday Acrobat job, done offline: annotate, search &amp; redact, sign, verify signatures, fill, OCR a scan, compare two versions, flatten, protect, DocMDP certify, LTV/DSS embed, and package PDF portfolios.
-        </p>
-        <ul class="checklist">
-          <li data-en="Sign with a real DSC — the plugged-in USB token or a .pfx / .p12 file; the key never leaves the token" data-hing="Asli DSC se sign — lagaya hua USB token ya .pfx / .p12 file; key kabhi token se bahar nahi niklti">Sign with a real DSC — the plugged-in USB token or a .pfx / .p12 file; the key never leaves the token</li>
-          <li data-en="Signs into the form's own empty signature field, like Acrobat" data-hing="Form ke khali signature field mein sign, Acrobat ki tarah">Signs into the form's own empty signature field, like Acrobat</li>
-          <li data-en="Verify signatures — intact, trusted, revoked — checked fully offline" data-hing="Signature verify karo — intact, trusted, revoked — poori tarah offline">Verify signatures — intact, trusted, revoked — checked fully offline</li>
-          <li data-en="Search &amp; redact every occurrence, plus an optional timestamp from an allow-listed TSA" data-hing="Har occurrence ko search &amp; redact karo, plus allow-listed TSA se optional timestamp">Search &amp; redact every occurrence, plus an optional timestamp from an allow-listed TSA</li>
-          <li data-en="Draw, type, or upload a signature picture" data-hing="Draw karo, type karo, ya signature image upload karo">Draw, type, or upload a signature picture</li>
-          <li data-en="Searchable text out of a scanned page" data-hing="Scan se searchable text">Searchable text out of a scanned page</li>
-        </ul>
-      </div>
-    </article>
-
+    <!-- Media Studio -->
     <article class="studio-panel" data-studio-panel="media">
       <div class="studio-shot">
-        <img src="assets/screenshots/04b-wheel-convert.png" alt="The Opal action wheel" width="400" height="400" />
+        <img src="assets/screenshots/11-media-studio.png" alt="The Opal Media Studio" width="1080" height="680" />
       </div>
       <div class="studio-copy">
         <h3 data-en="Media that behaves" data-hing="Media jo samajhdaar ho">Media that behaves</h3>
-        <p class="lede" data-en="Video and audio conversion, trimming, muting, compression and extraction — with FFmpeg travelling inside the app, so it works with the network unplugged."
-           data-hing="Video aur audio conversion, trimming, mute, compress aur extract — FFmpeg app ke andar hi hai, to network nikalne par bhi chalta hai.">
-          Video and audio conversion, trimming, muting, compression and extraction — with FFmpeg travelling inside the app, so it works with the network unplugged.
+        <p class="lede" data-en="Video and audio conversion, trimming, muting, compression and extraction with bundled FFmpeg traveling inside the app, working with the network unplugged."
+           data-hing="Video aur audio conversion, trimming, mute, compress aur extract: FFmpeg app ke andar hi hai, to network nikalne par bhi chalta hai.">
+          Video and audio conversion, trimming, muting, compression and extraction with bundled FFmpeg traveling inside the app, working with the network unplugged.
         </p>
         <ul class="checklist">
-          <li data-en="Trim by hand on a waveform" data-hing="Waveform par haath se trim">Trim by hand on a waveform</li>
-          <li data-en="MP4 to GIF, MP3 to M4A, and much more" data-hing="MP4 se GIF, MP3 se M4A, aur bhi bahut">MP4 to GIF, MP3 to M4A, and much more</li>
-          <li data-en="Shrink a video for WhatsApp" data-hing="WhatsApp ke liye video halki karo">Shrink a video for WhatsApp</li>
+          <li data-en="Trim audio and video visually on a high-precision interactive waveform" data-hing="Interactive waveform par audio aur video ko visual dekhkar trim karo">Trim audio and video visually on a high-precision interactive waveform</li>
+          <li data-en="Convert between MP4, MKV, WebM, MP3, WAV, M4A, and animated GIF" data-hing="MP4, MKV, WebM, MP3, WAV, M4A aur animated GIF mein convert karo">Convert between MP4, MKV, WebM, MP3, WAV, M4A, and animated GIF</li>
+          <li data-en="Shrink video files under 16 MB optimized for WhatsApp and email attachments" data-hing="WhatsApp aur email attachment ke liye video 16 MB se kam karo">Shrink video files under 16 MB optimized for WhatsApp and email attachments</li>
         </ul>
       </div>
     </article>
 
+    <!-- Document Viewer -->
     <article class="studio-panel" data-studio-panel="docs">
       <div class="studio-shot">
         <img src="assets/screenshots/05-document-viewer.png" alt="The Opal document viewer" width="1000" height="620" />
       </div>
       <div class="studio-copy">
         <h3 data-en="Opens what other apps refuse" data-hing="Jo doosre apps na kholein, ye kholta hai">Opens what other apps refuse</h3>
-        <p class="lede" data-en="Word, Excel, PowerPoint, EPUB, fonts, archives, code, subtitles — read them, convert them, and pull text out of the ones nobody else can open."
-           data-hing="Word, Excel, PowerPoint, EPUB, fonts, archive, code, subtitle — sab kholo, badlo, aur jinhe koi aur nahi khol sakta unse text nikaalo.">
-          Word, Excel, PowerPoint, EPUB, fonts, archives, code, subtitles — read them, convert them, and pull text out of the ones nobody else can open.
+        <p class="lede" data-en="Word, Excel, PowerPoint, EPUB, fonts, archives, code, subtitles: read them, convert them, and pull text out of the ones nobody else can open."
+           data-hing="Word, Excel, PowerPoint, EPUB, fonts, archive, code, subtitle: sab kholo, badlo, aur jinhe koi aur nahi khol sakta unse text nikaalo.">
+          Word, Excel, PowerPoint, EPUB, fonts, archives, code, subtitles: read them, convert them, and pull text out of the ones nobody else can open.
         </p>
         <ul class="checklist">
-          <li data-en="Hindi and other Indic text, rendered properly" data-hing="Hindi aur doosri bhashayein, sahi se dikhti hain">Hindi and other Indic text, rendered properly</li>
-          <li data-en="Preview, then export to PDF or TXT" data-hing="Dekho, phir PDF ya TXT mein export karo">Preview, then export to PDF or TXT</li>
-          <li data-en="Unzip an archive without leaving the window" data-hing="Archive kholo, window se bahar nahi gaye">Unzip an archive without leaving the window</li>
+          <li data-en="Hindi and other Indic text, rendered properly with real system font engines" data-hing="Hindi aur doosri bhashayein, sahi se dikhti hain system font engine ke saath">Hindi and other Indic text, rendered properly with real system font engines</li>
+          <li data-en="Preview, then export to clean searchable PDF or plain text" data-hing="Dekho, phir searchable PDF ya plain text mein export karo">Preview, then export to clean searchable PDF or plain text</li>
+          <li data-en="Inspect ZIP, 7Z, and TAR archives without leaving the window" data-hing="Window se bahar gaye bina ZIP, 7Z aur TAR archives dekho">Inspect ZIP, 7Z, and TAR archives without leaving the window</li>
         </ul>
       </div>
     </article>
+  </div>
+</section>
+
+<!-- ================= ACROBAT PRO PARITY SUITE ================= -->
+<section class="section acrobat" id="acrobat" style="padding-top: 60px;">
+  <div class="shell">
+    <span class="eyebrow reveal" data-en="Adobe Acrobat Pro Parity · 100% Free" data-hing="Adobe Acrobat Pro Parity · 100% Free">Adobe Acrobat Pro Parity · 100% Free</span>
+    <h2 class="reveal" data-en="Every standard Acrobat charges US$240/year for." data-hing="Har standard jiske Acrobat saal ke $240 leta hai.">Every standard Acrobat charges US$240/year for.</h2>
+    <p class="lede reveal" data-reveal-delay="1"
+       data-en="Commercial print preflight, ISO 32000-1 collections, author certification locks, and perpetual LTV revocation stores. Built for sovereign legal, tax, and engineering documents that cannot leave your machine."
+       data-hing="Commercial print preflight, ISO 32000-1 collections, author certification locks, aur perpetual LTV revocation stores. Aapke computer par poori tarah offline.">
+      Commercial print preflight, ISO 32000-1 collections, author certification locks, and perpetual LTV revocation stores. Built for sovereign legal, tax, and engineering documents that cannot leave your machine.
+    </p>
+
+    <div class="acrobat-grid reveal" data-reveal-delay="2">
+      <!-- Card 1: Preflight -->
+      <div class="acrobat-card">
+        <div class="acrobat-preview">
+          <img src="assets/screenshots/06-pdf-preflight.png" alt="PDF Preflight and PDF/X Fixup Tool" width="920" height="640" />
+        </div>
+        <div class="acrobat-body">
+          <span class="acrobat-badge">PDF/X &amp; Archival Standards</span>
+          <h3 data-en="Commercial Print Preflight" data-hing="Commercial Print Preflight">Commercial Print Preflight</h3>
+          <p data-en="Detects missing bleed boxes, un-embedded fonts, RGB/CMYK mismatches, and sub-300 DPI images before sending to professional press. Auto-fixes documents to ISO PDF/X-1a:2001."
+             data-hing="Press bhejne se pehle missing bleed box, un-embedded fonts aur kam DPI wali images pakadta hai. ISO PDF/X-1a:2001 mein automatic theek karta hai.">
+            Detects missing bleed boxes, un-embedded fonts, RGB/CMYK mismatches, and sub-300 DPI images before sending to professional press. Auto-fixes documents to ISO PDF/X-1a:2001.
+          </p>
+          <div class="acrobat-specs">
+            <span class="acrobat-spec-tag">ISO 15930-1 (PDF/X-1a)</span>
+            <span class="acrobat-spec-tag">OutputIntent Profiles</span>
+            <span class="acrobat-spec-tag">TrimBox &amp; BleedBox Sync</span>
+            <span class="acrobat-spec-tag">JSON / Text Audit Export</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Portfolios -->
+      <div class="acrobat-card">
+        <div class="acrobat-preview">
+          <img src="assets/screenshots/07-pdf-portfolio.png" alt="PDF Portfolio and Package Manager" width="880" height="560" />
+        </div>
+        <div class="acrobat-body">
+          <span class="acrobat-badge">ISO 32000-1 Section 12.3</span>
+          <h3 data-en="PDF Portfolios &amp; Packages" data-hing="PDF Portfolios aur Packages">PDF Portfolios &amp; Packages</h3>
+          <p data-en="Bundle multi-format project assets (PDF contracts, Excel models, CAD drawings, CSV data) into an executive container PDF with a branded cover page. Full Acrobat Reader interoperability."
+             data-hing="Multi-format project files (PDF contracts, Excel models, CAD drawings) ko ek master PDF mein cover page ke saath pack karo. Acrobat Reader mein poori tarah chalta hai.">
+            Bundle multi-format project assets (PDF contracts, Excel models, CAD drawings, CSV data) into an executive container PDF with a branded cover page. Full Acrobat Reader interoperability.
+          </p>
+          <div class="acrobat-specs">
+            <span class="acrobat-spec-tag">Collection Dictionary Tree</span>
+            <span class="acrobat-spec-tag">Executive Dark-Glass Cover</span>
+            <span class="acrobat-spec-tag">Selective File Extraction</span>
+            <span class="acrobat-spec-tag">Zero Asset Compression Loss</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: DocMDP -->
+      <div class="acrobat-card">
+        <div class="acrobat-preview">
+          <img src="assets/screenshots/03-pdf-studio.png" alt="DocMDP Document Certification" width="1534" height="800" />
+        </div>
+        <div class="acrobat-body">
+          <span class="acrobat-badge">DocMDP Author Signatures</span>
+          <h3 data-en="Document Certification Locks" data-hing="Document Certification Locks">Document Certification Locks</h3>
+          <p data-en="Certify documents as an author with cryptographic permission locking: P=1 strictly locks all edits, P=2 allows recipient form fill and signing, P=3 permits annotations. Zero false tampering warnings."
+             data-hing="Author ban kar document certify karo: P=1 sab lock karta hai, P=2 recipient signature allow karta hai, P=3 annotations allow karta hai.">
+            Certify documents as an author with cryptographic permission locking: P=1 strictly locks all edits, P=2 allows recipient form fill and signing, P=3 permits annotations. Zero false tampering warnings.
+          </p>
+          <div class="acrobat-specs">
+            <span class="acrobat-spec-tag">P=1, P=2, P=3 Permissions</span>
+            <span class="acrobat-spec-tag">Acrobat-Grade Diff Rules</span>
+            <span class="acrobat-spec-tag">IT Act 2000 Conforming</span>
+            <span class="acrobat-spec-tag">Cryptographic Field Locking</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: LTV / DSS -->
+      <div class="acrobat-card">
+        <div class="acrobat-preview">
+          <img src="assets/screenshots/09-pdf-signatures-verify.png" alt="Long-Term Validation (LTV / DSS) Status" width="650" height="480" />
+        </div>
+        <div class="acrobat-body">
+          <span class="acrobat-badge">PAdES-LTV · ETSI EN 319 142</span>
+          <h3 data-en="Long-Term Validation (LTV / DSS)" data-hing="Long-Term Validation (LTV / DSS)">Long-Term Validation (LTV / DSS)</h3>
+          <p data-en="Embeds Document Security Store (/DSS) and Validation Related Information (/VRI) dictionaries incrementally. Signatures remain legally verifiable decades later even if issuer servers shut down."
+             data-hing="Document Security Store (/DSS) aur /VRI dictionaries embed karta hai. Saal baad bhi digital signature valid verify hoti hai bhale hi CA server band ho jaye.">
+            Embeds Document Security Store (/DSS) and Validation Related Information (/VRI) dictionaries incrementally. Signatures remain legally verifiable decades later even if issuer servers shut down.
+          </p>
+          <div class="acrobat-specs">
+            <span class="acrobat-spec-tag">Incremental DSS Store</span>
+            <span class="acrobat-spec-tag">Embedded VRI Hash Maps</span>
+            <span class="acrobat-spec-tag">Offline Trust Verification</span>
+            <span class="acrobat-spec-tag">ETSI EN 319 142 Compliant</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -527,6 +671,9 @@
     </div>
 
     <div class="dsc-card reveal" data-reveal-delay="1" aria-hidden="true">
+      <div style="margin-bottom: 20px; border-radius: 14px; overflow: hidden; border: 1px solid rgba(255,255,255,0.14); box-shadow: 0 14px 34px rgba(0,0,0,0.65);">
+        <img src="assets/screenshots/09-pdf-signatures-verify.png" alt="Opal Offline Signature Verification and LTV Status" width="650" height="480" style="display:block; width:100%; height:auto;" />
+      </div>
       <div class="cli-head">
         <span class="cli-dots"><i></i><i></i><i></i></span>
         <span class="cli-title">sign &amp; verify, from the command line</span>
@@ -655,10 +802,10 @@ signed   2026-10-30 09:59 IST · field sigfield1 · page 8</code></pre>
         Free, no account, no telemetry. About 99 MB for the everyday tools, or 222 MB with the AI engines bundled in.
       </p>
       <div class="download-actions">
-        <a class="btn btn-primary btn-lg" href="downloads/Opal-v2.3.0-Windows-x64.zip" download>
+        <a class="btn btn-primary btn-lg" href="https://github.com/gaurav-eshanura/opal/releases/download/v2.3.0/Opal-v2.3.0-Windows-x64.zip" download>
           <span data-en="Download for Windows" data-hing="Windows ke liye download">Download for Windows</span>
         </a>
-        <a class="btn btn-quiet btn-lg" href="downloads/Opal-Full-v2.3.0-Windows-x64.zip" download>
+        <a class="btn btn-quiet btn-lg" href="https://github.com/gaurav-eshanura/opal/releases/download/v2.3.0/Opal-Full-v2.3.0-Windows-x64.zip" download>
           <span data-en="With AI engines" data-hing="AI engines ke saath">With AI engines</span>
         </a>
       </div>

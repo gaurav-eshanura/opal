@@ -6,7 +6,8 @@
       ".firebaserc",
       "README.md",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "downloads/**"
     ],
     "headers": [
       {
