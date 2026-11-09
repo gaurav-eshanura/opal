@@ -37,21 +37,13 @@ def pump(app, ms=400):
 
 def make_samples():
     WORK.mkdir(parents=True, exist_ok=True)
-    import numpy as np
-    rng = np.random.default_rng(11)
-    w, h = 900, 1150
-    bg = np.clip(np.dstack([rng.normal(96, 16, (h, w)), rng.normal(126, 16, (h, w)),
-                             rng.normal(168, 16, (h, w))]), 0, 255).astype("uint8")
-    photo = Image.fromarray(bg).filter(ImageFilter.GaussianBlur(16))
-    d = ImageDraw.Draw(photo)
-    d.ellipse([320, 170, 580, 430], fill=(231, 190, 156))
-    d.ellipse([298, 140, 602, 330], fill=(46, 36, 32))
-    d.ellipse([210, 430, 690, 1150], fill=(176, 44, 54))
-    d.ellipse([390, 285, 415, 302], fill=(30, 30, 30))
-    d.ellipse([495, 285, 520, 302], fill=(30, 30, 30))
-    photo = photo.filter(ImageFilter.UnsharpMask(radius=2, percent=170, threshold=2))
-    photo_path = WORK / "portrait.jpg"
-    photo.save(photo_path, quality=94)
+    bazaar_src = ROOT / "website" / "assets" / "screenshots" / "brand" / "jaisalmer_bazaar.jpg"
+
+    import shutil
+    photo_path = WORK / "jaisalmer_bazaar.jpg"
+    if bazaar_src.exists():
+        shutil.copy2(bazaar_src, photo_path)
+        shutil.copy2(bazaar_src, WORK / "portrait.jpg")
 
     import fitz
     doc = fitz.open()
