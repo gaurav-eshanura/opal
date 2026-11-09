@@ -166,8 +166,16 @@ def make_release_zip(dist_dir: Path, dist_name: str) -> Path | None:
     the website so the download button has a real file behind it."""
     if not dist_dir.exists():
         return None
-    platform = {"Windows": "Windows-x64", "Darwin": "macOS-x64", "Linux": "Linux-x64"}
-    tag = platform.get(sys.platform, "Windows-x64")
+    import platform as _plat
+    sys_name = _plat.system()
+    machine = _plat.machine().lower()
+    arch = "arm64" if ("arm" in machine or "aarch" in machine) else "x64"
+    if sys_name == "Darwin":
+        tag = f"macOS-{arch}"
+    elif sys_name == "Linux":
+        tag = f"Linux-{arch}"
+    else:
+        tag = f"Windows-{arch}"
     zip_path = ROOT / "dist" / f"{dist_name}-v{__version__}-{tag}.zip"
     print(f"Packing {zip_path.name} ...")
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as zf:
