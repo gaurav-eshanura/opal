@@ -2,7 +2,7 @@
 
 **Project:** `3961317633702086904` — *Opal — Liquid Glass File Studio*
 **Design system asset:** `assets/3539134380188353237` ("Opal Liquid Glass v1")
-**Captured:** 2026-11-06 · Screens captured: Dashboard, Image Lab, PDF Studio, Radial Wheel overlay.
+**Captured:** 2026-11-06 (updated 2026-11-09) · Screens captured: Dashboard, Image Lab, PDF Studio, Radial Wheel overlay, Floating Studio Home (`e62a729e0dbb4b7b9690f5739603c534`), Media Studio (`ab2bd16c633a442daaa7612ac4a92c2f`), Documents Studio (`615bde75fc634d78a073f857d5e6ca6f`), Dialogs & Toasts Sheet (`b0d549d7225349d0955494284f4c4d00`).
 
 Opal is a free, fully offline desktop "file studio" for Windows/macOS/Linux.
 The one visual language: **liquid glass on a deep inky field**. Every screen is
