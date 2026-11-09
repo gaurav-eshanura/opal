@@ -885,3 +885,68 @@ def embed_ltv(src: str, dst: Optional[str] = None,
         ocsp_paths=ocsp_paths,
         extra_cert_paths=extra_cert_paths,
     )
+
+# ---------------------------------------------------------------------------
+# PDF Portfolios & Packages (Acrobat Pro Parity)
+# ---------------------------------------------------------------------------
+
+def is_portfolio(src: str) -> bool:
+    """
+    Plain English: Checks whether the given PDF is an ISO 32000-1 Collection (PDF Portfolio).
+    """
+    from opal_studio import pdf_portfolio
+    return pdf_portfolio.is_portfolio(src)
+
+
+def get_portfolio_info(src: str) -> dict:
+    """
+    Plain English: Reads all packaged files, schemas, and sizes inside the PDF portfolio.
+    """
+    from opal_studio import pdf_portfolio
+    return pdf_portfolio.get_portfolio_info(src)
+
+
+def create_portfolio(files: List[Union[str, Path, Dict[str, Any]]],
+                     dst: Optional[str] = None,
+                     title: str = "Opal Document Portfolio",
+                     description: str = "",
+                     default_view: str = "details") -> dict:
+    """
+    Plain English: Packages multiple files into a single master PDF Portfolio with an
+    executive cover page and Acrobat collection dictionaries.
+    """
+    from opal_studio import pdf_portfolio
+    target_dst = dst or "portfolio_package.pdf"
+    return pdf_portfolio.create_portfolio(
+        files=files,
+        dst_pdf=target_dst,
+        title=title,
+        description=description,
+        default_view=default_view,
+    )
+
+
+def extract_portfolio(src: str, dst_dir: Optional[str] = None) -> List[str]:
+    """
+    Plain English: Extracts all packaged files from the portfolio into a destination folder.
+    """
+    from opal_studio import pdf_portfolio
+    target_folder = dst_dir or str(Path(src).with_suffix("")) + "_extracted"
+    return pdf_portfolio.extract_all_portfolio_files(src, target_folder)
+
+
+def add_to_portfolio(src: str, file_to_add: str, description: str = "",
+                     dst: Optional[str] = None) -> dict:
+    """
+    Plain English: Adds a new file into an existing PDF portfolio.
+    """
+    from opal_studio import pdf_portfolio
+    return pdf_portfolio.add_file_to_portfolio(src, file_to_add, description=description, dst_pdf=dst)
+
+
+def remove_from_portfolio(src: str, file_name: str, dst: Optional[str] = None) -> dict:
+    """
+    Plain English: Removes an existing file from a PDF portfolio.
+    """
+    from opal_studio import pdf_portfolio
+    return pdf_portfolio.remove_file_from_portfolio(src, file_name, dst_pdf=dst)

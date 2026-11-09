@@ -995,6 +995,289 @@ class StudioWorker(QThread):
 # The PDF Studio
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# PDF Portfolio Management Dialogs
+# ---------------------------------------------------------------------------
+
+class PortfolioDialog(QDialog):
+    """
+    Plain English: Interactive manager for Acrobat-grade PDF Portfolios. Displays
+    packaged files, sizes, types, descriptions, and allows extracting, adding,
+    removing, or opening files.
+    """
+    def __init__(self, pdf_path: str, parent=None):
+        super().__init__(parent)
+        self.pdf_path = pdf_path
+        self.setWindowTitle(f"PDF Portfolio — {Path(pdf_path).name}")
+        self.resize(780, 520)
+        self.setStyleSheet(INK_STYLE)
+        self._init_ui()
+        self._load_data()
+
+    def _init_ui(self):
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(20, 20, 20, 20)
+        lay.setSpacing(12)
+
+        self.header_card = QFrame()
+        self.header_card.setStyleSheet("background: rgba(138,131,255,0.12); border: 1px solid rgba(138,131,255,0.35); border-radius: 12px; padding: 12px;")
+        h_lay = QVBoxLayout(self.header_card)
+        self.title_lbl = QLabel("🗂 PDF Portfolio Package")
+        self.title_lbl.setStyleSheet("font-size: 14px; font-weight: 700; color: #8A83FF;")
+        self.meta_lbl = QLabel("Loading portfolio manifest...")
+        self.meta_lbl.setStyleSheet("font-size: 11px; color: #EDF1FA;")
+        h_lay.addWidget(self.title_lbl)
+        h_lay.addWidget(self.meta_lbl)
+        lay.addWidget(self.header_card)
+
+        self.table = QTableWidget()
+        self.table.setColumnCount(4)
+        self.table.setHorizontalHeaderLabels(["File Name", "Size", "Type", "Description"])
+        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.Stretch)
+        self.table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.table.setSelectionMode(QTableWidget.SingleSelection)
+        self.table.setStyleSheet(
+            f"QTableWidget {{ background: {BG_RAISED}; color: #EDF1FA; gridline-color: rgba(255,255,255,0.08); "
+            f"border: 1px solid rgba(255,255,255,0.12); border-radius: {RADIUS}px; font-size: 11px; }}"
+            f"QHeaderView::section {{ background: {FIELD}; color: #A8B2C8; font-weight: 700; padding: 6px; border: none; border-bottom: 1px solid rgba(255,255,255,0.12); }}"
+        )
+        self.table.doubleClicked.connect(self._preview_selected)
+        lay.addWidget(self.table)
+
+        btn_row = QHBoxLayout()
+        add_btn = QPushButton("Add File...")
+        add_btn.setStyleSheet(f"background: {BG_RAISED}; color: #EDF1FA; border: 1px solid rgba(255,255,255,0.15); border-radius: {RADIUS}px; padding: 6px 12px;")
+        add_btn.clicked.connect(self._add_file)
+        btn_row.addWidget(add_btn)
+
+        del_btn = QPushButton("Remove File")
+        del_btn.setStyleSheet(f"background: {BG_RAISED}; color: #EE4E8A; border: 1px solid rgba(238,78,138,0.30); border-radius: {RADIUS}px; padding: 6px 12px;")
+        del_btn.clicked.connect(self._remove_file)
+        btn_row.addWidget(del_btn)
+
+        btn_row.addStretch()
+
+        open_btn = QPushButton("Open File")
+        open_btn.setStyleSheet(f"background: {BG_RAISED}; color: #EDF1FA; border: 1px solid rgba(255,255,255,0.15); border-radius: {RADIUS}px; padding: 6px 12px;")
+        open_btn.clicked.connect(self._preview_selected)
+        btn_row.addWidget(open_btn)
+
+        extract_btn = QPushButton("Extract Selected...")
+        extract_btn.setStyleSheet(f"background: {BG_RAISED}; color: #37C98A; border: 1px solid rgba(55,201,138,0.35); border-radius: {RADIUS}px; padding: 6px 12px;")
+        extract_btn.clicked.connect(self._extract_selected)
+        btn_row.addWidget(extract_btn)
+
+        extract_all_btn = QPushButton("Extract All Files...")
+        extract_all_btn.setStyleSheet(f"background: {ACCENT_HI}; color: #FFFFFF; font-weight: 700; border-radius: {RADIUS}px; padding: 6px 14px;")
+        extract_all_btn.clicked.connect(self._extract_all)
+        btn_row.addWidget(extract_all_btn)
+
+        close_btn = QPushButton("Close")
+        close_btn.clicked.connect(self.accept)
+        btn_row.addWidget(close_btn)
+
+        lay.addLayout(btn_row)
+
+    def _load_data(self):
+        from opal_studio import pdf_portfolio
+        self.info = pdf_portfolio.get_portfolio_info(self.pdf_path)
+        count = self.info["files_count"]
+        size = self.info["total_size_human"]
+        is_port = "ISO 32000-1 Collection (Acrobat Portfolio)" if self.info["is_portfolio"] else "Embedded File Attachments"
+        self.meta_lbl.setText(f"{is_port} · {count} packaged file(s) · {size} total size")
+
+        self.table.setRowCount(count)
+        for row, f in enumerate(self.info["files"]):
+            self.table.setItem(row, 0, QTableWidgetItem(f["filename"]))
+            self.table.setItem(row, 1, QTableWidgetItem(f["size_human"]))
+            self.table.setItem(row, 2, QTableWidgetItem(f["extension"].upper().lstrip(".") or "FILE"))
+            self.table.setItem(row, 3, QTableWidgetItem(f.get("description", "")))
+
+    def _selected_filename(self) -> Optional[str]:
+        row = self.table.currentRow()
+        if row < 0 or row >= len(self.info["files"]):
+            return None
+        return self.info["files"][row]["name"]
+
+    def _add_file(self):
+        path, _ = QFileDialog.getOpenFileName(self, "Add File to Portfolio")
+        if not path:
+            return
+        from opal_studio import pdf_portfolio
+        try:
+            pdf_portfolio.add_file_to_portfolio(self.pdf_path, path)
+            self._load_data()
+            QMessageBox.information(self, "File Added", f"Added {Path(path).name} to the portfolio.")
+        except Exception as e:
+            QMessageBox.warning(self, "Add Failed", str(e))
+
+    def _remove_file(self):
+        fn = self._selected_filename()
+        if not fn:
+            QMessageBox.information(self, "Selection Required", "Please select a file to remove.")
+            return
+        confirm = QMessageBox.question(self, "Confirm Remove", f"Remove '{fn}' from the portfolio?",
+                                       QMessageBox.Yes | QMessageBox.No)
+        if confirm != QMessageBox.Yes:
+            return
+        from opal_studio import pdf_portfolio
+        try:
+            pdf_portfolio.remove_file_from_portfolio(self.pdf_path, fn)
+            self._load_data()
+        except Exception as e:
+            QMessageBox.warning(self, "Remove Failed", str(e))
+
+    def _extract_selected(self):
+        fn = self._selected_filename()
+        if not fn:
+            QMessageBox.information(self, "Selection Required", "Please select a file to extract.")
+            return
+        target, _ = QFileDialog.getSaveFileName(self, "Extract File", fn)
+        if not target:
+            return
+        from opal_studio import pdf_portfolio
+        try:
+            pdf_portfolio.extract_portfolio_file(self.pdf_path, fn, target)
+            QMessageBox.information(self, "Extracted", f"Saved to:\n{target}")
+        except Exception as e:
+            QMessageBox.warning(self, "Extraction Failed", str(e))
+
+    def _extract_all(self):
+        target_dir = QFileDialog.getExistingDirectory(self, "Extract All Files to Folder")
+        if not target_dir:
+            return
+        from opal_studio import pdf_portfolio
+        try:
+            saved = pdf_portfolio.extract_all_portfolio_files(self.pdf_path, target_dir)
+            QMessageBox.information(self, "Extraction Complete", f"Extracted {len(saved)} file(s) to:\n{target_dir}")
+        except Exception as e:
+            QMessageBox.warning(self, "Extraction Failed", str(e))
+
+    def _preview_selected(self):
+        fn = self._selected_filename()
+        if not fn:
+            return
+        import tempfile
+        tmp_dir = Path(tempfile.gettempdir()) / "opal_portfolio_cache"
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+        tmp_target = tmp_dir / fn
+        from opal_studio import pdf_portfolio
+        try:
+            pdf_portfolio.extract_portfolio_file(self.pdf_path, fn, str(tmp_target))
+            parent = self.parent()
+            if tmp_target.suffix.lower() == ".pdf" and hasattr(parent, "_open_in_new_tab"):
+                parent._open_in_new_tab(str(tmp_target))
+                self.accept()
+            else:
+                import subprocess
+                if sys.platform == "win32":
+                    os.startfile(str(tmp_target))
+                elif sys.platform == "darwin":
+                    subprocess.run(["open", str(tmp_target)], check=False)
+                else:
+                    subprocess.run(["xdg-open", str(tmp_target)], check=False)
+        except Exception as e:
+            QMessageBox.warning(self, "Open Failed", str(e))
+
+
+class CreatePortfolioDialog(QDialog):
+    """
+    Plain English: Modal dialog for assembling multiple files into a brand new PDF Portfolio.
+    """
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Create PDF Portfolio (Acrobat Package)")
+        self.resize(600, 420)
+        self.setStyleSheet(INK_STYLE)
+        self.created_path = None
+        self.selected_files = []
+        self._init_ui()
+
+    def _init_ui(self):
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(24, 24, 24, 24)
+        lay.setSpacing(12)
+
+        form = QFormLayout()
+        self.title_input = QLineEdit("Executive Document Package")
+        self.desc_input = QLineEdit("Bundled project specifications, reports, and data")
+        form.addRow("Package Title:", self.title_input)
+        form.addRow("Description:", self.desc_input)
+        lay.addLayout(form)
+
+        lbl = QLabel("Files to package:")
+        lbl.setStyleSheet("font-weight: 700; color: #EDF1FA;")
+        lay.addWidget(lbl)
+
+        self.list_widget = QListWidget()
+        self.list_widget.setStyleSheet(
+            f"background: {BG_RAISED}; color: #EDF1FA; border: 1px solid rgba(255,255,255,0.12); border-radius: {RADIUS}px; padding: 6px;"
+        )
+        lay.addWidget(self.list_widget)
+
+        file_btns = QHBoxLayout()
+        add_files_btn = QPushButton("Add Files...")
+        add_files_btn.clicked.connect(self._choose_files)
+        file_btns.addWidget(add_files_btn)
+
+        remove_btn = QPushButton("Remove Selected")
+        remove_btn.clicked.connect(self._remove_file)
+        file_btns.addWidget(remove_btn)
+        file_btns.addStretch()
+        lay.addLayout(file_btns)
+
+        row = QHBoxLayout()
+        row.addStretch()
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.clicked.connect(self.reject)
+        row.addWidget(cancel_btn)
+
+        create_btn = QPushButton("Create Portfolio PDF")
+        create_btn.setStyleSheet(f"background: {ACCENT_HI}; color: #FFFFFF; font-weight: 700; border-radius: {RADIUS}px; padding: 6px 16px;")
+        create_btn.clicked.connect(self._create)
+        row.addWidget(create_btn)
+        lay.addLayout(row)
+
+    def _choose_files(self):
+        paths, _ = QFileDialog.getOpenFileNames(self, "Select Files to Package into Portfolio")
+        if paths:
+            for p in paths:
+                if p not in self.selected_files:
+                    self.selected_files.append(p)
+                    self.list_widget.addItem(f"{Path(p).name} ({Path(p).parent})")
+
+    def _remove_file(self):
+        row = self.list_widget.currentRow()
+        if 0 <= row < len(self.selected_files):
+            self.selected_files.pop(row)
+            self.list_widget.takeItem(row)
+
+    def _create(self):
+        if not self.selected_files:
+            QMessageBox.information(self, "Files Required", "Please add at least one file to the portfolio.")
+            return
+        dst, _ = QFileDialog.getSaveFileName(self, "Save PDF Portfolio", "portfolio_package.pdf", "PDF Documents (*.pdf)")
+        if not dst:
+            return
+        from opal_studio import pdf_portfolio
+        try:
+            pdf_portfolio.create_portfolio(
+                files=self.selected_files,
+                dst_pdf=dst,
+                title=self.title_input.text().strip() or "Opal Document Portfolio",
+                description=self.desc_input.text().strip(),
+            )
+            self.created_path = dst
+            QMessageBox.information(self, "Portfolio Created", f"Successfully created PDF Portfolio.\n\nSaved to:\n{dst}")
+            self.accept()
+        except Exception as e:
+            QMessageBox.warning(self, "Creation Failed", str(e))
+
+
+
 class PdfStudio(QWidget):
     """Complete in-window PDF workspace: view, annotate, organize, protect, convert."""
 
@@ -1240,6 +1523,8 @@ class PdfStudio(QWidget):
             ("layers", "Flatten", "Flatten annotations permanently", self._flatten_document),
             ("checkbox", "Preflight / PDF-X", "Inspect and fix PDF/X, PDF/A, and print compliance", self._preflight_dialog),
             ("shield", "Signatures & LTV", "Inspect digital signatures and manage Long-Term Validation", self._verify_signatures_dialog),
+            ("folder", "Portfolio", "Manage and extract packaged files in this PDF Portfolio", self._open_portfolio_dialog),
+            ("archive", "Create Portfolio", "Package multiple files into a new master PDF Portfolio", self._create_portfolio_dialog),
             ("scan", "OCR", "Make scans searchable (offline AI)", lambda: self._run_worker("ocr")),
             ("lock", "Protect", "Add password protection", self._protect_dialog),
             ("unlock", "Unlock", "Remove password protection", self._unlock_document),
@@ -2572,6 +2857,22 @@ class PdfStudio(QWidget):
         lay.addLayout(btn_row)
 
         dlg.exec()
+
+
+    def _open_portfolio_dialog(self):
+        """Opens the Acrobat-grade PDF Portfolio manager dialog."""
+        if not self.file_path or not os.path.exists(self.file_path):
+            QMessageBox.information(self, "Portfolio", "Please open a PDF document first.")
+            return
+        dlg = PortfolioDialog(self.file_path, parent=self)
+        dlg.exec()
+
+    def _create_portfolio_dialog(self):
+        """Opens the wizard to create a new PDF Portfolio package."""
+        dlg = CreatePortfolioDialog(parent=self)
+        if dlg.exec() == QDialog.Accepted and dlg.created_path:
+            self._open_in_new_tab(dlg.created_path)
+
 
     def _flatten_document(self):
         res = self._engine_action("pdf_flatten")
