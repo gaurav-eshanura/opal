@@ -77,26 +77,11 @@ def candidate_modules() -> List[str]:
         # and load no other vendor module into this process.
         return [env]
 
-    # Windows registers each smart card's PKCS#11 module here.
+    # Windows registers each smart card's PKCS#11 module in the registry.
     try:
-        import winreg
-        for hive in (winreg.HKEY_LOCAL_MACHINE,):
-            for sub in (r"SOFTWARE\Microsoft\Cryptography\Calais\SmartCardModules",
-                        r"SOFTWARE\WOW6432Node\Microsoft\Cryptography\Calais\SmartCardModules"):
-                try:
-                    key = winreg.OpenKey(hive, sub)
-                    i = 0
-                    while True:
-                        try:
-                            name, value, _ = winreg.EnumValue(key, i)
-                        except OSError:
-                            break
-                        if isinstance(value, str) and value.lower().endswith(".dll"):
-                            add(value)
-                        i += 1
-                    winreg.CloseKey(key)
-                except OSError:
-                    pass
+        from opal_studio.platform_compat import get_smartcard_registry_modules
+        for mod_path in get_smartcard_registry_modules():
+            add(mod_path)
     except Exception:
         pass
 

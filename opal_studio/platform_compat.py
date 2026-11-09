@@ -353,3 +353,39 @@ def _migrate_legacy_data(base: Path, target: Path) -> None:
 
 def is_portable() -> bool:
     return portable_root() is not None
+
+
+# ---------------------------------------------------------------------------
+# Hardware Token and Smart Card Module Discovery
+# ---------------------------------------------------------------------------
+
+def get_smartcard_registry_modules() -> List[str]:
+    """
+    Plain English: Reads registered smart card PKCS#11 module DLL paths from the Windows registry.
+    Returns an empty list on non-Windows platforms or if the registry cannot be read.
+    """
+    if not IS_WINDOWS:
+        return []
+    modules: List[str] = []
+    try:
+        import winreg  # type: ignore[import-not-found]
+        for hive in (winreg.HKEY_LOCAL_MACHINE,):
+            for sub in (r"SOFTWARE\Microsoft\Cryptography\Calais\SmartCardModules",
+                        r"SOFTWARE\WOW6432Node\Microsoft\Cryptography\Calais\SmartCardModules"):
+                try:
+                    key = winreg.OpenKey(hive, sub)
+                    i = 0
+                    while True:
+                        try:
+                            name, value, _ = winreg.EnumValue(key, i)
+                        except OSError:
+                            break
+                        if isinstance(value, str) and value.lower().endswith(".dll"):
+                            modules.append(value)
+                        i += 1
+                    winreg.CloseKey(key)
+                except OSError:
+                    pass
+    except Exception:
+        pass
+    return modules

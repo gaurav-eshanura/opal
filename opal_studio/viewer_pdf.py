@@ -1172,13 +1172,8 @@ class PortfolioDialog(QDialog):
                 parent._open_in_new_tab(str(tmp_target))
                 self.accept()
             else:
-                import subprocess
-                if sys.platform == "win32":
-                    os.startfile(str(tmp_target))
-                elif sys.platform == "darwin":
-                    subprocess.run(["open", str(tmp_target)], check=False)
-                else:
-                    subprocess.run(["xdg-open", str(tmp_target)], check=False)
+                from opal_studio.platform_compat import open_with_default
+                open_with_default(str(tmp_target))
         except Exception as e:
             QMessageBox.warning(self, "Open Failed", str(e))
 
