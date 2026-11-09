@@ -41,8 +41,8 @@ things Acrobat is used for, and a few it never did.
 
 | Build | Size | What it is | Get it |
 |---|---|---|---|
-| **Opal** | 211 MB (99 MB zipped) | Everything except the heavy AI engines, which install on first use | [`Opal-v2.2.0-Windows-x64.zip`](https://github.com/gaurav-eshanura/opal/releases/latest) |
-| **Opal Full** | 553 MB (222 MB zipped) | Everything bundled, including the cut-out model — works offline from the first click | [`Opal-Full-v2.2.0-Windows-x64.zip`](https://github.com/gaurav-eshanura/opal/releases/latest) |
+| **Opal** | 211 MB (99 MB zipped) | Everything except the heavy AI engines, which install on first use | [`Opal-v2.3.0-Windows-x64.zip`](https://github.com/gaurav-eshanura/opal/releases/latest) |
+| **Opal Full** | 553 MB (222 MB zipped) | Everything bundled, including the cut-out model — works offline from the first click | [`Opal-Full-v2.3.0-Windows-x64.zip`](https://github.com/gaurav-eshanura/opal/releases/latest) |
 
 macOS and Linux builds are produced by the scripts in [`build_macos.sh`](build_macos.sh)
 and [`build_linux.sh`](build_linux.sh) — see [Building from source](#-building-from-source).
@@ -360,7 +360,11 @@ tools/                  the screenshot capture tool
 
 - [x] Floating studio with a tabbed workspace
 - [x] The modifier wheel
-- [x] Full PDF editor with real DSC signing
+- [x] Full PDF editor with real DSC USB token and .pfx signing
+- [x] Acrobat Pro parity: DocMDP document certification with P=1/2/3 permissions locking
+- [x] Long-Term Validation (LTV / DSS) embedding for perpetual signature validity (ETSI EN 319 142)
+- [x] Acrobat-grade PDF Portfolios and Packages (ISO 32000-1 Section 12.3 Collections)
+- [x] Commercial print & archival preflight verification and PDF/X automated fixups
 - [x] On-device AI background removal, upscaling and OCR
 - [x] Cross-platform input watcher
 - [x] Portable mode
