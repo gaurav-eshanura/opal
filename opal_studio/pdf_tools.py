@@ -796,3 +796,37 @@ def find_empty_sig_field(src: str, page_no: Optional[int] = None) -> Optional[Tu
         return fallback
     finally:
         doc.close()
+
+
+# ---------------------------------------------------------------------------
+# Preflight & PDF/X Conformance (Acrobat Pro Parity)
+# ---------------------------------------------------------------------------
+
+def preflight_pdf(src: str, profile: str = "PDF/X-1a:2001"):
+    """
+    Plain English: Validates a PDF file against print and archival standards
+    (PDF/X-1a, PDF/X-3, PDF/X-4, PDF/A-1b, Commercial Print) and returns an inspection report.
+    """
+    from opal_studio.pdf_preflight import run_preflight
+    return run_preflight(src, profile=profile)
+
+
+def convert_to_pdfx(src: str, dst: Optional[str] = None, profile: str = "PDF/X-1a:2001",
+                    preset_name: str = "FOGRA39", trim_margin_pt: float = 9.0,
+                    flatten_transparency: bool = True, rasterize_unembedded_fonts: bool = True):
+    """
+    Plain English: Converts and fixes up a PDF to be 100% compliant with standard PDF/X or PDF/A,
+    injecting defined trim boxes, standard output intent, and flattening forbidden elements.
+    """
+    from opal_studio.pdf_preflight import apply_preflight_fixups
+    target_dst = dst or _sibling(src, "_pdfx.pdf")
+    report = apply_preflight_fixups(
+        src,
+        target_dst,
+        profile=profile,
+        preset_name=preset_name,
+        trim_margin_pt=trim_margin_pt,
+        flatten_transparency=flatten_transparency,
+        rasterize_unembedded_fonts=rasterize_unembedded_fonts,
+    )
+    return str(target_dst), report

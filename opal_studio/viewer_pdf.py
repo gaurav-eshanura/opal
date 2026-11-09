@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushB
                                QDialog, QComboBox, QListWidget, QListWidgetItem,
                                QTreeWidget, QTreeWidgetItem, QTabWidget, QToolButton, QColorDialog,
                                QInputDialog, QApplication, QSizePolicy, QProgressBar, QCheckBox,
-                               QFormLayout, QStackedWidget)
+                               QFormLayout, QStackedWidget, QTableWidget, QTableWidgetItem, QHeaderView)
 from PySide6.QtPrintSupport import QPrintDialog, QPrinter
 
 from opal_studio.theme import (BG_RAISED, FIELD, RADIUS, RADIUS_SMALL, ACCENT_SOFT,
@@ -347,6 +347,267 @@ class SignatureDialog(QDialog):
 # ---------------------------------------------------------------------------
 # Page canvas with overlays and tool interaction
 # ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# Preflight & Compliance Dialog (Acrobat Pro Parity)
+# ---------------------------------------------------------------------------
+
+class PreflightDialog(QDialog):
+    """
+    Plain English: Inspects and displays PDF/X, PDF/A, and print compliance metrics
+    for the current document, and offers automatic one-click fixups.
+    """
+
+    def __init__(self, doc_path: str, parent=None):
+        super().__init__(parent)
+        self.doc_path = doc_path
+        self.setWindowTitle("PDF Preflight & Compliance (Acrobat-Grade)")
+        self.setMinimumSize(820, 600)
+        self.setStyleSheet(INK_STYLE + """
+            QTableWidget {
+                background: rgba(255,255,255,0.03);
+                color: #EDF1FA;
+                gridline-color: rgba(255,255,255,0.08);
+                border: 1px solid rgba(255,255,255,0.12);
+                border-radius: 8px;
+            }
+            QHeaderView::section {
+                background: rgba(255,255,255,0.08);
+                color: #A8B2C8;
+                font-weight: 700;
+                font-size: 11px;
+                border: none;
+                padding: 6px;
+            }
+            QTabWidget::pane { border: 1px solid rgba(255,255,255,0.16); }
+            QTabBar::tab { background:rgba(255,255,255,0.05); color:#8B96AD; padding:6px 14px; font-weight:600; }
+            QTabBar::tab:selected { background:#6C63FF; color:#fff; }
+        """)
+
+        from opal_studio.theme import head_label, hint_label, body_label
+        from opal_studio.pdf_preflight import PreflightProfile, run_preflight, apply_preflight_fixups
+
+        self.current_report = None
+
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(24, 24, 24, 24)
+        lay.setSpacing(14)
+
+        # Header
+        top_header = QHBoxLayout()
+        v_title = QVBoxLayout()
+        v_title.addWidget(head_label("PDF Preflight & Conformance Inspection"))
+        v_title.addWidget(hint_label("Validate fonts, image resolution, geometry boxes, and output intents against ISO standards."))
+        top_header.addLayout(v_title)
+        top_header.addStretch()
+
+        # Profile selection
+        self.profile_combo = QComboBox()
+        self.profile_combo.addItem("PDF/X-1a:2001 (Strict CMYK & Blind Exchange)", PreflightProfile.PDFX_1A)
+        self.profile_combo.addItem("PDF/X-3:2002 (Color-Managed Print)", PreflightProfile.PDFX_3)
+        self.profile_combo.addItem("PDF/X-4:2010 (Modern Press with Transparency)", PreflightProfile.PDFX_4)
+        self.profile_combo.addItem("PDF/A-1b (Archival Preservation)", PreflightProfile.PDFA_1B)
+        self.profile_combo.addItem("Commercial Print Ready (300 DPI Press)", PreflightProfile.COMMERCIAL_PRINT)
+        self.profile_combo.currentIndexChanged.connect(self._run_inspection)
+        top_header.addWidget(self.profile_combo)
+
+        inspect_btn = QPushButton("Inspect")
+        inspect_btn.clicked.connect(self._run_inspection)
+        top_header.addWidget(inspect_btn)
+        lay.addLayout(top_header)
+
+        # Verdict HUD Banner
+        self.verdict_frame = QFrame()
+        self.verdict_frame.setStyleSheet("background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.14); border-radius: 12px; padding: 12px;")
+        v_lay = QHBoxLayout(self.verdict_frame)
+        self.verdict_label = QLabel("Initializing preflight inspection...")
+        self.verdict_label.setStyleSheet("font-size: 14px; font-weight: 700; color: #EDF1FA;")
+        v_lay.addWidget(self.verdict_label)
+        v_lay.addStretch()
+
+        self.counts_label = QLabel("")
+        self.counts_label.setStyleSheet("font-size: 12px; color: #A8B2C8;")
+        v_lay.addWidget(self.counts_label)
+        lay.addWidget(self.verdict_frame)
+
+        # Detail Tabs
+        self.tabs = QTabWidget()
+
+        # Tab 1: Issues
+        self.issues_list = QListWidget()
+        self.issues_list.setStyleSheet("background: transparent; border: none; color: #EDF1FA;")
+        self.tabs.addTab(self.issues_list, "Issues")
+
+        # Tab 2: Fonts
+        self.fonts_table = QTableWidget()
+        self.fonts_table.setColumnCount(4)
+        self.fonts_table.setHorizontalHeaderLabels(["Font Family", "Type", "Embedded", "Pages"])
+        self.fonts_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tabs.addTab(self.fonts_table, "Fonts")
+
+        # Tab 3: Images
+        self.images_table = QTableWidget()
+        self.images_table.setColumnCount(5)
+        self.images_table.setHorizontalHeaderLabels(["Page", "Dimensions", "Resolution", "Color Space", "Status"])
+        self.images_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tabs.addTab(self.images_table, "Images")
+
+        # Tab 4: Geometry
+        self.geom_table = QTableWidget()
+        self.geom_table.setColumnCount(5)
+        self.geom_table.setHorizontalHeaderLabels(["Page", "MediaBox", "TrimBox", "BleedBox", "Explicit Trim"])
+        self.geom_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tabs.addTab(self.geom_table, "Geometry")
+
+        lay.addWidget(self.tabs)
+
+        # Bottom actions
+        btn_row = QHBoxLayout()
+        export_btn = QPushButton("Export HTML Report...")
+        export_btn.clicked.connect(self._export_html_report)
+        btn_row.addWidget(export_btn)
+
+        btn_row.addStretch()
+
+        fix_btn = QPushButton("Auto-Fix & Export Compliant PDF...")
+        fix_btn.setStyleSheet("""
+            QPushButton {
+                background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
+                                stop: 0 #8A5CF6, stop: 0.55 #EE4E8A, stop: 1 #FF9A3C);
+                color: #FFFFFF; border: none; border-radius: 12px; padding: 7px 18px; font-weight: 700;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
+                                stop: 0 #9B7BFF, stop: 0.55 #FF6BA0, stop: 1 #FFB35C);
+            }
+        """)
+        fix_btn.clicked.connect(self._apply_auto_fix)
+        btn_row.addWidget(fix_btn)
+
+        close_btn = QPushButton("Close")
+        close_btn.clicked.connect(self.accept)
+        btn_row.addWidget(close_btn)
+
+        lay.addLayout(btn_row)
+
+        # Initial inspection trigger
+        self._run_inspection()
+
+    def _current_profile(self) -> str:
+        return self.profile_combo.currentData()
+
+    def _run_inspection(self):
+        from opal_studio.pdf_preflight import run_preflight, CheckSeverity
+        profile = self._current_profile()
+        try:
+            self.current_report = run_preflight(self.doc_path, profile=profile)
+        except Exception as e:
+            self.verdict_label.setText(f"Preflight inspection failed: {e}")
+            return
+
+        rep = self.current_report
+        # Update Banner
+        if rep.passed:
+            self.verdict_frame.setStyleSheet("background: rgba(55,201,138,0.12); border: 1px solid rgba(55,201,138,0.40); border-radius: 12px; padding: 12px;")
+            self.verdict_label.setText(f"✓ COMPLIANT — Passed All Checks for {profile}")
+            self.verdict_label.setStyleSheet("font-size: 14px; font-weight: 700; color: #37C98A;")
+        else:
+            self.verdict_frame.setStyleSheet("background: rgba(238,78,138,0.12); border: 1px solid rgba(238,78,138,0.40); border-radius: 12px; padding: 12px;")
+            self.verdict_label.setText(f"✕ NON-COMPLIANT — Issues Detected for {profile}")
+            self.verdict_label.setStyleSheet("font-size: 14px; font-weight: 700; color: #EE4E8A;")
+
+        self.counts_label.setText(f"Errors: {rep.error_count} · Warnings: {rep.warning_count} · Info: {rep.info_count} · Pages: {rep.page_count}")
+
+        # Populate Issues List
+        self.issues_list.clear()
+        if not rep.issues:
+            item = QListWidgetItem("✓ No defects or standard violations found. Document is fully compliant.")
+            item.setForeground(QColor("#37C98A"))
+            self.issues_list.addItem(item)
+        else:
+            for issue in rep.issues:
+                page_str = f"Page {issue.page}" if issue.page > 0 else "Global"
+                item_text = f"[{issue.severity.upper()}] ({page_str}) {issue.category.capitalize()}: {issue.message}"
+                item = QListWidgetItem(item_text)
+                if issue.severity == CheckSeverity.ERROR:
+                    item.setForeground(QColor("#EE4E8A"))
+                elif issue.severity == CheckSeverity.WARNING:
+                    item.setForeground(QColor("#FF9A3C"))
+                else:
+                    item.setForeground(QColor("#8A83FF"))
+                self.issues_list.addItem(item)
+
+        # Populate Fonts Table
+        self.fonts_table.setRowCount(len(rep.fonts_summary))
+        for row, f in enumerate(rep.fonts_summary):
+            self.fonts_table.setItem(row, 0, QTableWidgetItem(str(f.get("name", ""))))
+            self.fonts_table.setItem(row, 1, QTableWidgetItem(str(f.get("type", ""))))
+            emb = "✓ Embedded" if f.get("embedded") else "✕ Missing"
+            emb_item = QTableWidgetItem(emb)
+            emb_item.setForeground(QColor("#37C98A" if f.get("embedded") else "#EE4E8A"))
+            self.fonts_table.setItem(row, 2, emb_item)
+            pages = ", ".join(str(p) for p in f.get("pages", []))
+            self.fonts_table.setItem(row, 3, QTableWidgetItem(pages))
+
+        # Populate Images Table
+        self.images_table.setRowCount(len(rep.images_summary))
+        for row, img in enumerate(rep.images_summary):
+            self.images_table.setItem(row, 0, QTableWidgetItem(f"Page {img.get('page')}"))
+            self.images_table.setItem(row, 1, QTableWidgetItem(f"{img.get('width')} x {img.get('height')}"))
+            dpi = img.get("effective_dpi", 0)
+            self.images_table.setItem(row, 2, QTableWidgetItem(f"{dpi} DPI"))
+            self.images_table.setItem(row, 3, QTableWidgetItem(str(img.get("colorspace", ""))))
+            st = "✓ Print Ready (≥300 DPI)" if dpi >= 300 else ("⚠ Low Res (<150 DPI)" if dpi < 150 else "● Acceptable")
+            st_item = QTableWidgetItem(st)
+            st_item.setForeground(QColor("#37C98A" if dpi >= 300 else ("#EE4E8A" if dpi < 150 else "#FF9A3C")))
+            self.images_table.setItem(row, 4, st_item)
+
+        # Populate Geometry Table
+        self.geom_table.setRowCount(len(rep.geometry_summary))
+        for row, g in enumerate(rep.geometry_summary):
+            self.geom_table.setItem(row, 0, QTableWidgetItem(f"Page {g.get('page')}"))
+            self.geom_table.setItem(row, 1, QTableWidgetItem(str(g.get("mediabox", []))))
+            self.geom_table.setItem(row, 2, QTableWidgetItem(str(g.get("trimbox", []))))
+            self.geom_table.setItem(row, 3, QTableWidgetItem(str(g.get("bleedbox", []))))
+            ex = "✓ Defined" if g.get("explicit_trim") else "✕ Defaulted to MediaBox"
+            ex_item = QTableWidgetItem(ex)
+            ex_item.setForeground(QColor("#37C98A" if g.get("explicit_trim") else "#FF9A3C"))
+            self.geom_table.setItem(row, 4, ex_item)
+
+    def _export_html_report(self):
+        if not self.current_report:
+            return
+        default_name = f"{Path(self.doc_path).stem}_preflight_report.html"
+        save_path, _ = QFileDialog.getSaveFileName(self, "Save Preflight HTML Report", default_name, "HTML Files (*.html)")
+        if save_path:
+            with open(save_path, "w", encoding="utf-8") as f:
+                f.write(self.current_report.to_html())
+            QMessageBox.information(self, "Preflight Report", f"Preflight report exported successfully to: " + str(save_path))
+
+    def _apply_auto_fix(self):
+        from opal_studio.pdf_preflight import apply_preflight_fixups
+        default_name = f"{Path(self.doc_path).stem}_compliant.pdf"
+        dest_path, _ = QFileDialog.getSaveFileName(self, "Export Compliant PDF", default_name, "PDF Files (*.pdf)")
+        if not dest_path:
+            return
+
+        profile = self._current_profile()
+        try:
+            rep = apply_preflight_fixups(
+                self.doc_path,
+                dest_path,
+                profile=profile,
+                flatten_transparency=True,
+                rasterize_unembedded_fonts=True,
+            )
+            self.doc_path = dest_path
+            self._run_inspection()
+            QMessageBox.information(self, "Preflight Fixup Complete",
+                                    f"Document successfully converted and exported to: {dest_path}\nCompliance: {'PASS' if rep.passed else 'Issues'}")
+        except Exception as e:
+            QMessageBox.critical(self, "Fixup Failed", f"Could not apply preflight fixups: {e}")
+
 
 class PdfPageView(QWidget):
     """Renders one PDF page plus live overlays (search, selection, tool preview)."""
@@ -977,6 +1238,7 @@ class PdfStudio(QWidget):
             ("drop", "Watermark", "Add a diagonal watermark", self._watermark_dialog),
             ("hash", "Page #", "Add page numbers", self._pagenum_dialog),
             ("layers", "Flatten", "Flatten annotations permanently", self._flatten_document),
+            ("checkbox", "Preflight / PDF-X", "Inspect and fix PDF/X, PDF/A, and print compliance", self._preflight_dialog),
             ("scan", "OCR", "Make scans searchable (offline AI)", lambda: self._run_worker("ocr")),
             ("lock", "Protect", "Add password protection", self._protect_dialog),
             ("unlock", "Unlock", "Remove password protection", self._unlock_document),
@@ -2150,6 +2412,16 @@ class PdfStudio(QWidget):
         if not ok2:
             return
         self._run_worker("pagenum", {"format": fmt, "start": start})
+
+    
+    def _preflight_dialog(self):
+        """Opens the Acrobat-grade PDF Preflight & Compliance inspector."""
+        if not self.file_path or not os.path.exists(self.file_path):
+            QMessageBox.information(self, "Preflight", "Please open or save a PDF document first.")
+            return
+        self._save_doc()
+        dlg = PreflightDialog(self.file_path, parent=self)
+        dlg.exec()
 
     def _flatten_document(self):
         res = self._engine_action("pdf_flatten")
